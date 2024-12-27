@@ -65,7 +65,7 @@ html {
 
 @layer utilities {
   .animate-fadeIn {
-    animation: fadeIn 0.5s ease-out;
+    animation: fadeIn 0.5s ease-out forwards;
   }
 
   .animate-blob {
@@ -74,6 +74,14 @@ html {
 
   .animate-gradient-shift {
     animation: gradientShift 15s ease infinite;
+  }
+
+  .animate-ticker {
+    animation: ticker 30s linear infinite;
+  }
+
+  .animate-ticker-mobile {
+    animation: ticker 20s linear infinite;
   }
 
   @keyframes fadeIn {
@@ -111,6 +119,15 @@ html {
     }
     100% {
       background-position: 0% 50%;
+    }
+  }
+
+  @keyframes ticker {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
     }
   }
 
