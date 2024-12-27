@@ -1,27 +1,14 @@
-import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { useSession } from "@supabase/auth-helpers-react";
 import LanguageTicker from "@/components/LanguageTicker";
 import FloatingElements from "@/components/FloatingElements";
 import Hero from "@/components/sections/Hero";
 import Features from "@/components/sections/Features";
 import HowItWorks from "@/components/sections/HowItWorks";
 import CTA from "@/components/sections/CTA";
-import Partners from "@/components/sections/Partners";
-import BetaFeatures from "@/components/sections/BetaFeatures";
-import FutureVision from "@/components/sections/FutureVision";
-import Testimonials from "@/components/sections/Testimonials";
 
 const Index = () => {
-  const session = useSession();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    if (session) {
-      navigate("/dashboard");
-    }
-  }, [session, navigate]);
 
   return (
     <div className="min-h-screen bg-background overflow-x-hidden overflow-y-auto">
@@ -59,13 +46,9 @@ const Index = () => {
       </nav>
 
       <Hero />
-      <Partners />
       <LanguageTicker />
       <Features />
-      <BetaFeatures />
-      <FutureVision />
       <HowItWorks />
-      <Testimonials />
       <CTA />
 
       {/* Footer */}
