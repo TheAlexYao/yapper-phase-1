@@ -5,13 +5,17 @@ import FloatingElements from "@/components/FloatingElements";
 import Hero from "@/components/sections/Hero";
 import Features from "@/components/sections/Features";
 import HowItWorks from "@/components/sections/HowItWorks";
+import Partners from "@/components/sections/Partners";
+import BetaFeatures from "@/components/sections/BetaFeatures";
+import FutureVision from "@/components/sections/FutureVision";
+import Testimonials from "@/components/sections/Testimonials";
 import CTA from "@/components/sections/CTA";
 
 const Index = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-background overflow-x-hidden">
+    <div className="relative min-h-screen bg-background">
       <FloatingElements />
       {/* Dynamic background gradients */}
       <div className="fixed inset-0 bg-gradient-to-br from-[#38b6ff]/10 via-transparent to-[#7843e6]/10 animate-gradient-shift" />
@@ -49,7 +53,11 @@ const Index = () => {
         <Hero />
         <LanguageTicker />
         <Features />
+        <Partners />
         <HowItWorks />
+        <BetaFeatures />
+        <FutureVision />
+        <Testimonials />
         <CTA />
       </main>
 
@@ -71,6 +79,9 @@ const Index = () => {
                 </a>
               ))}
             </div>
+          </div>
+          <div className="text-center mt-4 text-sm text-muted-foreground">
+            Built with <a href="https://lovable.dev/#via=alex" className="text-[#7843e6] hover:underline">Lovable</a>
           </div>
         </div>
       </footer>
