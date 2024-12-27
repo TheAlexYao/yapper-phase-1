@@ -11,7 +11,7 @@ const Index = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-background overflow-x-hidden overflow-y-auto">
+    <div className="min-h-screen bg-background">
       <FloatingElements />
       {/* Dynamic background gradients */}
       <div className="fixed inset-0 bg-gradient-to-br from-[#38b6ff]/10 via-transparent to-[#7843e6]/10 animate-gradient-shift" />
@@ -45,11 +45,13 @@ const Index = () => {
         </div>
       </nav>
 
-      <Hero />
-      <LanguageTicker />
-      <Features />
-      <HowItWorks />
-      <CTA />
+      <main className="relative z-10">
+        <Hero />
+        <LanguageTicker />
+        <Features />
+        <HowItWorks />
+        <CTA />
+      </main>
 
       {/* Footer */}
       <footer className="py-8 border-t relative bg-background/80 backdrop-blur-sm">
@@ -68,9 +70,6 @@ const Index = () => {
                   {item}
                 </a>
               ))}
-            </div>
-            <div className="mt-4 md:mt-0 text-sm text-muted-foreground">
-              Built with <a href="https://lovable.dev/#via=alex" className="text-[#7843e6] hover:text-[#38b6ff] transition-colors">Lovable</a>
             </div>
           </div>
         </div>
