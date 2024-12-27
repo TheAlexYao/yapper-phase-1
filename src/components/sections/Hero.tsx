@@ -18,7 +18,7 @@ const Hero = () => {
         </p>
         <div className="flex flex-col md:flex-row gap-6 justify-center items-center animate-fadeIn opacity-0" style={{ animationDelay: "0.6s" }}>
           <Button 
-            size="xl"
+            size="lg"
             className="bg-[#38b6ff] hover:bg-[#38b6ff]/90 hover:scale-105 transform transition-all duration-200 shadow-[0_0_15px_rgba(56,182,255,0.3)] hover:shadow-[0_0_25px_rgba(56,182,255,0.5)] w-full md:w-auto text-xl py-6 px-8"
             onClick={() => navigate('/auth')}
           >
@@ -26,7 +26,7 @@ const Hero = () => {
           </Button>
           <Button 
             variant="outline" 
-            size="xl"
+            size="lg"
             className="group hover:scale-105 transform transition-all duration-200 w-full md:w-auto text-xl py-6 px-8"
             onClick={() => navigate('/auth')}
           >

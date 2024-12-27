@@ -1,23 +1,34 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { useSession } from "@supabase/auth-helpers-react";
+import LanguageTicker from "@/components/LanguageTicker";
+import FloatingElements from "@/components/FloatingElements";
+import Hero from "@/components/sections/Hero";
+import Features from "@/components/sections/Features";
+import HowItWorks from "@/components/sections/HowItWorks";
+import CTA from "@/components/sections/CTA";
+import Partners from "@/components/sections/Partners";
+import BetaFeatures from "@/components/sections/BetaFeatures";
+import FutureVision from "@/components/sections/FutureVision";
+import Testimonials from "@/components/sections/Testimonials";
 
 const Index = () => {
   const session = useSession();
   const navigate = useNavigate();
 
   useEffect(() => {
-    console.log('Index - Session state:', session ? 'Authenticated' : 'Not authenticated');
     if (session) {
-      console.log('Index - Redirecting to dashboard');
       navigate("/dashboard");
     }
   }, [session, navigate]);
 
   return (
-    <div className="min-h-screen bg-background overflow-hidden">
+    <div className="min-h-screen bg-background overflow-x-hidden overflow-y-auto">
       <FloatingElements />
       {/* Dynamic background gradients */}
       <div className="fixed inset-0 bg-gradient-to-br from-[#38b6ff]/10 via-transparent to-[#7843e6]/10 animate-gradient-shift" />
-      <div className="fixed inset-0">
+      <div className="fixed inset-0 pointer-events-none">
         <div className="absolute -top-40 -right-40 w-96 h-96 bg-[#38b6ff] rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[#7843e6] rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000" />
         <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-[#38b6ff] rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000" />
@@ -37,7 +48,7 @@ const Index = () => {
               Features
             </a>
             <Button 
-              size="xl"
+              size="lg"
               className="bg-[#7843e6] hover:bg-[#7843e6]/90 hover:scale-105 transform transition-all duration-200 shadow-[0_0_15px_rgba(120,67,230,0.3)] hover:shadow-[0_0_25px_rgba(120,67,230,0.5)] text-xl py-6 px-8"
               onClick={() => navigate('/auth')}
             >
@@ -48,13 +59,17 @@ const Index = () => {
       </nav>
 
       <Hero />
+      <Partners />
       <LanguageTicker />
       <Features />
+      <BetaFeatures />
+      <FutureVision />
       <HowItWorks />
+      <Testimonials />
       <CTA />
 
       {/* Footer */}
-      <footer className="py-8 border-t relative">
+      <footer className="py-8 border-t relative bg-background/80 backdrop-blur-sm">
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="text-lg text-muted-foreground hover:text-foreground transition-colors">
@@ -70,6 +85,9 @@ const Index = () => {
                   {item}
                 </a>
               ))}
+            </div>
+            <div className="mt-4 md:mt-0 text-sm text-muted-foreground">
+              Built with <a href="https://lovable.dev/#via=alex" className="text-[#7843e6] hover:text-[#38b6ff] transition-colors">Lovable</a>
             </div>
           </div>
         </div>
