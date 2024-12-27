@@ -11,7 +11,7 @@ const Testimonials = () => {
   ];
 
   return (
-    <section className="py-20 px-4 bg-background/50">
+    <section id="testimonials" className="py-20 px-4 bg-background/50">
       <div className="container mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {testimonials.map((testimonial, index) => (

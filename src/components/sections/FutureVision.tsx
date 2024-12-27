@@ -20,7 +20,7 @@ const FutureVision = () => {
   ];
 
   return (
-    <section className="py-20 px-4">
+    <section id="future-vision" className="py-20 px-4">
       <div className="container mx-auto">
         <h2 className="text-4xl md:text-5xl font-bold text-center mb-4">Get Ready for a Language Adventure Like No Other</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16">

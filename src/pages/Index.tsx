@@ -32,15 +32,24 @@ const Index = () => {
             Yapper
           </div>
           <div className="hidden md:flex items-center space-x-8">
-            <a href="#how-it-works" className="text-xl text-foreground/80 hover:text-foreground transition-colors hover:scale-105">
+            <a href="#features" className="text-lg text-foreground/80 hover:text-foreground transition-colors hover:scale-105">
+              Features
+            </a>
+            <a href="#how-it-works" className="text-lg text-foreground/80 hover:text-foreground transition-colors hover:scale-105">
               How It Works
             </a>
-            <a href="#features" className="text-xl text-foreground/80 hover:text-foreground transition-colors hover:scale-105">
-              Features
+            <a href="#beta-features" className="text-lg text-foreground/80 hover:text-foreground transition-colors hover:scale-105">
+              Beta Features
+            </a>
+            <a href="#future-vision" className="text-lg text-foreground/80 hover:text-foreground transition-colors hover:scale-105">
+              Future Vision
+            </a>
+            <a href="#testimonials" className="text-lg text-foreground/80 hover:text-foreground transition-colors hover:scale-105">
+              Testimonials
             </a>
             <Button 
               size="lg"
-              className="bg-[#7843e6] hover:bg-[#7843e6]/90 hover:scale-105 transform transition-all duration-200 shadow-[0_0_15px_rgba(120,67,230,0.3)] hover:shadow-[0_0_25px_rgba(120,67,230,0.5)] text-xl py-6 px-8"
+              className="bg-[#7843e6] hover:bg-[#7843e6]/90 hover:scale-105 transform transition-all duration-200 shadow-[0_0_15px_rgba(120,67,230,0.3)] hover:shadow-[0_0_25px_rgba(120,67,230,0.5)]"
               onClick={() => navigate('/auth')}
             >
               Get Started
