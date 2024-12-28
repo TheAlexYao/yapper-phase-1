@@ -6,12 +6,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ArrowLeft, Mic, Play, Pause, ChevronDown, ChevronUp, Volume2, Info, ChevronRight, Turtle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-</lov-replace>
-
-<lov-search>
-      <FloatingElements />
-</lov-search>
-<lov-replace>
 import PostScenarioSummary from './PostScenarioSummary';
 
 interface ChatMessage {
@@ -244,7 +238,9 @@ const RecordingInterface: React.FC<{
 
       mediaRecorder.ondataavailable = (e) => chunksRef.current.push(e.data);
       mediaRecorder.onstop = () => {
-        // Remove the audio URL creation from here
+        const blob = new Blob(chunksRef.current, { type: 'audio/ogg; codecs=opus' });
+        const url = URL.createObjectURL(blob);
+        setAudioUrl(url);
       };
 
       mediaRecorder.start();
@@ -258,10 +254,6 @@ const RecordingInterface: React.FC<{
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
-      // Create audio URL when stopping the recording
-      const blob = new Blob(chunksRef.current, { type: 'audio/ogg; codecs=opus' });
-      const url = URL.createObjectURL(blob);
-      setAudioUrl(url);
     }
   };
 
@@ -507,7 +499,6 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({ scenarioId, sce
 
   return (
     <div className="h-screen w-screen overflow-hidden relative flex flex-col">
-      <FloatingElements />
       <div className="absolute inset-0">
         <div className="absolute inset-0 bg-gradient-to-br from-[#38b6ff]/10 via-transparent to-[#7843e6]/10 animate-gradient-shift"></div>
       </div>
