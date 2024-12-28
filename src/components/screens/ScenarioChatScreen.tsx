@@ -53,6 +53,7 @@ interface ScenarioChatScreenProps {
   scenarioId: string;
   scenarioTitle: string;
   characterName: string;
+  selectedLanguage: string;
   onBackToCharacters: () => void;
 }
 
@@ -551,3 +552,4 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({ scenarioId, sce
 };
 
 export default ScenarioChatScreen;
+

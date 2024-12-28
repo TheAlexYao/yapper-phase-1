@@ -17,12 +17,14 @@ interface Character {
 
 interface CharacterSelectionScreenProps {
   scenarioTitle: string;
+  selectedLanguage: string;
   onBackToScenarios: () => void;
   onCharacterSelect: (characterId: string, characterName: string) => void;
 }
 
 const CharacterSelectionScreen: React.FC<CharacterSelectionScreenProps> = ({
   scenarioTitle,
+  selectedLanguage,
   onBackToScenarios,
   onCharacterSelect,
 }) => {
