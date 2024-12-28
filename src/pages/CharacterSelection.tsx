@@ -10,9 +10,7 @@ const CharacterSelection = () => {
   };
 
   const handleCharacterSelect = (characterId: string, characterName: string) => {
-    console.log("Selected character:", characterName, characterId);
-    // Handle character selection here
-    // For now, we'll just log it and could navigate to another page later
+    navigate(`/scenarios/${characterId}/${encodeURIComponent(scenarioTitle!)}/chat/${encodeURIComponent(characterName)}`);
   };
 
   if (!scenarioTitle) {

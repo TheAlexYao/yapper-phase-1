@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import TopicSelection from "./pages/TopicSelection";
 import ScenarioSelection from "./pages/ScenarioSelection";
 import CharacterSelection from "./pages/CharacterSelection";
+import ScenarioChat from "./pages/ScenarioChat";
 
 const queryClient = new QueryClient();
 
@@ -19,6 +20,7 @@ const App = () => (
           <Route path="/topics" element={<TopicSelection />} />
           <Route path="/topics/:topicTitle/scenarios" element={<ScenarioSelection />} />
           <Route path="/scenarios/:scenarioTitle/characters" element={<CharacterSelection />} />
+          <Route path="/scenarios/:scenarioId/:scenarioTitle/chat/:characterName" element={<ScenarioChat />} />
         </Routes>
         <Toaster />
         <Sonner />
