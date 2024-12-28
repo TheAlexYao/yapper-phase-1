@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, Play, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -126,7 +126,7 @@ const PostScenarioSummary: React.FC<PostScenarioSummaryProps> = ({
     {
       title: "Conversation Review",
       content: (
-        <div className="space-y-4">
+        <div className="space-y-4 h-full overflow-y-auto px-4">
           {transcript.map((line, index) => (
             <motion.div
               key={index}
@@ -143,7 +143,7 @@ const PostScenarioSummary: React.FC<PostScenarioSummaryProps> = ({
               {line.role === 'user' && (
                 <div className="flex flex-wrap gap-2 items-center">
                   {line.audioUrl && <AudioPlayer audioUrl={line.audioUrl} label="Your Recording" />}
-                  <AudioPlayer audioUrl={line.ttsUrl} label="Reference Audio" />
+                  {line.ttsUrl && <AudioPlayer audioUrl={line.ttsUrl} label="Reference Audio" />}
                   {line.score !== undefined && (
                     <span className="text-sm bg-gradient-to-r from-[#38b6ff] to-[#7843e6] text-white px-3 py-1 rounded-full">
                       Score: {line.score}%
@@ -159,7 +159,7 @@ const PostScenarioSummary: React.FC<PostScenarioSummaryProps> = ({
     {
       title: "Performance Analysis",
       content: (
-        <div className="space-y-6">
+        <div className="space-y-6 h-full overflow-y-auto px-4">
           <div className="space-y-4">
             {Object.entries(detailedScores).map(([key, value], index) => (
               <motion.div
@@ -223,7 +223,7 @@ const PostScenarioSummary: React.FC<PostScenarioSummaryProps> = ({
     {
       title: "Progress Tracking",
       content: (
-        <div className="space-y-6">
+        <div className="space-y-6 h-full overflow-y-auto px-4">
           <div className="h-[200px]">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={progressData}>
@@ -284,7 +284,7 @@ const PostScenarioSummary: React.FC<PostScenarioSummaryProps> = ({
   ];
 
   return (
-    <div className="min-h-screen w-full bg-white">
+    <div className="min-h-screen w-full bg-white flex flex-col">
       <header className="sticky top-0 z-50 bg-gradient-to-r from-[#38b6ff] to-[#7843e6] text-white shadow-lg">
         <div className="container mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
@@ -309,14 +309,8 @@ const PostScenarioSummary: React.FC<PostScenarioSummaryProps> = ({
         </div>
       </header>
 
-      <main 
-        ref={containerRef}
-        className="container mx-auto px-4 py-6"
-      >
+      <main className="flex-1 container mx-auto px-4 py-6">
         <Card className="border-none shadow-lg">
-          <CardHeader className="border-b bg-gray-50">
-            <CardTitle>{cards[currentCard].title}</CardTitle>
-          </CardHeader>
           <CardContent className="p-6">
             <AnimatePresence mode="wait">
               <motion.div
@@ -325,7 +319,9 @@ const PostScenarioSummary: React.FC<PostScenarioSummaryProps> = ({
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -300 }}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                className="h-[calc(100vh-16rem)] overflow-hidden"
               >
+                <h2 className="text-xl font-bold mb-4">{cards[currentCard].title}</h2>
                 {cards[currentCard].content}
               </motion.div>
             </AnimatePresence>
@@ -333,7 +329,7 @@ const PostScenarioSummary: React.FC<PostScenarioSummaryProps> = ({
         </Card>
       </main>
 
-      <footer className="fixed bottom-0 left-0 right-0 bg-white border-t">
+      <footer className="sticky bottom-0 bg-white border-t shadow-lg">
         <div className="container mx-auto px-4 py-3 flex justify-between items-center">
           <Button 
             onClick={() => handleSwipe(-1)} 
