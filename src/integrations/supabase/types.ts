@@ -390,6 +390,48 @@ export type Database = {
         }
         Relationships: []
       }
+      topics: {
+        Row: {
+          category: Database["public"]["Enums"]["topic_category"]
+          created_at: string | null
+          description: string | null
+          description_translations: Json | null
+          display_order: number | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          title: string
+          title_translations: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          category: Database["public"]["Enums"]["topic_category"]
+          created_at?: string | null
+          description?: string | null
+          description_translations?: Json | null
+          display_order?: number | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          title: string
+          title_translations?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["topic_category"]
+          created_at?: string | null
+          description?: string | null
+          description_translations?: Json | null
+          display_order?: number | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          title?: string
+          title_translations?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       tts_cache: {
         Row: {
           audio_url: string | null
@@ -510,6 +552,13 @@ export type Database = {
     }
     Enums: {
       sender_type: "user" | "agent"
+      topic_category:
+        | "food"
+        | "travel"
+        | "business"
+        | "dating"
+        | "culture"
+        | "daily_life"
     }
     CompositeTypes: {
       [_ in never]: never

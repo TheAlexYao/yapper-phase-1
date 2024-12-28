@@ -1,130 +1,51 @@
 'use client'
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Card, CardContent } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from "@/integrations/supabase/client";
 import FloatingElements from '@/components/FloatingElements';
+import LanguageSelector from '@/components/topics/LanguageSelector';
+import TopicCarousel from '@/components/topics/TopicCarousel';
+import { useToast } from "@/components/ui/use-toast";
 
 interface Topic {
   id: string;
   title: string;
   description: string;
   image_url: string;
-  language: string;
+  title_translations?: Record<string, string>;
+  description_translations?: Record<string, string>;
 }
 
 interface TopicSelectionScreenProps {
   onTopicSelect: (topicTitle: string) => void;
 }
 
-const TopicCard: React.FC<{ topic: Topic; onSelect: () => void }> = ({ topic, onSelect }) => {
-  return (
-    <Card 
-      className="w-full h-full overflow-hidden cursor-pointer transform transition-all duration-300 hover:scale-[1.02] hover:shadow-lg rounded-2xl"
-      onClick={onSelect}
-    >
-      <CardContent className="p-0 h-full relative">
-        <img
-          src={topic.image_url}
-          alt={topic.title}
-          className="w-full h-full object-cover"
-          loading="lazy"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent flex flex-col justify-end p-6">
-          <h3 className="text-2xl md:text-3xl font-bold text-white mb-2">{topic.title}</h3>
-          <p className="text-sm md:text-base text-white/90">{topic.description}</p>
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
-
-const LanguageSelector: React.FC<{ selectedLanguage: string; onLanguageChange: (language: string) => void }> = ({ selectedLanguage, onLanguageChange }) => {
-  const languages = [
-    { code: 'en', name: 'English', flag: '🇬🇧' },
-    { code: 'es', name: 'Spanish', flag: '🇪🇸' },
-    { code: 'th', name: 'Thai', flag: '🇹🇭' },
-    { code: 'ru', name: 'Russian', flag: '🇷🇺' },
-  ];
-
-  return (
-    <Select value={selectedLanguage} onValueChange={onLanguageChange}>
-      <SelectTrigger className="w-[180px] bg-white text-gray-800 border-2 border-[#38b6ff] rounded-md">
-        <SelectValue placeholder="Select language" />
-      </SelectTrigger>
-      <SelectContent className="bg-white border-2 border-[#38b6ff]">
-        {languages.map((lang) => (
-          <SelectItem key={lang.code} value={lang.code} className="flex items-center gap-2">
-            <span>{lang.flag}</span> {lang.name}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  );
-};
-
 const TopicSelectionScreen: React.FC<TopicSelectionScreenProps> = ({ onTopicSelect }) => {
-  const [topics, setTopics] = useState<Topic[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [selectedLanguage, setSelectedLanguage] = useState('en');
   const [currentIndex, setCurrentIndex] = useState(0);
-  const touchStartX = useRef<number | null>(null);
-  const touchEndX = useRef<number | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
 
-  useEffect(() => {
-    const fetchTopics = async () => {
-      try {
-        setLoading(true);
-        // Simulating API call with setTimeout
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        const fetchedTopics: Topic[] = [
-          { 
-            id: '1', 
-            title: 'Food', 
-            description: 'Learn about local cuisine', 
-            image_url: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&q=80', 
-            language: selectedLanguage 
-          },
-          { 
-            id: '2', 
-            title: 'Travel', 
-            description: 'Explore new destinations', 
-            image_url: 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&q=80', 
-            language: selectedLanguage 
-          },
-          { 
-            id: '3', 
-            title: 'Business', 
-            description: 'Master professional communication', 
-            image_url: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&q=80', 
-            language: selectedLanguage 
-          },
-          { 
-            id: '4', 
-            title: 'Dating', 
-            description: 'Navigate romantic situations', 
-            image_url: 'https://images.unsplash.com/photo-1511306404404-ad607bd7c601?auto=format&fit=crop&q=80', 
-            language: selectedLanguage 
-          },
-        ];
-        setTopics(fetchedTopics);
-        setError(null);
-      } catch (err) {
-        setError('Failed to load topics. Please try again.');
-      } finally {
-        setLoading(false);
+  const { data: topics = [], isLoading, error } = useQuery({
+    queryKey: ['topics', selectedLanguage],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('topics')
+        .select('*')
+        .order('display_order', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching topics:', error);
+        throw error;
       }
-    };
 
-    fetchTopics();
-  }, [selectedLanguage]);
+      return data || [];
+    },
+  });
 
   const handleLanguageChange = (language: string) => {
     setSelectedLanguage(language);
+    setCurrentIndex(0);
   };
 
   const handleTopicSelect = useCallback((topicId: string) => {
@@ -162,46 +83,13 @@ const TopicSelectionScreen: React.FC<TopicSelectionScreenProps> = ({ onTopicSele
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [navigate, topics, currentIndex, handleTopicSelect]);
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!touchStartX.current) return;
-    const currentX = e.touches[0].clientX;
-    const diff = touchStartX.current - currentX;
-    if (Math.abs(diff) > 5) {
-      e.preventDefault();
-    }
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (!touchStartX.current) return;
-    touchEndX.current = e.changedTouches[0].clientX;
-    const diff = touchStartX.current - touchEndX.current;
-    if (diff > 50) {
-      navigate('next');
-    } else if (diff < -50) {
-      navigate('prev');
-    }
-    touchStartX.current = null;
-    touchEndX.current = null;
-  };
-
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const preventScroll = (e: TouchEvent) => {
-      e.preventDefault();
-    };
-
-    container.addEventListener('touchmove', preventScroll, { passive: false });
-
-    return () => {
-      container.removeEventListener('touchmove', preventScroll);
-    };
-  }, []);
+  if (error) {
+    toast({
+      variant: "destructive",
+      title: "Error",
+      description: "Failed to load topics. Please try again later.",
+    });
+  }
 
   return (
     <div className="h-screen w-screen overflow-hidden relative flex flex-col items-center justify-between">
@@ -226,66 +114,18 @@ const TopicSelectionScreen: React.FC<TopicSelectionScreenProps> = ({ onTopicSele
           </div>
         </div>
 
-        <div 
-          ref={containerRef}
-          className="relative flex flex-col items-center justify-center w-full max-w-sm px-4"
-        >
-          {loading && (
+        <div className="relative flex flex-col items-center justify-center w-full max-w-sm px-4">
+          {isLoading ? (
             <div className="flex items-center justify-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
             </div>
-          )}
-
-          {error && (
-            <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-lg" role="alert">
-              <strong className="font-bold">Error:</strong>
-              <span className="block sm:inline"> {error}</span>
-            </div>
-          )}
-
-          {!loading && !error && (
-            <>
-              <div 
-                className="w-full aspect-[3/4] overflow-hidden rounded-2xl shadow-xl mb-4"
-                onTouchStart={handleTouchStart}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
-              >
-                <div 
-                  className="flex h-full transition-transform duration-300 ease-out"
-                  style={{ transform: `translateX(-${currentIndex * 100}%)` }}
-                >
-                  {topics.map((topic) => (
-                    <div key={topic.id} className="w-full h-full flex-shrink-0">
-                      <TopicCard
-                        topic={topic}
-                        onSelect={() => handleTopicSelect(topic.id)}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex justify-center gap-4 w-full">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="bg-gradient-to-r from-[#38b6ff] to-[#7843e6] text-white rounded-full p-2 border-none"
-                  onClick={() => navigate('prev')}
-                >
-                  <ChevronLeft className="h-6 w-6" />
-                </Button>
-
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="bg-gradient-to-r from-[#38b6ff] to-[#7843e6] text-white rounded-full p-2 border-none"
-                  onClick={() => navigate('next')}
-                >
-                  <ChevronRight className="h-6 w-6" />
-                </Button>
-              </div>
-            </>
+          ) : (
+            <TopicCarousel
+              topics={topics}
+              currentIndex={currentIndex}
+              onNavigate={navigate}
+              onTopicSelect={handleTopicSelect}
+            />
           )}
         </div>
       </div>
