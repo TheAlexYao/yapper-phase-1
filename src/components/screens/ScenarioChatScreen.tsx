@@ -6,7 +6,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ArrowLeft, Mic, Play, Pause, ChevronDown, ChevronUp, Volume2, Info, ChevronRight, Turtle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import FloatingElements from './FloatingElements';
+</lov-replace>
+
+<lov-search>
+      <FloatingElements />
+</lov-search>
+<lov-replace>
 import PostScenarioSummary from './PostScenarioSummary';
 
 interface ChatMessage {
