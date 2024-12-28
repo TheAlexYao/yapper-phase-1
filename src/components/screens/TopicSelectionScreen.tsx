@@ -7,15 +7,9 @@ import FloatingElements from '@/components/FloatingElements';
 import LanguageSelector from '@/components/topics/LanguageSelector';
 import TopicCarousel from '@/components/topics/TopicCarousel';
 import { useToast } from "@/components/ui/use-toast";
+import { Database } from '@/integrations/supabase/types';
 
-interface Topic {
-  id: string;
-  title: string;
-  description: string;
-  image_url: string;
-  title_translations?: Record<string, string>;
-  description_translations?: Record<string, string>;
-}
+type Topic = Database['public']['Tables']['topics']['Row'];
 
 interface TopicSelectionScreenProps {
   onTopicSelect: (topicTitle: string) => void;

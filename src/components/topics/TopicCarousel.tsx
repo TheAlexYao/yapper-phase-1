@@ -2,15 +2,9 @@ import { useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import TopicCard from './TopicCard';
+import { Database } from '@/integrations/supabase/types';
 
-interface Topic {
-  id: string;
-  title: string;
-  description: string;
-  image_url: string;
-  title_translations?: Record<string, string>;
-  description_translations?: Record<string, string>;
-}
+type Topic = Database['public']['Tables']['topics']['Row'];
 
 interface TopicCarouselProps {
   topics: Topic[];

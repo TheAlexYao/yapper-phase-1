@@ -1,13 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
+import { Database } from '@/integrations/supabase/types';
 
-interface Topic {
-  id: string;
-  title: string;
-  description: string;
-  image_url: string;
-  title_translations?: Record<string, string>;
-  description_translations?: Record<string, string>;
-}
+type Topic = Database['public']['Tables']['topics']['Row'];
 
 interface TopicCardProps {
   topic: Topic;
@@ -22,7 +16,7 @@ const TopicCard: React.FC<TopicCardProps> = ({ topic, onSelect }) => {
     >
       <CardContent className="p-0 h-full relative">
         <img
-          src={topic.image_url}
+          src={topic.image_url || ''}
           alt={topic.title}
           className="w-full h-full object-cover"
           loading="lazy"
