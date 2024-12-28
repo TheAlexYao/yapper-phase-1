@@ -39,13 +39,17 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
         setIsLoading(true);
         console.log('Fetching script messages for:', { scenarioId, selectedLanguage });
         
-        // Get the script template with proper joins
+        // First get the script template that matches our scenario and language
         const { data: template, error: templateError } = await supabase
           .from('script_templates')
           .select(`
             id,
+            scenario_id,
+            character_id,
+            city_id,
             cities!inner (
               id,
+              language_id,
               languages!inner (
                 id,
                 code
@@ -54,7 +58,7 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
           `)
           .eq('scenario_id', scenarioId)
           .eq('cities.languages.code', selectedLanguage)
-          .maybeSingle();
+          .single();
 
         if (templateError) {
           console.error('Error fetching script template:', templateError);
@@ -63,6 +67,7 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
             description: "Failed to load conversation script. Please try again.",
             variant: "destructive"
           });
+          setIsLoading(false);
           return;
         }
 
@@ -79,7 +84,7 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
 
         console.log('Found template:', template);
 
-        // Fetch messages for the template
+        // Now fetch all messages for this template
         const { data: messages, error: messagesError } = await supabase
           .from('script_messages')
           .select('*')
@@ -93,6 +98,7 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
             description: "Failed to load conversation messages. Please try again.",
             variant: "destructive"
           });
+          setIsLoading(false);
           return;
         }
 
@@ -103,6 +109,7 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
             description: "No conversation content is available for this scenario yet.",
             variant: "destructive"
           });
+          setIsLoading(false);
           return;
         }
 
