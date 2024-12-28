@@ -8,7 +8,8 @@ import { supabase } from "@/integrations/supabase/client";
 import PostScenarioSummary from './PostScenarioSummary';
 import ChatBubble from '../chat/ChatBubble';
 import RecordingInterface from '../chat/RecordingInterface';
-import { ChatMessage, BotMessage } from '@/types/chat';
+import AudioPlayer from '../chat/AudioPlayer';
+import { ChatMessage, BotMessage, UserMessage } from '@/types/chat';
 
 interface ScenarioChatScreenProps {
   scenarioId: string;
