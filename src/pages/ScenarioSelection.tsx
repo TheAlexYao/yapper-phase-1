@@ -14,7 +14,8 @@ const ScenarioSelection = () => {
   };
 
   const handleScenarioSelect = (scenarioTitle: string, scenarioId: string) => {
-    navigate(`/scenarios/${encodeURIComponent(scenarioTitle)}?lang=${language}/characters`);
+    // Fix: Remove the slash before 'characters' to prevent double slashes
+    navigate(`/scenarios/${encodeURIComponent(scenarioTitle)}/characters?lang=${language}`);
   };
 
   if (!topicTitle) {
