@@ -2,10 +2,10 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import AudioPlayer from './AudioPlayer';
 import RecordingInterface from './RecordingInterface';
-import { BotMessage } from '@/types/chat';
+import { ChatMessage } from '@/types/chat';
 
 interface ChatInputProps {
-  currentPrompt: BotMessage | null;
+  currentPrompt: ChatMessage | null;
   onRecordingComplete: (audioUrl: string, score: number) => void;
 }
 
