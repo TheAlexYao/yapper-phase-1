@@ -1,16 +1,11 @@
-'use client'
-
 import React, { useState, useEffect, useRef } from 'react';
-import { Button } from "@/components/ui/button";
-import { ArrowLeft, Info, ChevronRight } from 'lucide-react';
-import { AnimatePresence } from 'framer-motion';
 import { supabase } from "@/integrations/supabase/client";
-import PostScenarioSummary from './PostScenarioSummary';
-import ChatBubble from '../chat/ChatBubble';
-import RecordingInterface from '../chat/RecordingInterface';
-import AudioPlayer from '../chat/AudioPlayer';
-import { ChatMessage, BotMessage, UserMessage } from '@/types/chat';
 import { useToast } from "@/components/ui/use-toast";
+import PostScenarioSummary from './PostScenarioSummary';
+import { ChatMessage, BotMessage } from '@/types/chat';
+import ChatHeader from '../chat/ChatHeader';
+import ChatMessages from '../chat/ChatMessages';
+import ChatInput from '../chat/ChatInput';
 
 interface ScenarioChatScreenProps {
   scenarioId: string;
@@ -32,20 +27,22 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
   const [scriptMessages, setScriptMessages] = useState<any[]>([]);
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  const chatEndRef = useRef<HTMLDivElement>(null);
   const [isConversationComplete, setIsConversationComplete] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
+  const chatEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     const fetchScriptMessages = async () => {
       try {
         setIsLoading(true);
-        // First, try to get the script template
+        
+        // First, get the script template for the specific language
         const { data: template, error: templateError } = await supabase
           .from('script_templates')
-          .select('id')
+          .select('id, cities!inner(language_id)')
           .eq('scenario_id', scenarioId)
+          .eq('cities.languages!inner(code)', selectedLanguage)
           .maybeSingle();
 
         if (templateError) {
@@ -59,10 +56,10 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
         }
 
         if (!template) {
-          console.error('No script template found for this scenario');
+          console.error('No script template found for this scenario and language');
           toast({
             title: "Not Available",
-            description: "This conversation scenario is not yet available. Please try another one.",
+            description: `This conversation is not yet available in ${selectedLanguage}. Please try another language.`,
             variant: "destructive"
           });
           return;
@@ -135,7 +132,7 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
     };
 
     fetchScriptMessages();
-  }, [scenarioId, toast]);
+  }, [scenarioId, selectedLanguage, toast]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -218,23 +215,6 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
     }
   };
 
-  const handleViewSummary = () => {
-    setShowSummary(true);
-  };
-
-  const handleRestartScenario = () => {
-    setShowSummary(false);
-    setMessages([]);
-    setCurrentPrompt(null);
-    setCurrentMessageIndex(0);
-    setIsConversationComplete(false);
-  };
-
-  const handleNextScenario = () => {
-    // Implement logic to move to the next scenario
-    console.log("Moving to next scenario");
-  };
-
   const calculateAverageScore = () => {
     const userMessages = messages.filter(message => message.role === 'user' && message.score !== null);
     if (userMessages.length === 0) return 0;
@@ -274,9 +254,15 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
           { date: '2023-05-03', score: 85 },
           { date: '2023-05-04', score: calculateAverageScore() }
         ]}
-        onRestart={handleRestartScenario}
+        onRestart={() => {
+          setShowSummary(false);
+          setMessages([]);
+          setCurrentPrompt(null);
+          setCurrentMessageIndex(0);
+          setIsConversationComplete(false);
+        }}
         onExit={onBackToCharacters}
-        onNextScenario={handleNextScenario}
+        onNextScenario={() => console.log("Moving to next scenario")}
       />
     );
   }
@@ -299,50 +285,25 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
       </div>
 
       <div className="relative z-20 flex flex-col h-full">
-        <div className="flex items-center justify-between p-4 border-b bg-white/80 backdrop-blur-sm">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-gray-600 hover:text-gray-800 hover:bg-opacity-80 transition-colors duration-200"
-            onClick={onBackToCharacters}
-          >
-            <ArrowLeft className="h-6 w-6" />
-          </Button>
-          <h1 className="text-xl font-bold text-center flex-grow">
-            Chat with {characterName}: {scenarioTitle}
-          </h1>
-          <div className="w-10"></div>
-        </div>
+        <ChatHeader
+          characterName={characterName}
+          scenarioTitle={scenarioTitle}
+          onBackToCharacters={onBackToCharacters}
+        />
 
-        <div className="flex-grow overflow-y-auto p-4 bg-white/80">
-          <AnimatePresence>
-            {messages.map(message => (
-              <ChatBubble key={message.id} message={message} />
-            ))}
-          </AnimatePresence>
-          <div ref={chatEndRef} />
-        </div>
+        <ChatMessages messages={messages} chatEndRef={chatEndRef} />
 
         {isConversationComplete ? (
           <div className="fixed inset-x-0 bottom-0 bg-white border-t p-4 flex flex-col items-center space-y-4">
             <h3 className="text-xl font-bold text-center">Conversation Complete!</h3>
             <p className="text-center text-gray-600">Great job! You've completed this conversation scenario.</p>
-            <Button onClick={handleViewSummary}>View Summary</Button>
+            <Button onClick={() => setShowSummary(true)}>View Summary</Button>
           </div>
         ) : (
-          currentPrompt && (
-            <div className="border-t bg-white flex flex-col items-center w-full">
-              <div className="p-4 w-full flex flex-col items-center">
-                <h3 className="font-semibold mb-2 text-center">Your turn:</h3>
-                <p className="text-sm md:text-base text-center">{currentPrompt.text}</p>
-                <p className="text-xs md:text-sm text-gray-600 mt-1 text-center">{currentPrompt.transliteration}</p>
-                <div className="mt-2 flex flex-col items-center gap-2">
-                  <AudioPlayer audioUrl={currentPrompt.tts_audio_url} label="TTS" />
-                  <RecordingInterface onRecordingComplete={handleRecordingComplete} />
-                </div>
-              </div>
-            </div>
-          )
+          <ChatInput
+            currentPrompt={currentPrompt}
+            onRecordingComplete={handleRecordingComplete}
+          />
         )}
       </div>
     </div>
