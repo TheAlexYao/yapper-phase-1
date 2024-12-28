@@ -5,12 +5,16 @@ const ScenarioSelection = () => {
   const navigate = useNavigate();
   const { topicTitle } = useParams();
 
+  // Extract language from URL parameter
+  const language = new URLSearchParams(topicTitle?.split('?')[1]).get('lang') || 'en';
+  const cleanTopicTitle = topicTitle?.split('?')[0];
+
   const handleBackToTopics = () => {
     navigate('/topics');
   };
 
   const handleScenarioSelect = (scenarioTitle: string, scenarioId: string) => {
-    navigate(`/scenarios/${encodeURIComponent(scenarioTitle)}/characters`);
+    navigate(`/scenarios/${encodeURIComponent(scenarioTitle)}?lang=${language}/characters`);
   };
 
   if (!topicTitle) {
@@ -20,7 +24,8 @@ const ScenarioSelection = () => {
 
   return (
     <ScenarioSelectionScreen
-      topicTitle={decodeURIComponent(topicTitle)}
+      topicTitle={decodeURIComponent(cleanTopicTitle || '')}
+      selectedLanguage={language}
       onBackToTopics={handleBackToTopics}
       onScenarioSelect={handleScenarioSelect}
     />
