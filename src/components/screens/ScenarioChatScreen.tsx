@@ -39,10 +39,19 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
         setIsLoading(true);
         console.log('Fetching script messages for:', { scenarioId, selectedLanguage });
         
-        // First, get the script template for the specific language
+        // Get the script template with proper joins
         const { data: template, error: templateError } = await supabase
           .from('script_templates')
-          .select('id, cities!inner(language_id, languages!inner(code))')
+          .select(`
+            id,
+            cities!inner (
+              id,
+              languages!inner (
+                id,
+                code
+              )
+            )
+          `)
           .eq('scenario_id', scenarioId)
           .eq('cities.languages.code', selectedLanguage)
           .maybeSingle();
@@ -64,12 +73,13 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
             description: `This conversation is not yet available in ${selectedLanguage}. Please try another language.`,
             variant: "destructive"
           });
+          setIsLoading(false);
           return;
         }
 
         console.log('Found template:', template);
 
-        // If we have a template, fetch the messages
+        // Fetch messages for the template
         const { data: messages, error: messagesError } = await supabase
           .from('script_messages')
           .select('*')
@@ -99,6 +109,7 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
         console.log('Found messages:', messages);
         setScriptMessages(messages);
         
+        // Set up initial messages
         if (messages.length > 0) {
           const firstMessage = messages[0];
           setMessages([{
