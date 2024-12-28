@@ -18,24 +18,11 @@ export const useScriptMessages = (scenarioId: string, selectedLanguage: string) 
         setIsLoading(true);
         console.log('Fetching script messages for:', { scenarioId, selectedLanguage });
         
+        // First get the script template for this scenario
         const { data: template, error: templateError } = await supabase
           .from('script_templates')
-          .select(`
-            id,
-            scenario_id,
-            character_id,
-            city_id,
-            cities!inner (
-              id,
-              language_id,
-              languages!inner (
-                id,
-                code
-              )
-            )
-          `)
+          .select('id')
           .eq('scenario_id', scenarioId)
-          .eq('cities.languages.code', selectedLanguage)
           .maybeSingle();
 
         if (templateError) {
@@ -50,10 +37,10 @@ export const useScriptMessages = (scenarioId: string, selectedLanguage: string) 
         }
 
         if (!template) {
-          console.error('No script template found for:', { scenarioId, selectedLanguage });
+          console.error('No script template found for:', { scenarioId });
           toast({
             title: "Not Available",
-            description: `This conversation is not yet available in ${selectedLanguage}. Please try another language.`,
+            description: "This conversation is not yet available. Please try another scenario.",
             variant: "destructive"
           });
           setIsLoading(false);
@@ -62,6 +49,7 @@ export const useScriptMessages = (scenarioId: string, selectedLanguage: string) 
 
         console.log('Found template:', template);
 
+        // Then get all messages for this template
         const { data: messages, error: messagesError } = await supabase
           .from('script_messages')
           .select('*')
