@@ -30,30 +30,39 @@ const FloatingElements = () => {
 
   return (
     <div ref={containerRef} className="fixed inset-0 pointer-events-none overflow-hidden">
-      {/* Travel Inspired */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#38b6ff]/5 via-transparent to-[#7843e6]/5" />
+      
+      {/* Primary gradient blob */}
       <div className={cn(
-        "floating-element absolute w-32 h-32 rounded-full",
-        "bg-[url('https://images.unsplash.com/photo-1504893524553-b855bce32c67')] bg-cover bg-center",
-        "top-[20%] left-[15%] opacity-20 transition-transform duration-300 blur-sm"
-      )} />
-      <div className={cn(
-        "floating-element absolute w-48 h-48 rounded-full",
-        "bg-[url('https://images.unsplash.com/photo-1501854140801-50d01698950b')] bg-cover bg-center",
-        "top-[40%] right-[10%] opacity-20 transition-transform duration-300 blur-sm"
-      )} />
-
-      {/* Living Abroad */}
-      <div className={cn(
-        "floating-element absolute w-40 h-40 rounded-full",
-        "bg-[url('https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07')] bg-cover bg-center",
-        "bottom-[30%] left-[25%] opacity-20 transition-transform duration-300 blur-sm"
+        "floating-element absolute",
+        "w-[40vw] h-[40vw] md:w-[30vw] md:h-[30vw]",
+        "bg-gradient-to-r from-[#38b6ff]/10 to-[#7843e6]/10",
+        "top-[-10%] right-[-10%]",
+        "transform rotate-45 skew-x-12",
+        "filter blur-3xl",
+        "animate-float-slow"
       )} />
 
-      {/* Adventure */}
+      {/* Secondary gradient blob */}
       <div className={cn(
-        "floating-element absolute w-36 h-36 rounded-full",
-        "bg-[url('https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05')] bg-cover bg-center",
-        "top-[15%] right-[25%] opacity-20 transition-transform duration-300 blur-sm"
+        "floating-element absolute",
+        "w-[45vw] h-[45vw] md:w-[35vw] md:h-[35vw]",
+        "bg-gradient-to-l from-[#7843e6]/10 to-[#38b6ff]/10",
+        "bottom-[-15%] left-[-15%]",
+        "transform -rotate-45 skew-y-12",
+        "filter blur-3xl",
+        "animate-float-slower"
+      )} />
+
+      {/* Accent gradient blob */}
+      <div className={cn(
+        "floating-element absolute",
+        "w-[30vw] h-[30vw] md:w-[25vw] md:h-[25vw]",
+        "bg-gradient-to-br from-[#38b6ff]/5 to-[#7843e6]/5",
+        "top-[40%] left-[30%]",
+        "transform rotate-12",
+        "filter blur-3xl",
+        "animate-float"
       )} />
     </div>
   );
