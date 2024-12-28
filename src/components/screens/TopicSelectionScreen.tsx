@@ -21,7 +21,7 @@ const TopicSelectionScreen: React.FC<TopicSelectionScreenProps> = ({ onTopicSele
   const { toast } = useToast();
 
   const { data: topics = [], isLoading, error } = useQuery({
-    queryKey: ['topics', selectedLanguage],
+    queryKey: ['topics'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('topics')
@@ -45,9 +45,10 @@ const TopicSelectionScreen: React.FC<TopicSelectionScreenProps> = ({ onTopicSele
   const handleTopicSelect = useCallback((topicId: string) => {
     const selectedTopic = topics.find(topic => topic.id === topicId);
     if (selectedTopic) {
-      onTopicSelect(selectedTopic.title);
+      // Pass both the topic title and selected language to the next screen
+      onTopicSelect(`${selectedTopic.title}?lang=${selectedLanguage}`);
     }
-  }, [topics, onTopicSelect]);
+  }, [topics, onTopicSelect, selectedLanguage]);
 
   const navigate = useCallback((direction: 'prev' | 'next') => {
     setCurrentIndex(current => {
