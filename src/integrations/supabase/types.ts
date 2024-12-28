@@ -638,7 +638,6 @@ export type Database = {
       }
       topics: {
         Row: {
-          category: Database["public"]["Enums"]["topic_category"]
           created_at: string | null
           description: string | null
           description_translations: Json | null
@@ -651,7 +650,6 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
-          category: Database["public"]["Enums"]["topic_category"]
           created_at?: string | null
           description?: string | null
           description_translations?: Json | null
@@ -664,7 +662,6 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
-          category?: Database["public"]["Enums"]["topic_category"]
           created_at?: string | null
           description?: string | null
           description_translations?: Json | null
@@ -798,13 +795,6 @@ export type Database = {
     }
     Enums: {
       sender_type: "user" | "agent"
-      topic_category:
-        | "food"
-        | "travel"
-        | "business"
-        | "dating"
-        | "culture"
-        | "daily_life"
     }
     CompositeTypes: {
       [_ in never]: never

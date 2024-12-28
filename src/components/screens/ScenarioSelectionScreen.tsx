@@ -5,12 +5,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react';
 import FloatingElements from '@/components/FloatingElements';
+import { supabase } from "@/integrations/supabase/client";
 
 interface Scenario {
   id: string;
   title: string;
-  description: string;
-  image_url: string;
+  description: string | null;
+  image_url: string | null;
+  topic: string;
 }
 
 const ScenarioCard: React.FC<{ scenario: Scenario; onSelect: () => void }> = ({ scenario, onSelect }) => {
@@ -21,7 +23,7 @@ const ScenarioCard: React.FC<{ scenario: Scenario; onSelect: () => void }> = ({ 
     >
       <CardContent className="p-0 h-full relative">
         <img
-          src={scenario.image_url}
+          src={scenario.image_url || '/placeholder.svg'}
           alt={scenario.title}
           className="w-full h-full object-cover"
           loading="lazy"
@@ -50,56 +52,38 @@ const ScenarioSelectionScreen: React.FC<ScenarioSelectionScreenProps> = ({ topic
   const touchEndX = useRef<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  const fetchScenarios = async () => {
+    try {
+      setLoading(true);
+      const { data, error: fetchError } = await supabase
+        .from('default_scenarios')
+        .select('*')
+        .eq('topic', topicTitle);
+
+      if (fetchError) throw fetchError;
+
+      if (data) {
+        setScenarios(data);
+        setError(null);
+      }
+    } catch (err) {
+      console.error('Error fetching scenarios:', err);
+      setError('Failed to load scenarios. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchScenarios();
+  }, [topicTitle]);
+
   const handleScenarioSelect = useCallback((scenarioId: string) => {
     const selectedScenario = scenarios.find(scenario => scenario.id === scenarioId);
     if (selectedScenario) {
       onScenarioSelect(selectedScenario.title, selectedScenario.id);
     }
   }, [scenarios, onScenarioSelect]);
-
-  useEffect(() => {
-    const fetchScenarios = async () => {
-      try {
-        setLoading(true);
-        // Simulating API call with setTimeout
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        const fetchedScenarios: Scenario[] = [
-          { 
-            id: '1', 
-            title: 'First Date at a Café', 
-            description: 'Navigate a casual first date conversation', 
-            image_url: 'https://images.unsplash.com/photo-1511920170033-f8396924c348?auto=format&fit=crop&q=80', 
-          },
-          { 
-            id: '2', 
-            title: 'Meeting Friends at a Party', 
-            description: 'Socialize with new acquaintances at a gathering', 
-            image_url: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&q=80', 
-          },
-          { 
-            id: '3', 
-            title: 'Job Interview', 
-            description: 'Ace your next job interview with confidence', 
-            image_url: 'https://images.unsplash.com/photo-1560264280-88b68371db39?auto=format&fit=crop&q=80', 
-          },
-          { 
-            id: '4', 
-            title: 'Ordering at a Restaurant', 
-            description: 'Learn how to order food and interact with waitstaff', 
-            image_url: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80', 
-          },
-        ];
-        setScenarios(fetchedScenarios);
-        setError(null);
-      } catch (err) {
-        setError('Failed to load scenarios. Please try again.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchScenarios();
-  }, []);
 
   const navigate = useCallback((direction: 'prev' | 'next') => {
     setCurrentIndex(current => {
@@ -218,7 +202,7 @@ const ScenarioSelectionScreen: React.FC<ScenarioSelectionScreenProps> = ({ topic
             </div>
           )}
 
-          {!loading && !error && (
+          {!loading && !error && scenarios.length > 0 && (
             <>
               <div 
                 className="w-full aspect-[3/4] overflow-hidden rounded-2xl shadow-xl mb-4"
@@ -262,6 +246,12 @@ const ScenarioSelectionScreen: React.FC<ScenarioSelectionScreenProps> = ({ topic
               </div>
             </>
           )}
+
+          {!loading && !error && scenarios.length === 0 && (
+            <div className="text-center text-gray-600">
+              <p>No scenarios available for this topic yet.</p>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -269,4 +259,3 @@ const ScenarioSelectionScreen: React.FC<ScenarioSelectionScreenProps> = ({ topic
 };
 
 export default ScenarioSelectionScreen;
-
