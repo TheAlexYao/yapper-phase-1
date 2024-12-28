@@ -454,11 +454,16 @@ export type Database = {
           created_at: string | null
           id: string
           line_number: number
+          pronunciation_data: Json | null
+          pronunciation_score: number | null
+          reference_audio_url: string | null
           script_template_id: string | null
+          sentence_count: number
           speaker: string | null
           translation: string | null
           transliteration: string | null
           updated_at: string | null
+          user_audio_url: string | null
         }
         Insert: {
           audio_url?: string | null
@@ -466,11 +471,16 @@ export type Database = {
           created_at?: string | null
           id?: string
           line_number: number
+          pronunciation_data?: Json | null
+          pronunciation_score?: number | null
+          reference_audio_url?: string | null
           script_template_id?: string | null
+          sentence_count?: number
           speaker?: string | null
           translation?: string | null
           transliteration?: string | null
           updated_at?: string | null
+          user_audio_url?: string | null
         }
         Update: {
           audio_url?: string | null
@@ -478,11 +488,16 @@ export type Database = {
           created_at?: string | null
           id?: string
           line_number?: number
+          pronunciation_data?: Json | null
+          pronunciation_score?: number | null
+          reference_audio_url?: string | null
           script_template_id?: string | null
+          sentence_count?: number
           speaker?: string | null
           translation?: string | null
           transliteration?: string | null
           updated_at?: string | null
+          user_audio_url?: string | null
         }
         Relationships: [
           {
