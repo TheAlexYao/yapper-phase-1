@@ -5,13 +5,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react';
 import FloatingElements from '@/components/FloatingElements';
+import { supabase } from "@/integrations/supabase/client";
 
 interface Character {
   id: string;
   name: string;
-  description: string;
-  image_url: string;
-  gender: 'female' | 'male';
+  bio: string | null;
+  avatar_url: string | null;
+  gender: string | null;
 }
 
 const CharacterCard: React.FC<{ character: Character; onSelect: () => void }> = ({ character, onSelect }) => {
@@ -22,14 +23,14 @@ const CharacterCard: React.FC<{ character: Character; onSelect: () => void }> = 
     >
       <CardContent className="p-0 h-full relative">
         <img
-          src={character.image_url}
+          src={character.avatar_url || '/placeholder.svg'}
           alt={character.name}
           className="w-full h-full object-cover"
           loading="lazy"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent flex flex-col justify-end p-6">
           <h3 className="text-2xl md:text-3xl font-bold text-white mb-2">{character.name}</h3>
-          <p className="text-sm md:text-base text-white/90">{character.description}</p>
+          <p className="text-sm md:text-base text-white/90">{character.bio || 'A friendly conversation partner to help you practice your language skills.'}</p>
         </div>
       </CardContent>
     </Card>
@@ -51,41 +52,29 @@ const CharacterSelectionScreen: React.FC<CharacterSelectionScreenProps> = ({ sce
   const touchEndX = useRef<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const fetchCharacters = async () => {
-      try {
-        setLoading(true);
-        // Simulating API call with setTimeout
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        const fetchedCharacters: Character[] = [
-          { 
-            id: '1', 
-            name: 'Sophia', 
-            description: 'A friendly and patient conversation partner to help you practice your language skills in everyday situations.', 
-            image_url: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80', 
-            gender: 'female'
-          },
-          { 
-            id: '2', 
-            name: 'Alex', 
-            description: 'An encouraging and supportive language partner who will guide you through various scenarios to improve your fluency.', 
-            image_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80', 
-            gender: 'male'
-          },
-        ];
-        // Sort characters to ensure the female character is displayed first
-        const sortedCharacters = fetchedCharacters.sort((a, b) => 
-          a.gender === 'female' ? -1 : b.gender === 'female' ? 1 : 0
-        );
-        setCharacters(sortedCharacters);
-        setError(null);
-      } catch (err) {
-        setError('Failed to load conversation partners. Please try again.');
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchCharacters = async () => {
+    try {
+      setLoading(true);
+      const { data, error: fetchError } = await supabase
+        .from('characters')
+        .select('*')
+        .order('gender', { ascending: false }); // This will put 'female' first since 'f' comes before 'm'
 
+      if (fetchError) throw fetchError;
+
+      if (data) {
+        setCharacters(data);
+        setError(null);
+      }
+    } catch (err) {
+      console.error('Error fetching characters:', err);
+      setError('Failed to load conversation partners. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchCharacters();
   }, []);
 
@@ -184,7 +173,7 @@ const CharacterSelectionScreen: React.FC<CharacterSelectionScreenProps> = ({ sce
             <h1 className="text-2xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#38b6ff] to-[#7843e6]">
               Choose Your Partner
             </h1>
-            <div className="w-10"></div> {/* Spacer for alignment */}
+            <div className="w-10"></div>
           </div>
           <p className="text-lg text-gray-600 mb-4">Select a conversation partner for: {scenarioTitle}</p>
         </div>
@@ -206,7 +195,7 @@ const CharacterSelectionScreen: React.FC<CharacterSelectionScreenProps> = ({ sce
             </div>
           )}
 
-          {!loading && !error && (
+          {!loading && !error && characters.length > 0 && (
             <>
               <div 
                 className="w-full aspect-[3/4] overflow-hidden rounded-2xl shadow-xl mb-4"
@@ -249,6 +238,12 @@ const CharacterSelectionScreen: React.FC<CharacterSelectionScreenProps> = ({ sce
                 </Button>
               </div>
             </>
+          )}
+
+          {!loading && !error && characters.length === 0 && (
+            <div className="text-center text-gray-600">
+              <p>No conversation partners available yet.</p>
+            </div>
           )}
         </div>
       </div>
