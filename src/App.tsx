@@ -11,22 +11,24 @@ import ScenarioChat from "./pages/ScenarioChat";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <BrowserRouter>
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/topics" element={<TopicSelection />} />
-          <Route path="/topics/:topicTitle/scenarios" element={<ScenarioSelection />} />
-          <Route path="/scenarios/:scenarioTitle/characters" element={<CharacterSelection />} />
-          <Route path="/scenarios/:scenarioId/:scenarioTitle/chat/:characterName" element={<ScenarioChat />} />
-        </Routes>
-        <Toaster />
-        <Sonner />
-      </TooltipProvider>
-    </QueryClientProvider>
-  </BrowserRouter>
-);
+const App = () => {
+  return (
+    <BrowserRouter>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/topics" element={<TopicSelection />} />
+            <Route path="/topics/:topicTitle/scenarios" element={<ScenarioSelection />} />
+            <Route path="/scenarios/:scenarioTitle/characters" element={<CharacterSelection />} />
+            <Route path="/scenarios/:scenarioId/:scenarioTitle/chat/:characterName" element={<ScenarioChat />} />
+          </Routes>
+          <Toaster />
+          <Sonner />
+        </TooltipProvider>
+      </QueryClientProvider>
+    </BrowserRouter>
+  );
+};
 
 export default App;
