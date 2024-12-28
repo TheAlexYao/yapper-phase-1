@@ -1,34 +1,34 @@
-import { UserPlus, Target, Mic2, Trophy, MessageSquare } from "lucide-react";
+import { MessageSquare, Code2, Sparkles, Globe, Rocket } from "lucide-react";
+
+const steps = [
+  {
+    title: "Chat with AI",
+    description: "Start by describing what you want to build in natural language",
+    icon: <MessageSquare className="w-12 h-12" />
+  },
+  {
+    title: "Generate Code",
+    description: "Watch as AI generates clean, maintainable code for your project",
+    icon: <Code2 className="w-12 h-12" />
+  },
+  {
+    title: "Instant Preview",
+    description: "See your changes in real-time with live preview",
+    icon: <Sparkles className="w-12 h-12" />
+  },
+  {
+    title: "Customize",
+    description: "Fine-tune and customize your application to perfection",
+    icon: <Globe className="w-12 h-12" />
+  },
+  {
+    title: "Deploy",
+    description: "Launch your application with one click deployment",
+    icon: <Rocket className="w-12 h-12" />
+  }
+];
 
 const HowItWorks = () => {
-  const steps = [
-    {
-      icon: <UserPlus className="w-8 h-8" />,
-      title: "Sign Up Free",
-      description: "No credit card required—create an account in seconds."
-    },
-    {
-      icon: <Target className="w-8 h-8" />,
-      title: "Pick a Scenario",
-      description: "Choose from daily-life topics or travel-focused chats."
-    },
-    {
-      icon: <Mic2 className="w-8 h-8" />,
-      title: "Speak & Get Tips",
-      description: "Record your lines and get quick feedback—no dry grammar lessons."
-    },
-    {
-      icon: <Trophy className="w-8 h-8" />,
-      title: "Celebrate Your Progress",
-      description: "Watch your confidence grow with every scenario completed."
-    },
-    {
-      icon: <MessageSquare className="w-8 h-8" />,
-      title: "Stay Tuned for AI Chat",
-      description: "Be the first to try our upcoming real-time AI conversation feature."
-    }
-  ];
-
   return (
     <section id="how-it-works" className="py-20 px-4 bg-gradient-to-b from-background to-background/50">
       <div className="container mx-auto">
