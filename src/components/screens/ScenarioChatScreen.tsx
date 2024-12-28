@@ -10,6 +10,7 @@ import ChatBubble from '../chat/ChatBubble';
 import RecordingInterface from '../chat/RecordingInterface';
 import AudioPlayer from '../chat/AudioPlayer';
 import { ChatMessage, BotMessage, UserMessage } from '@/types/chat';
+import { useToast } from "@/components/ui/use-toast";
 
 interface ScenarioChatScreenProps {
   scenarioId: string;
@@ -30,28 +31,68 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
   const [currentPrompt, setCurrentPrompt] = useState<BotMessage | null>(null);
   const [scriptMessages, setScriptMessages] = useState<any[]>([]);
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const [isConversationComplete, setIsConversationComplete] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchScriptMessages = async () => {
       try {
-        const { data: templates, error: templateError } = await supabase
+        setIsLoading(true);
+        // First, try to get the script template
+        const { data: template, error: templateError } = await supabase
           .from('script_templates')
           .select('id')
           .eq('scenario_id', scenarioId)
-          .single();
+          .maybeSingle();
 
-        if (templateError) throw templateError;
+        if (templateError) {
+          console.error('Error fetching script template:', templateError);
+          toast({
+            title: "Error",
+            description: "Failed to load conversation script. Please try again.",
+            variant: "destructive"
+          });
+          return;
+        }
 
+        if (!template) {
+          console.error('No script template found for this scenario');
+          toast({
+            title: "Not Available",
+            description: "This conversation scenario is not yet available. Please try another one.",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        // If we have a template, fetch the messages
         const { data: messages, error: messagesError } = await supabase
           .from('script_messages')
           .select('*')
-          .eq('script_template_id', templates.id)
+          .eq('script_template_id', template.id)
           .order('line_number', { ascending: true });
 
-        if (messagesError) throw messagesError;
+        if (messagesError) {
+          console.error('Error fetching script messages:', messagesError);
+          toast({
+            title: "Error",
+            description: "Failed to load conversation messages. Please try again.",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        if (!messages || messages.length === 0) {
+          toast({
+            title: "No Content",
+            description: "No conversation content is available for this scenario yet.",
+            variant: "destructive"
+          });
+          return;
+        }
 
         setScriptMessages(messages);
         if (messages.length > 0) {
@@ -82,12 +123,19 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
           setCurrentMessageIndex(1);
         }
       } catch (error) {
-        console.error('Error fetching script messages:', error);
+        console.error('Error in fetchScriptMessages:', error);
+        toast({
+          title: "Error",
+          description: "An unexpected error occurred. Please try again.",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
       }
     };
 
     fetchScriptMessages();
-  }, [scenarioId]);
+  }, [scenarioId, toast]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -230,6 +278,17 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
         onExit={onBackToCharacters}
         onNextScenario={handleNextScenario}
       />
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="h-screen w-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading conversation...</p>
+        </div>
+      </div>
     );
   }
 
