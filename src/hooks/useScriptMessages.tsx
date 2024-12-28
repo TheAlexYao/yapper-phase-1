@@ -35,6 +35,8 @@ export const useScriptMessages = (scenarioId: string, selectedLanguage: string) 
           .eq('cities.languages.code', selectedLanguage)
           .maybeSingle();
 
+        console.log('Template query result:', { template, templateError });
+
         if (templateError) {
           console.error('Error fetching script template:', templateError);
           toast({
@@ -65,6 +67,8 @@ export const useScriptMessages = (scenarioId: string, selectedLanguage: string) 
           .select('*')
           .eq('script_template_id', template.id)
           .order('line_number', { ascending: true });
+
+        console.log('Script messages query result:', { scriptMsgs, messagesError });
 
         if (messagesError) {
           console.error('Error fetching script messages:', messagesError);
