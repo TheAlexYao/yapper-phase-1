@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react';
-import FloatingElements from './FloatingElements';
+import FloatingElements from '@/components/FloatingElements';
 
 interface Scenario {
   id: string;
@@ -269,3 +269,4 @@ const ScenarioSelectionScreen: React.FC<ScenarioSelectionScreenProps> = ({ topic
 };
 
 export default ScenarioSelectionScreen;
+
