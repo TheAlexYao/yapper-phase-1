@@ -157,6 +157,36 @@ export type Database = {
           },
         ]
       }
+      default_scenarios: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          image_url: string | null
+          title: string
+          topic: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          title: string
+          topic: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          title?: string
+          topic?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       guided_conversation_messages: {
         Row: {
           audio_url: string | null
@@ -389,6 +419,51 @@ export type Database = {
           voice_preference?: string | null
         }
         Relationships: []
+      }
+      scenario_images: {
+        Row: {
+          created_at: string | null
+          id: string
+          image_url: string
+          language_code: string | null
+          region: string | null
+          scenario_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          image_url: string
+          language_code?: string | null
+          region?: string | null
+          scenario_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          image_url?: string
+          language_code?: string | null
+          region?: string | null
+          scenario_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scenario_images_language_code_fkey"
+            columns: ["language_code"]
+            isOneToOne: false
+            referencedRelation: "languages"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "scenario_images_scenario_id_fkey"
+            columns: ["scenario_id"]
+            isOneToOne: false
+            referencedRelation: "default_scenarios"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       scenarios: {
         Row: {
