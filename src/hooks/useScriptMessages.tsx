@@ -60,7 +60,7 @@ export const useScriptMessages = (scenarioId: string, selectedLanguage: string) 
         console.log('Found template:', template);
 
         // Get all messages for this template, ordered by line number
-        const { data: messages, error: messagesError } = await supabase
+        const { data: scriptMsgs, error: messagesError } = await supabase
           .from('script_messages')
           .select('*')
           .eq('script_template_id', template.id)
@@ -77,7 +77,7 @@ export const useScriptMessages = (scenarioId: string, selectedLanguage: string) 
           return;
         }
 
-        if (!messages || messages.length === 0) {
+        if (!scriptMsgs || scriptMsgs.length === 0) {
           console.error('No messages found for template:', template.id);
           toast({
             title: "No Content",
@@ -88,12 +88,12 @@ export const useScriptMessages = (scenarioId: string, selectedLanguage: string) 
           return;
         }
 
-        console.log('Found messages:', messages);
-        setScriptMessages(messages);
+        console.log('Found messages:', scriptMsgs);
+        setScriptMessages(scriptMsgs);
         
         // Set up initial messages
-        if (messages.length > 0) {
-          const firstMessage = messages[0];
+        if (scriptMsgs.length > 0) {
+          const firstMessage = scriptMsgs[0];
           setMessages([{
             id: '1',
             role: 'bot',
@@ -105,14 +105,14 @@ export const useScriptMessages = (scenarioId: string, selectedLanguage: string) 
             score: null,
           }]);
           
-          if (messages[1]) {
+          if (scriptMsgs[1]) {
             setCurrentPrompt({
               id: '2',
               role: 'bot',
-              text: messages[1].content,
-              transliteration: messages[1].transliteration,
-              translation: messages[1].translation,
-              tts_audio_url: messages[1].audio_url || '/audio/user-prompt.mp3',
+              text: scriptMsgs[1].content,
+              transliteration: scriptMsgs[1].transliteration,
+              translation: scriptMsgs[1].translation,
+              tts_audio_url: scriptMsgs[1].audio_url || '/audio/user-prompt.mp3',
               user_audio_url: null,
               score: null,
             });
