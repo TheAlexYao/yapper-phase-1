@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import TopicSelection from "./pages/TopicSelection";
 import ScenarioSelection from "./pages/ScenarioSelection";
+import CharacterSelection from "./pages/CharacterSelection";
 
 const queryClient = new QueryClient();
 
@@ -17,6 +18,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/topics" element={<TopicSelection />} />
           <Route path="/topics/:topicTitle/scenarios" element={<ScenarioSelection />} />
+          <Route path="/scenarios/:scenarioTitle/characters" element={<CharacterSelection />} />
         </Routes>
         <Toaster />
         <Sonner />

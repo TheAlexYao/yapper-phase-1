@@ -10,9 +10,7 @@ const ScenarioSelection = () => {
   };
 
   const handleScenarioSelect = (scenarioTitle: string, scenarioId: string) => {
-    console.log("Selected scenario:", scenarioTitle, scenarioId);
-    // Handle scenario selection here
-    // For now, we'll just log it and could navigate to another page later
+    navigate(`/scenarios/${encodeURIComponent(scenarioTitle)}/characters`);
   };
 
   if (!topicTitle) {
