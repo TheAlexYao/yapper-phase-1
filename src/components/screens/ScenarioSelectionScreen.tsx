@@ -1,19 +1,10 @@
-'use client'
-
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Card, CardContent } from "@/components/ui/card";
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import FloatingElements from '@/components/FloatingElements';
 import { supabase } from "@/integrations/supabase/client";
-
-interface Scenario {
-  id: string;
-  title: string;
-  description: string | null;
-  image_url: string | null;
-  topic: string;
-}
+import ScenarioCarousel from '@/components/scenarios/ScenarioCarousel';
+import { Scenario } from "@/types/scenario";
 
 interface ScenarioSelectionScreenProps {
   topicTitle: string;
@@ -32,9 +23,6 @@ const ScenarioSelectionScreen: React.FC<ScenarioSelectionScreenProps> = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const touchStartX = useRef<number | null>(null);
-  const touchEndX = useRef<number | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
 
   const fetchScenarios = async () => {
     try {
@@ -99,47 +87,6 @@ const ScenarioSelectionScreen: React.FC<ScenarioSelectionScreenProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [navigate, scenarios, currentIndex, handleScenarioSelect, onBackToTopics]);
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!touchStartX.current) return;
-    const currentX = e.touches[0].clientX;
-    const diff = touchStartX.current - currentX;
-    if (Math.abs(diff) > 5) {
-      e.preventDefault();
-    }
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (!touchStartX.current) return;
-    touchEndX.current = e.changedTouches[0].clientX;
-    const diff = touchStartX.current - touchEndX.current;
-    if (diff > 50) {
-      navigate('next');
-    } else if (diff < -50) {
-      navigate('prev');
-    }
-    touchStartX.current = null;
-    touchEndX.current = null;
-  };
-
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const preventScroll = (e: TouchEvent) => {
-      e.preventDefault();
-    };
-
-    container.addEventListener('touchmove', preventScroll, { passive: false });
-
-    return () => {
-      container.removeEventListener('touchmove', preventScroll);
-    };
-  }, []);
-
   return (
     <div className="h-screen w-screen overflow-hidden relative flex flex-col items-center justify-between">
       <FloatingElements />
@@ -164,15 +111,12 @@ const ScenarioSelectionScreen: React.FC<ScenarioSelectionScreenProps> = ({
             <h1 className="text-2xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#38b6ff] to-[#7843e6]">
               {topicTitle} Scenarios
             </h1>
-            <div className="w-10"></div> {/* Spacer for alignment */}
+            <div className="w-10"></div>
           </div>
           <p className="text-lg text-gray-600 mb-4">Choose a scenario to practice</p>
         </div>
 
-        <div 
-          ref={containerRef}
-          className="relative flex flex-col items-center justify-center w-full max-w-sm px-4"
-        >
+        <div className="relative flex flex-col items-center justify-center w-full max-w-sm px-4">
           {loading && (
             <div className="flex items-center justify-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
@@ -187,48 +131,12 @@ const ScenarioSelectionScreen: React.FC<ScenarioSelectionScreenProps> = ({
           )}
 
           {!loading && !error && scenarios.length > 0 && (
-            <>
-              <div 
-                className="w-full aspect-[3/4] overflow-hidden rounded-2xl shadow-xl mb-4"
-                onTouchStart={handleTouchStart}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
-              >
-                <div 
-                  className="flex h-full transition-transform duration-300 ease-out"
-                  style={{ transform: `translateX(-${currentIndex * 100}%)` }}
-                >
-                  {scenarios.map((scenario) => (
-                    <div key={scenario.id} className="w-full h-full flex-shrink-0">
-                      <ScenarioCard
-                        scenario={scenario}
-                        onSelect={() => handleScenarioSelect(scenario.id)}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex justify-center gap-4 w-full">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="bg-gradient-to-r from-[#38b6ff] to-[#7843e6] text-white rounded-full p-2 border-none"
-                  onClick={() => navigate('prev')}
-                >
-                  <ChevronLeft className="h-6 w-6" />
-                </Button>
-
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="bg-gradient-to-r from-[#38b6ff] to-[#7843e6] text-white rounded-full p-2 border-none"
-                  onClick={() => navigate('next')}
-                >
-                  <ChevronRight className="h-6 w-6" />
-                </Button>
-              </div>
-            </>
+            <ScenarioCarousel
+              scenarios={scenarios}
+              currentIndex={currentIndex}
+              onNavigate={navigate}
+              onSelect={handleScenarioSelect}
+            />
           )}
 
           {!loading && !error && scenarios.length === 0 && (
