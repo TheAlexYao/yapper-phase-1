@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { Button } from "@/components/ui/button";
 import PostScenarioSummary from './PostScenarioSummary';
 import { ChatMessage, BotMessage, UserMessage } from '@/types/chat';
-import { Button } from "@/components/ui/button";
 import ChatHeader from '../chat/ChatHeader';
 import ChatMessages from '../chat/ChatMessages';
 import ChatInput from '../chat/ChatInput';
@@ -37,13 +37,14 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
     const fetchScriptMessages = async () => {
       try {
         setIsLoading(true);
+        console.log('Fetching script messages for:', { scenarioId, selectedLanguage });
         
         // First, get the script template for the specific language
         const { data: template, error: templateError } = await supabase
           .from('script_templates')
-          .select('id, cities!inner(language_id)')
+          .select('id, cities!inner(language_id, languages!inner(code))')
           .eq('scenario_id', scenarioId)
-          .eq('cities.languages!inner(code)', selectedLanguage)
+          .eq('cities.languages.code', selectedLanguage)
           .maybeSingle();
 
         if (templateError) {
@@ -57,7 +58,7 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
         }
 
         if (!template) {
-          console.error('No script template found for this scenario and language');
+          console.error('No script template found for:', { scenarioId, selectedLanguage });
           toast({
             title: "Not Available",
             description: `This conversation is not yet available in ${selectedLanguage}. Please try another language.`,
@@ -65,6 +66,8 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
           });
           return;
         }
+
+        console.log('Found template:', template);
 
         // If we have a template, fetch the messages
         const { data: messages, error: messagesError } = await supabase
@@ -84,6 +87,7 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
         }
 
         if (!messages || messages.length === 0) {
+          console.error('No messages found for template:', template.id);
           toast({
             title: "No Content",
             description: "No conversation content is available for this scenario yet.",
@@ -92,7 +96,9 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
           return;
         }
 
+        console.log('Found messages:', messages);
         setScriptMessages(messages);
+        
         if (messages.length > 0) {
           const firstMessage = messages[0];
           setMessages([{
