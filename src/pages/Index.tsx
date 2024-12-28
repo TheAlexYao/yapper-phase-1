@@ -10,15 +10,9 @@ import BetaFeatures from "@/components/sections/BetaFeatures";
 import FutureVision from "@/components/sections/FutureVision";
 import Testimonials from "@/components/sections/Testimonials";
 import CTA from "@/components/sections/CTA";
-import TopicSelectionScreen from "@/components/screens/TopicSelectionScreen";
 
 const Index = () => {
   const navigate = useNavigate();
-
-  const handleTopicSelect = (topicTitle: string) => {
-    console.log("Selected topic:", topicTitle);
-    // Handle topic selection here
-  };
 
   return (
     <div className="relative min-h-screen bg-background">
@@ -56,7 +50,7 @@ const Index = () => {
             <Button 
               size="lg"
               className="bg-[#7843e6] hover:bg-[#7843e6]/90 hover:scale-105 transform transition-all duration-200 shadow-[0_0_15px_rgba(120,67,230,0.3)] hover:shadow-[0_0_25px_rgba(120,67,230,0.5)]"
-              onClick={() => navigate('/auth')}
+              onClick={() => navigate('/topics')}
             >
               Get Started
             </Button>
@@ -65,7 +59,6 @@ const Index = () => {
       </nav>
 
       <main className="relative z-10">
-        <TopicSelectionScreen onTopicSelect={handleTopicSelect} />
         <Hero />
         <LanguageTicker />
         <Features />
