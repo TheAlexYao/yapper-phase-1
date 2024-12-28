@@ -10,9 +10,15 @@ import BetaFeatures from "@/components/sections/BetaFeatures";
 import FutureVision from "@/components/sections/FutureVision";
 import Testimonials from "@/components/sections/Testimonials";
 import CTA from "@/components/sections/CTA";
+import TopicSelectionScreen from "@/components/screens/TopicSelectionScreen";
 
 const Index = () => {
   const navigate = useNavigate();
+
+  const handleTopicSelect = (topicTitle: string) => {
+    console.log("Selected topic:", topicTitle);
+    // Handle topic selection here
+  };
 
   return (
     <div className="relative min-h-screen bg-background">
@@ -59,6 +65,7 @@ const Index = () => {
       </nav>
 
       <main className="relative z-10">
+        <TopicSelectionScreen onTopicSelect={handleTopicSelect} />
         <Hero />
         <LanguageTicker />
         <Features />
