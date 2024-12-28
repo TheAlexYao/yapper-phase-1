@@ -1,12 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
-import { Button } from "@/components/ui/button";
+import React, { useRef, useState } from 'react';
+import { useScriptMessages } from '@/hooks/useScriptMessages';
 import PostScenarioSummary from './PostScenarioSummary';
-import { ChatMessage, BotMessage, UserMessage } from '@/types/chat';
-import ChatHeader from '../chat/ChatHeader';
-import ChatMessages from '../chat/ChatMessages';
-import ChatInput from '../chat/ChatInput';
+import { UserMessage } from '@/types/chat';
+import ChatInterface from '../chat/ChatInterface';
 
 interface ScenarioChatScreenProps {
   scenarioId: string;
@@ -23,145 +19,21 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
   selectedLanguage,
   onBackToCharacters
 }) => {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [currentPrompt, setCurrentPrompt] = useState<BotMessage | null>(null);
-  const [scriptMessages, setScriptMessages] = useState<any[]>([]);
-  const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isConversationComplete, setIsConversationComplete] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
-  const { toast } = useToast();
 
-  useEffect(() => {
-    const fetchScriptMessages = async () => {
-      try {
-        setIsLoading(true);
-        console.log('Fetching script messages for:', { scenarioId, selectedLanguage });
-        
-        // First get the script template that matches our scenario and language
-        const { data: template, error: templateError } = await supabase
-          .from('script_templates')
-          .select(`
-            id,
-            scenario_id,
-            character_id,
-            city_id,
-            cities!inner (
-              id,
-              language_id,
-              languages!inner (
-                id,
-                code
-              )
-            )
-          `)
-          .eq('scenario_id', scenarioId)
-          .eq('cities.languages.code', selectedLanguage)
-          .single();
-
-        if (templateError) {
-          console.error('Error fetching script template:', templateError);
-          toast({
-            title: "Error",
-            description: "Failed to load conversation script. Please try again.",
-            variant: "destructive"
-          });
-          setIsLoading(false);
-          return;
-        }
-
-        if (!template) {
-          console.error('No script template found for:', { scenarioId, selectedLanguage });
-          toast({
-            title: "Not Available",
-            description: `This conversation is not yet available in ${selectedLanguage}. Please try another language.`,
-            variant: "destructive"
-          });
-          setIsLoading(false);
-          return;
-        }
-
-        console.log('Found template:', template);
-
-        // Now fetch all messages for this template
-        const { data: messages, error: messagesError } = await supabase
-          .from('script_messages')
-          .select('*')
-          .eq('script_template_id', template.id)
-          .order('line_number', { ascending: true });
-
-        if (messagesError) {
-          console.error('Error fetching script messages:', messagesError);
-          toast({
-            title: "Error",
-            description: "Failed to load conversation messages. Please try again.",
-            variant: "destructive"
-          });
-          setIsLoading(false);
-          return;
-        }
-
-        if (!messages || messages.length === 0) {
-          console.error('No messages found for template:', template.id);
-          toast({
-            title: "No Content",
-            description: "No conversation content is available for this scenario yet.",
-            variant: "destructive"
-          });
-          setIsLoading(false);
-          return;
-        }
-
-        console.log('Found messages:', messages);
-        setScriptMessages(messages);
-        
-        // Set up initial messages
-        if (messages.length > 0) {
-          const firstMessage = messages[0];
-          setMessages([{
-            id: '1',
-            role: 'bot',
-            text: firstMessage.content,
-            transliteration: firstMessage.transliteration,
-            translation: firstMessage.translation,
-            tts_audio_url: firstMessage.audio_url || '/audio/welcome.mp3',
-            user_audio_url: null,
-            score: null,
-          }]);
-          
-          if (messages[1]) {
-            setCurrentPrompt({
-              id: '2',
-              role: 'bot',
-              text: messages[1].content,
-              transliteration: messages[1].transliteration,
-              translation: messages[1].translation,
-              tts_audio_url: messages[1].audio_url || '/audio/user-prompt.mp3',
-              user_audio_url: null,
-              score: null,
-            });
-          }
-          setCurrentMessageIndex(1);
-        }
-      } catch (error) {
-        console.error('Error in fetchScriptMessages:', error);
-        toast({
-          title: "Error",
-          description: "An unexpected error occurred. Please try again.",
-          variant: "destructive"
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchScriptMessages();
-  }, [scenarioId, selectedLanguage, toast]);
-
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  const {
+    messages,
+    setMessages,
+    currentPrompt,
+    setCurrentPrompt,
+    scriptMessages,
+    currentMessageIndex,
+    setCurrentMessageIndex,
+    isLoading,
+    isConversationComplete,
+    setIsConversationComplete
+  } = useScriptMessages(scenarioId, selectedLanguage);
 
   const handleRecordingComplete = (audioUrl: string, score: number) => {
     if (currentPrompt && currentMessageIndex < scriptMessages.length) {
@@ -206,9 +78,9 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
       setTimeout(() => {
         const nextBotMessage = scriptMessages[currentMessageIndex + 1];
         if (nextBotMessage) {
-          const botResponse: BotMessage = {
+          const botResponse = {
             id: Date.now().toString(),
-            role: 'bot',
+            role: 'bot' as const,
             text: nextBotMessage.content,
             transliteration: nextBotMessage.transliteration,
             translation: nextBotMessage.translation,
@@ -304,34 +176,17 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
   }
 
   return (
-    <div className="h-screen w-screen overflow-hidden relative flex flex-col">
-      <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#38b6ff]/10 via-transparent to-[#7843e6]/10 animate-gradient-shift"></div>
-      </div>
-
-      <div className="relative z-20 flex flex-col h-full">
-        <ChatHeader
-          characterName={characterName}
-          scenarioTitle={scenarioTitle}
-          onBackToCharacters={onBackToCharacters}
-        />
-
-        <ChatMessages messages={messages} chatEndRef={chatEndRef} />
-
-        {isConversationComplete ? (
-          <div className="fixed inset-x-0 bottom-0 bg-white border-t p-4 flex flex-col items-center space-y-4">
-            <h3 className="text-xl font-bold text-center">Conversation Complete!</h3>
-            <p className="text-center text-gray-600">Great job! You've completed this conversation scenario.</p>
-            <Button onClick={() => setShowSummary(true)}>View Summary</Button>
-          </div>
-        ) : (
-          <ChatInput
-            currentPrompt={currentPrompt}
-            onRecordingComplete={handleRecordingComplete}
-          />
-        )}
-      </div>
-    </div>
+    <ChatInterface
+      characterName={characterName}
+      scenarioTitle={scenarioTitle}
+      messages={messages}
+      currentPrompt={currentPrompt}
+      isConversationComplete={isConversationComplete}
+      chatEndRef={chatEndRef}
+      onBackToCharacters={onBackToCharacters}
+      onRecordingComplete={handleRecordingComplete}
+      onShowSummary={() => setShowSummary(true)}
+    />
   );
 };
 
