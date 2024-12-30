@@ -21,7 +21,6 @@ interface ScriptData {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
@@ -38,7 +37,7 @@ serve(async (req) => {
       .from('scripts')
       .select('*')
       .eq('audio_generated', false)
-      .limit(5) // Process in batches
+      .limit(5)
 
     if (fetchError) {
       throw new Error(`Error fetching scripts: ${fetchError.message}`)
@@ -54,23 +53,42 @@ serve(async (req) => {
     console.log(`Processing ${scripts.length} scripts...`)
 
     for (const script of scripts) {
+      // Fetch language voices
+      const { data: languageData, error: languageError } = await supabase
+        .from('languages')
+        .select('male_voice, female_voice')
+        .eq('code', script.language_code)
+        .single()
+
+      if (languageError) {
+        throw new Error(`Error fetching language data: ${languageError.message}`)
+      }
+
+      if (!languageData.male_voice || !languageData.female_voice) {
+        console.warn(`Missing voice configuration for language ${script.language_code}`)
+        continue
+      }
+
       const scriptData: ScriptData = script.script_data
       let modified = false
 
       for (const line of scriptData.lines) {
         if (!line.audioUrl) {
           try {
-            // Prepare TTS request
+            // Select voice based on speaker
+            const voiceName = line.speaker === 'character' 
+              ? (script.character_id % 2 === 0 ? languageData.female_voice : languageData.male_voice)
+              : (script.user_gender === 'female' ? languageData.female_voice : languageData.male_voice)
+
             const ssml = `
-              <speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${scriptData.languageCode}">
-                <voice name="${line.speaker === 'character' ? 'es-ES-ElviraNeural' : 'es-ES-AlvaroNeural'}">
+              <speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${script.language_code}">
+                <voice name="${voiceName}">
                   <prosody rate="0.9">
                     ${line.targetText}
                   </prosody>
                 </voice>
               </speak>`
 
-            // Call Azure TTS API
             const response = await fetch(
               `https://${Deno.env.get('AZURE_SPEECH_REGION')}.tts.speech.microsoft.com/cognitiveservices/v1`,
               {
@@ -91,7 +109,6 @@ serve(async (req) => {
             const audioBuffer = await response.arrayBuffer()
             const audioBlob = new Blob([audioBuffer], { type: 'audio/mpeg' })
 
-            // Upload to Supabase Storage
             const fileName = `${script.id}_line${line.lineNumber}_${Date.now()}.mp3`
             const { data: uploadData, error: uploadError } = await supabase.storage
               .from('tts_cache')
@@ -104,7 +121,6 @@ serve(async (req) => {
               throw new Error(`Storage upload error: ${uploadError.message}`)
             }
 
-            // Get public URL
             const { data: publicUrl } = supabase.storage
               .from('tts_cache')
               .getPublicUrl(fileName)
@@ -121,7 +137,6 @@ serve(async (req) => {
       }
 
       if (modified) {
-        // Update script with new audio URLs
         const { error: updateError } = await supabase
           .from('scripts')
           .update({
