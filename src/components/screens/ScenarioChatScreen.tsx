@@ -334,6 +334,106 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
   const [isConversationComplete, setIsConversationComplete] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
   const { toast } = useToast();
+  const [sessionId, setSessionId] = useState<string | null>(null);
+
+  // Load or create session
+  useEffect(() => {
+    const loadOrCreateSession = async () => {
+      try {
+        // Try to find existing session
+        const { data: existingSessions, error: fetchError } = await supabase
+          .from('chat_sessions')
+          .select('*')
+          .eq('scenario_id', scenarioId)
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (fetchError) throw fetchError;
+
+        if (existingSessions && existingSessions.length > 0) {
+          // Restore session state
+          const session = existingSessions[0];
+          setSessionId(session.id);
+          setMessages(session.messages);
+          setCurrentLineIndex(session.current_line_index);
+          
+          // Find the next user prompt if any
+          if (scriptLines.length > session.current_line_index) {
+            const nextUserPrompt = scriptLines.slice(session.current_line_index).find(line => line.role === 'user');
+            if (nextUserPrompt) {
+              setCurrentPrompt({
+                id: Date.now().toString(),
+                role: 'bot',
+                text: nextUserPrompt.text,
+                transliteration: nextUserPrompt.transliteration,
+                translation: nextUserPrompt.translation,
+                tts_audio_url: nextUserPrompt.tts_audio_url,
+                user_audio_url: null,
+                score: null,
+              });
+            }
+          }
+        } else {
+          // Create new session
+          const { data: newSession, error: createError } = await supabase
+            .from('chat_sessions')
+            .insert([
+              {
+                scenario_id: scenarioId,
+                character_id: characterId,
+                messages: [],
+                current_line_index: 0
+              }
+            ])
+            .select()
+            .single();
+
+          if (createError) throw createError;
+          setSessionId(newSession.id);
+        }
+      } catch (error) {
+        console.error('Error managing session:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load or create chat session",
+          variant: "destructive"
+        });
+      }
+    };
+
+    if (script) {
+      loadOrCreateSession();
+    }
+  }, [script, scenarioId]);
+
+  // Update session when messages or currentLineIndex changes
+  useEffect(() => {
+    const updateSession = async () => {
+      if (!sessionId) return;
+
+      try {
+        const { error } = await supabase
+          .from('chat_sessions')
+          .update({
+            messages: messages,
+            current_line_index: currentLineIndex,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', sessionId);
+
+        if (error) throw error;
+      } catch (error) {
+        console.error('Error updating session:', error);
+        toast({
+          title: "Error",
+          description: "Failed to save chat progress",
+          variant: "destructive"
+        });
+      }
+    };
+
+    updateSession();
+  }, [messages, currentLineIndex, sessionId]);
 
   useEffect(() => {
     if (script) {
@@ -493,13 +593,51 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
     setShowSummary(true);
   };
 
-  const handleRestartScenario = () => {
-    setShowSummary(false);
-    setMessages([]);
-    setCurrentPrompt(null);
-    setIsConversationEnded(false);
-    setIsConversationComplete(false);
-    setConversationStartTime(Date.now());
+  const handleRestartScenario = async () => {
+    try {
+      if (sessionId) {
+        // Delete existing session
+        const { error } = await supabase
+          .from('chat_sessions')
+          .delete()
+          .eq('id', sessionId);
+
+        if (error) throw error;
+      }
+
+      // Reset all states
+      setShowSummary(false);
+      setMessages([]);
+      setCurrentPrompt(null);
+      setIsConversationEnded(false);
+      setIsConversationComplete(false);
+      setConversationStartTime(Date.now());
+      setSessionId(null);
+      
+      // Create new session
+      const { data: newSession, error: createError } = await supabase
+        .from('chat_sessions')
+        .insert([
+          {
+            scenario_id: scenarioId,
+            character_id: characterId,
+            messages: [],
+            current_line_index: 0
+          }
+        ])
+        .select()
+        .single();
+
+      if (createError) throw createError;
+      setSessionId(newSession.id);
+    } catch (error) {
+      console.error('Error restarting scenario:', error);
+      toast({
+        title: "Error",
+        description: "Failed to restart scenario",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleNextScenario = () => {
