@@ -37,7 +37,7 @@ export const assessPronunciation = async (audioBlob: Blob, text: string): Promis
       throw error;
     }
 
-    console.log('Received assessment data:', JSON.stringify(data, null, 2));
+    console.log('Raw assessment data received:', JSON.stringify(data, null, 2));
 
     if (!data.assessment?.NBest?.[0]) {
       console.error('Invalid assessment data structure:', data);
@@ -47,14 +47,28 @@ export const assessPronunciation = async (audioBlob: Blob, text: string): Promis
     const nBestResult = data.assessment.NBest[0];
     const pronunciationScore = data.assessment.pronunciationScore;
 
+    console.log('Processing NBest result:', JSON.stringify(nBestResult, null, 2));
+    console.log('Words data:', JSON.stringify(nBestResult.Words, null, 2));
+
     // Create word scores object
     const wordScores: { [word: string]: number } = {};
     nBestResult.Words.forEach(word => {
       wordScores[word.Word] = word.PronunciationAssessment.AccuracyScore;
+      console.log(`Word score for "${word.Word}":`, word.PronunciationAssessment.AccuracyScore);
     });
 
     // Generate suggestions based on word scores
     const suggestions = generateSuggestions(nBestResult.Words);
+
+    console.log('Final processed feedback:', {
+      score: pronunciationScore,
+      accuracyScore: nBestResult.PronunciationAssessment.AccuracyScore,
+      fluencyScore: nBestResult.PronunciationAssessment.FluencyScore,
+      completenessScore: nBestResult.PronunciationAssessment.CompletenessScore,
+      wordScores,
+      suggestions,
+      words: nBestResult.Words
+    });
 
     return {
       score: pronunciationScore,
