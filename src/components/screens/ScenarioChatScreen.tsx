@@ -380,9 +380,21 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
     feedback: any;
   }> => {
     try {
+      console.log('Starting pronunciation assessment with:', {
+        audioBlob,
+        targetText
+      });
+
       const formData = new FormData();
+      // Ensure we're sending the audio file with the correct filename and type
       formData.append('audio', audioBlob, 'recording.wav');
       formData.append('targetText', targetText);
+
+      console.log('Sending FormData to assess-pronunciation:', {
+        hasAudio: formData.has('audio'),
+        hasTargetText: formData.has('targetText'),
+        targetText
+      });
 
       const { data: assessmentData, error } = await supabase.functions.invoke('assess-pronunciation', {
         body: formData,
@@ -407,6 +419,8 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
   const handleRecordingComplete = async (audioUrl: string, audioBlob: Blob) => {
     if (currentPrompt) {
       try {
+        console.log('Starting recording completion with prompt:', currentPrompt);
+        
         const { score, feedback } = await assessPronunciation(audioBlob, currentPrompt.text);
 
         const newMessage: UserMessage = {
