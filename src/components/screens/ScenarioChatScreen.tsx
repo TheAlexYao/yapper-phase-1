@@ -204,7 +204,15 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
                 CompletenessScore: feedback.completenessScore || 0,
                 PronScore: score
               },
-              Words: feedback.words || []
+              Words: feedback.words.map(word => ({
+                Word: word.Word,
+                Offset: word.Offset || 0,
+                Duration: word.Duration || 0,
+                PronunciationAssessment: {
+                  AccuracyScore: word.PronunciationAssessment.AccuracyScore,
+                  ErrorType: word.PronunciationAssessment.ErrorType
+                }
+              }))
             }]
           }
         };
@@ -298,11 +306,7 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
         }}
         wordLevelFeedback={messages
           .filter((msg): msg is UserMessage => msg.role === 'user' && msg.feedback !== undefined)
-          .flatMap(msg => msg.feedback.NBest[0].Words.map(word => ({
-            word: word.Word,
-            accuracyScore: word.PronunciationAssessment.AccuracyScore,
-            errorType: word.PronunciationAssessment.ErrorType
-          })))}
+          .flatMap(msg => msg.feedback.NBest[0].Words)}
         progressData={mockProgressData}
         onRestart={() => sessionId && handleRestartScenario(sessionId)}
         onExit={onBackToCharacters}
