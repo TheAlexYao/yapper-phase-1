@@ -7,10 +7,10 @@ interface LanguageSelectorProps {
 
 const LanguageSelector: React.FC<LanguageSelectorProps> = ({ selectedLanguage, onLanguageChange }) => {
   const languages = [
-    { code: 'en', name: 'English', flag: '🇬🇧' },
-    { code: 'es', name: 'Spanish', flag: '🇪🇸' },
-    { code: 'th', name: 'Thai', flag: '🇹🇭' },
-    { code: 'ru', name: 'Russian', flag: '🇷🇺' },
+    { code: 'en-US', name: 'English', flag: '🇺🇸' },
+    { code: 'es-ES', name: 'Spanish', flag: '🇪🇸' },
+    { code: 'th-TH', name: 'Thai', flag: '🇹🇭' },
+    { code: 'ru-RU', name: 'Russian', flag: '🇷🇺' },
   ];
 
   return (
