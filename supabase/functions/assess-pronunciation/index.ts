@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
+import { SpeechConfig, AudioConfig, SpeechRecognizer, PronunciationAssessment } from "npm:microsoft-cognitiveservices-speech-sdk@1.32.0"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -59,32 +60,68 @@ serve(async (req) => {
 
     console.log('Audio file uploaded successfully:', publicUrl)
 
-    // For now, return a mock assessment while we implement the actual Azure Speech Service integration
-    const mockAssessment = {
+    // Configure Azure Speech Service
+    const speechConfig = SpeechConfig.fromSubscription(
+      Deno.env.get('AZURE_SPEECH_KEY') ?? '',
+      Deno.env.get('AZURE_SPEECH_REGION') ?? ''
+    )
+    speechConfig.speechRecognitionLanguage = languageCode
+
+    // Create audio config from the uploaded file
+    const audioConfig = AudioConfig.fromWavFileInput(await audioFile.arrayBuffer())
+
+    // Create recognizer
+    const recognizer = new SpeechRecognizer(speechConfig, audioConfig)
+
+    // Configure pronunciation assessment
+    const pronunciationAssessment = new PronunciationAssessment(
+      referenceText,
+      languageCode
+    )
+    pronunciationAssessment.applyTo(recognizer)
+
+    // Perform recognition and assessment
+    const result = await new Promise((resolve, reject) => {
+      recognizer.recognizeOnceAsync(
+        result => {
+          if (result.errorDetails) {
+            reject(new Error(result.errorDetails))
+            return
+          }
+          resolve(result)
+        },
+        error => reject(error)
+      )
+    })
+
+    console.log('Assessment completed:', result)
+
+    // Process and return results
+    const assessment = {
       NBest: [{
         PronunciationAssessment: {
-          AccuracyScore: Math.floor(Math.random() * 20) + 80, // Random score between 80-100
-          FluencyScore: Math.floor(Math.random() * 20) + 80,
-          CompletenessScore: Math.floor(Math.random() * 20) + 80,
-          PronScore: Math.floor(Math.random() * 20) + 80
+          AccuracyScore: result.pronunciationAssessment?.accuracyScore ?? 0,
+          FluencyScore: result.pronunciationAssessment?.fluencyScore ?? 0,
+          CompletenessScore: result.pronunciationAssessment?.completenessScore ?? 0,
+          PronScore: result.pronunciationAssessment?.pronScore ?? 0
         },
-        Words: referenceText.split(' ').map(word => ({
-          Word: word,
+        Words: result.pronunciationAssessment?.detailedWords?.map(word => ({
+          Word: word.word,
           PronunciationAssessment: {
-            AccuracyScore: Math.floor(Math.random() * 20) + 80,
-            ErrorType: "None"
+            AccuracyScore: word.accuracyScore,
+            ErrorType: word.errorType
           }
-        }))
+        })) ?? []
       }],
-      pronunciationScore: Math.floor(Math.random() * 20) + 80
+      pronunciationScore: result.pronunciationAssessment?.pronScore ?? 0
     }
 
-    console.log('Returning assessment:', { publicUrl, mockAssessment })
+    console.log('Returning assessment:', { publicUrl, assessment })
 
     return new Response(
       JSON.stringify({ 
         audioUrl: publicUrl, 
-        assessment: mockAssessment 
+        assessment 
       }),
       { 
         headers: { 
