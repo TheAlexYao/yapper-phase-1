@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 import * as sdk from "npm:microsoft-cognitiveservices-speech-sdk@1.32.0"
 
 const corsHeaders = {
@@ -70,7 +70,7 @@ serve(async (req) => {
     // Create a push stream for the audio data
     const pushStream = sdk.AudioInputStream.createPushStream()
     
-    // Get audio data
+    // Get audio data and write to stream
     const arrayBuffer = await audioFile.arrayBuffer()
     pushStream.write(new Uint8Array(arrayBuffer))
     pushStream.close()
@@ -103,9 +103,43 @@ serve(async (req) => {
     })
 
     // Extract assessment data
-    const assessment = result && typeof result === 'object' && result.privJson
-      ? JSON.parse(result.privJson).NBest[0]
-      : {
+    let assessment = null
+    if (result && result.privJson) {
+      try {
+        const jsonData = JSON.parse(result.privJson)
+        console.log('Raw assessment data:', jsonData)
+        
+        if (jsonData.NBest && jsonData.NBest[0]) {
+          const nBestResult = jsonData.NBest[0]
+          assessment = {
+            NBest: [{
+              PronunciationAssessment: {
+                AccuracyScore: nBestResult.PronunciationAssessment.AccuracyScore,
+                FluencyScore: nBestResult.PronunciationAssessment.FluencyScore,
+                CompletenessScore: nBestResult.PronunciationAssessment.CompletenessScore,
+                PronScore: nBestResult.PronunciationAssessment.PronScore
+              },
+              Words: nBestResult.Words.map((word: any) => ({
+                Word: word.Word,
+                Offset: word.Offset,
+                Duration: word.Duration,
+                PronunciationAssessment: {
+                  AccuracyScore: word.PronunciationAssessment?.AccuracyScore || 0,
+                  ErrorType: word.PronunciationAssessment?.ErrorType || "None"
+                }
+              }))
+            }],
+            pronunciationScore: nBestResult.PronunciationAssessment.PronScore
+          }
+        }
+      } catch (error) {
+        console.error('Error parsing assessment data:', error)
+      }
+    }
+
+    if (!assessment) {
+      assessment = {
+        NBest: [{
           PronunciationAssessment: {
             AccuracyScore: 0,
             FluencyScore: 0,
@@ -113,7 +147,10 @@ serve(async (req) => {
             PronScore: 0
           },
           Words: []
-        }
+        }],
+        pronunciationScore: 0
+      }
+    }
 
     console.log('Returning assessment:', { publicUrl, assessment })
 
