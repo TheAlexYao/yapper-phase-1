@@ -77,7 +77,7 @@ const ScenarioSelectionScreen: React.FC<ScenarioSelectionScreenProps> = ({
       } else if (event.key === 'Enter') {
         const selectedScenario = scenarios[currentIndex];
         if (selectedScenario) {
-          handleScenarioSelect(selectedScenario.id.toString());
+          handleScenarioSelect(selectedScenario.id);
         }
       } else if (event.key === 'Backspace') {
         onBackToTopics();
