@@ -2,6 +2,9 @@ import { useNavigate } from "react-router-dom";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import ScenarioChatScreen from "@/components/screens/ScenarioChatScreen";
 import { supabase } from "@/integrations/supabase/client";
+import { Database } from "@/integrations/supabase/types";
+
+type ScriptRow = Database['public']['Tables']['scripts']['Row'];
 
 const ScenarioChat = () => {
   const navigate = useNavigate();
@@ -42,7 +45,17 @@ const ScenarioChat = () => {
         throw error;
       }
 
-      return data;
+      if (!data) return null;
+
+      // Transform the data to match the Script interface
+      const transformedScript = {
+        ...data,
+        script_data: typeof data.script_data === 'string' 
+          ? JSON.parse(data.script_data) 
+          : data.script_data
+      };
+
+      return transformedScript;
     },
     enabled: !!selectedScenario && !!selectedCharacter,
   });

@@ -70,6 +70,7 @@ interface Script {
   audio_generated: boolean;
   created_at?: string;
   updated_at?: string;
+  transliteration?: string | null;
 }
 
 interface ScenarioChatScreenProps {
