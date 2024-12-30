@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Mic, Play, Pause, Turtle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AudioPlayerProps {
   audioUrl: string;
@@ -129,16 +130,15 @@ const RecordingControls: React.FC<RecordingControlsProps> = ({ onRecordingComple
       formData.append('text', currentPrompt.text);
       formData.append('languageCode', 'es-ES'); // TODO: Make this dynamic based on selected language
 
-      const response = await fetch('https://jgxvzzyfjpntsbhxfcjv.supabase.co/functions/v1/assess-pronunciation', {
-        method: 'POST',
-        body: formData
+      const { data, error } = await supabase.functions.invoke('assess-pronunciation', {
+        body: formData,
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to assess pronunciation');
+      if (error) {
+        throw error;
       }
 
-      const { audioUrl: uploadedAudioUrl, assessment } = await response.json();
+      const { audioUrl: uploadedAudioUrl, assessment } = data;
       
       if (uploadedAudioUrl && assessment) {
         onRecordingComplete(uploadedAudioUrl, audioBlob);
