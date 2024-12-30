@@ -1,3 +1,5 @@
+import { supabase } from "@/integrations/supabase/client";
+
 export const assessPronunciation = async (audioBlob: Blob, text: string): Promise<{
   score: number;
   feedback: {
