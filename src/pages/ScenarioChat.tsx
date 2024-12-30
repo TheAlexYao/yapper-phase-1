@@ -21,17 +21,25 @@ const ScenarioChat = () => {
     name: string 
   } | undefined;
 
+  // Map language codes to their full versions
+  const languageMap: { [key: string]: string } = {
+    'es': 'es-ES',
+    'en': 'en-US',
+    // Add more mappings as needed
+  };
+
   const selectedLanguage = queryClient.getQueryData(['selectedLanguage']) as string || "en";
+  const mappedLanguage = languageMap[selectedLanguage] || selectedLanguage;
   const userGender = queryClient.getQueryData(['userGender']) as string || "male";
 
   // Query for the script
   const { data: script, isLoading: isLoadingScript } = useQuery({
-    queryKey: ['script', selectedScenario?.id, selectedCharacter?.id, selectedLanguage, userGender],
+    queryKey: ['script', selectedScenario?.id, selectedCharacter?.id, mappedLanguage, userGender],
     queryFn: async () => {
       if (!selectedScenario || !selectedCharacter) return null;
 
       console.log('Fetching script with params:', {
-        language_code: selectedLanguage,
+        language_code: mappedLanguage,
         scenario_id: selectedScenario.id,
         topic_id: selectedScenario.topicId,
         character_id: selectedCharacter.id,
@@ -41,7 +49,7 @@ const ScenarioChat = () => {
       const { data, error } = await supabase
         .from('scripts')
         .select('*')
-        .eq('language_code', selectedLanguage)
+        .eq('language_code', mappedLanguage)
         .eq('scenario_id', selectedScenario.id)
         .eq('topic_id', selectedScenario.topicId)
         .eq('character_id', selectedCharacter.id)
