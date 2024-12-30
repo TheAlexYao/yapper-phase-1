@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 import * as sdk from "npm:microsoft-cognitiveservices-speech-sdk@1.32.0"
 
 const corsHeaders = {
@@ -30,31 +29,6 @@ serve(async (req) => {
       throw new Error('Missing required fields')
     }
 
-    // Upload audio file to storage
-    const fileName = `recordings/${crypto.randomUUID()}.wav`
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
-    
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('audio')
-      .upload(fileName, audioFile, {
-        contentType: 'audio/wav',
-        upsert: false
-      })
-
-    if (uploadError) {
-      console.error('Error uploading audio:', uploadError)
-      throw new Error('Failed to upload audio file')
-    }
-
-    const { data: { publicUrl } } = supabase.storage
-      .from('audio')
-      .getPublicUrl(fileName)
-
-    console.log('Audio uploaded successfully:', publicUrl)
-
     // Get Azure credentials
     const speechKey = Deno.env.get('AZURE_SPEECH_KEY')
     const speechRegion = Deno.env.get('AZURE_SPEECH_REGION')
@@ -62,6 +36,8 @@ serve(async (req) => {
     if (!speechKey || !speechRegion) {
       throw new Error('Azure Speech Services configuration missing')
     }
+
+    console.log('Azure credentials loaded successfully')
 
     // Configure Azure Speech Services
     const speechConfig = sdk.SpeechConfig.fromSubscription(speechKey, speechRegion)
@@ -74,6 +50,8 @@ serve(async (req) => {
     const arrayBuffer = await audioFile.arrayBuffer()
     pushStream.write(new Uint8Array(arrayBuffer))
     pushStream.close()
+
+    console.log('Audio data processed and written to stream')
 
     // Create audio config from push stream
     const audioConfig = sdk.AudioConfig.fromStreamInput(pushStream)
@@ -89,6 +67,12 @@ serve(async (req) => {
       true
     )
 
+    console.log('Pronunciation assessment configured with:', {
+      referenceText,
+      gradingSystem: 'HundredMark',
+      granularity: 'Word'
+    })
+
     pronunciationConfig.applyTo(recognizer)
 
     // Perform recognition and assessment
@@ -98,7 +82,10 @@ serve(async (req) => {
           console.log('Assessment completed:', JSON.stringify(result, null, 2))
           resolve(result)
         },
-        error => reject(error)
+        error => {
+          console.error('Error during assessment:', error)
+          reject(error)
+        }
       )
     })
 
@@ -134,10 +121,12 @@ serve(async (req) => {
         }
       } catch (error) {
         console.error('Error parsing assessment data:', error)
+        throw error
       }
     }
 
     if (!assessment) {
+      console.log('No assessment data available, using default scores')
       assessment = {
         NBest: [{
           PronunciationAssessment: {
@@ -160,10 +149,10 @@ serve(async (req) => {
       }
     }
 
-    console.log('Returning assessment:', JSON.stringify({ publicUrl, assessment }, null, 2))
+    console.log('Returning assessment:', JSON.stringify({ assessment }, null, 2))
 
     return new Response(
-      JSON.stringify({ audioUrl: publicUrl, assessment }),
+      JSON.stringify({ assessment }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
 
