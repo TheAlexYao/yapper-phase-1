@@ -19,9 +19,9 @@ const App = () => {
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/topics" element={<TopicSelection />} />
-            <Route path="/topics/:topicTitle/scenarios" element={<ScenarioSelection />} />
-            <Route path="/scenarios/:scenarioTitle/characters" element={<CharacterSelection />} />
-            <Route path="/scenarios/:scenarioId/:scenarioTitle/chat/:characterName" element={<ScenarioChat />} />
+            <Route path="/scenarios" element={<ScenarioSelection />} />
+            <Route path="/characters" element={<CharacterSelection />} />
+            <Route path="/chat" element={<ScenarioChat />} />
           </Routes>
           <Toaster />
           <Sonner />

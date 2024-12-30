@@ -1,31 +1,31 @@
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import CharacterSelectionScreen from "@/components/screens/CharacterSelectionScreen";
 
 const CharacterSelection = () => {
   const navigate = useNavigate();
-  const { scenarioTitle } = useParams();
-
-  // Extract language from URL parameter
-  const language = new URLSearchParams(scenarioTitle?.split('?')[1]).get('lang') || 'en';
-  const cleanScenarioTitle = scenarioTitle?.split('?')[0];
+  const queryClient = useQueryClient();
+  const selectedScenario = queryClient.getQueryData(['selectedScenario']) as { id: string; title: string } | undefined;
 
   const handleBackToScenarios = () => {
-    navigate(-1);
+    queryClient.removeQueries(['selectedScenario']);
+    navigate('/scenarios');
   };
 
   const handleCharacterSelect = (characterId: string, characterName: string) => {
-    navigate(`/scenarios/${characterId}/${encodeURIComponent(cleanScenarioTitle!)}/chat/${encodeURIComponent(characterName)}?lang=${language}`);
+    queryClient.setQueryData(['selectedCharacter'], { id: characterId, name: characterName });
+    navigate('/chat');
   };
 
-  if (!scenarioTitle) {
-    navigate('/topics');
+  if (!selectedScenario) {
+    navigate('/scenarios');
     return null;
   }
 
   return (
     <CharacterSelectionScreen
-      scenarioTitle={decodeURIComponent(cleanScenarioTitle || '')}
-      selectedLanguage={language}
+      scenarioTitle={selectedScenario.title}
+      selectedLanguage="en"
       onBackToScenarios={handleBackToScenarios}
       onCharacterSelect={handleCharacterSelect}
     />
