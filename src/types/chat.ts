@@ -21,6 +21,8 @@ export interface ChatMessage {
       };
       Words: Array<{
         Word: string;
+        Offset: number;
+        Duration: number;
         PronunciationAssessment: {
           AccuracyScore: number;
           ErrorType: string;
