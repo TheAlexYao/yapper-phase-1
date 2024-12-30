@@ -1,6 +1,14 @@
-import { SpeechConfig, AudioConfig, PronunciationAssessment, PronunciationAssessmentConfig, SpeechRecognizer } from "microsoft-cognitiveservices-speech-sdk";
+import { 
+  SpeechConfig, 
+  AudioConfig, 
+  PronunciationAssessment, 
+  PronunciationAssessmentConfig, 
+  SpeechRecognizer 
+} from "npm:microsoft-cognitiveservices-speech-sdk@1.32.0";
 
 export async function performSpeechRecognition(audioData: ArrayBuffer, referenceText: string) {
+  console.log("Starting speech recognition with reference text:", referenceText);
+  
   const speechConfig = SpeechConfig.fromSubscription(
     Deno.env.get("AZURE_SPEECH_KEY") || "",
     Deno.env.get("AZURE_SPEECH_REGION") || ""
@@ -21,13 +29,16 @@ export async function performSpeechRecognition(audioData: ArrayBuffer, reference
   PronunciationAssessment.applyTo(recognizer);
   
   return new Promise((resolve, reject) => {
+    console.log("Starting recognition...");
     recognizer.recognizeOnceAsync(
       async (result) => {
         if (result.errorDetails) {
+          console.error("Recognition error:", result.errorDetails);
           reject(new Error(result.errorDetails));
           return;
         }
 
+        console.log("Recognition successful, getting assessment result");
         const pronunciationAssessmentResult = PronunciationAssessment.getAssessmentResultFromResult(result);
         
         // Get detailed word-level assessment
@@ -39,7 +50,7 @@ export async function performSpeechRecognition(audioData: ArrayBuffer, reference
           }
         }));
 
-        resolve({
+        const response = {
           NBest: [{
             PronunciationAssessment: {
               AccuracyScore: pronunciationAssessmentResult.accuracyScore,
@@ -51,9 +62,13 @@ export async function performSpeechRecognition(audioData: ArrayBuffer, reference
           }],
           overallScore: pronunciationAssessmentResult.pronunciationScore,
           suggestions: generateSuggestions(pronunciationAssessmentResult)
-        });
+        };
+
+        console.log("Assessment complete:", response);
+        resolve(response);
       },
       (error) => {
+        console.error("Recognition error:", error);
         reject(error);
       }
     );

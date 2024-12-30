@@ -8,15 +8,19 @@ serve(async (req) => {
   }
 
   try {
+    console.log("Received pronunciation assessment request");
     const { audioData, referenceText } = await req.json();
 
     if (!audioData || !referenceText) {
+      console.error("Missing required parameters");
       return new Response(
         JSON.stringify({ error: "Missing required parameters" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    console.log("Processing audio data for text:", referenceText);
+    
     // Convert base64 to ArrayBuffer
     const binaryString = atob(audioData.split(',')[1]);
     const bytes = new Uint8Array(binaryString.length);
@@ -24,6 +28,7 @@ serve(async (req) => {
       bytes[i] = binaryString.charCodeAt(i);
     }
 
+    console.log("Audio data converted, starting speech recognition");
     const result = await performSpeechRecognition(bytes.buffer, referenceText);
 
     return new Response(
