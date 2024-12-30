@@ -340,7 +340,7 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
         detailedScores={detailedScores}
         wordLevelFeedback={messages
           .filter((msg): msg is UserMessage => 
-            msg.role === 'user' && msg.feedback?.NBest?.[0]?.Words
+            Boolean(msg.role === 'user' && msg.feedback?.NBest?.[0]?.Words)
           )
           .flatMap(msg => 
             msg.feedback.NBest[0].Words.map(word => ({
