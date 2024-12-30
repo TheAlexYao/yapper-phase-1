@@ -127,15 +127,12 @@ const RecordingControls: React.FC<RecordingControlsProps> = ({ onRecordingComple
     
     setIsSubmitting(true);
     try {
-      // Convert audio to WAV format with proper settings
       const audioContext = new AudioContext();
       const audioData = await audioBlob.arrayBuffer();
       const audioBuffer = await audioContext.decodeAudioData(audioData);
-      
-      // Create WAV file with proper format
       const wavBlob = await convertToWav(audioBuffer);
       
-      if (wavBlob.size > 1024 * 1024 * 10) { // 10MB limit
+      if (wavBlob.size > 1024 * 1024 * 10) {
         throw new Error('Audio file too large. Please record a shorter message.');
       }
 
@@ -163,7 +160,44 @@ const RecordingControls: React.FC<RecordingControlsProps> = ({ onRecordingComple
 
       const { audioUrl: uploadedAudioUrl, assessment } = data;
       
-      if (uploadedAudioUrl && assessment) {
+      if (uploadedAudioUrl && assessment?.NBest?.[0]) {
+        const nBestResult = assessment.NBest[0];
+        const feedback = {
+          overall_score: assessment.pronunciationScore * 100,
+          phoneme_analysis: "",
+          word_scores: {},
+          suggestions: "",
+          NBest: [{
+            PronunciationAssessment: {
+              AccuracyScore: nBestResult.PronunciationAssessment.AccuracyScore,
+              FluencyScore: nBestResult.PronunciationAssessment.FluencyScore,
+              CompletenessScore: nBestResult.PronunciationAssessment.CompletenessScore,
+              PronScore: nBestResult.PronunciationAssessment.PronScore
+            },
+            Words: nBestResult.Words.map(word => ({
+              Word: word.Word,
+              Offset: word.Offset || 0,
+              Duration: word.Duration || 0,
+              PronunciationAssessment: {
+                AccuracyScore: word.PronunciationAssessment.AccuracyScore,
+                ErrorType: word.PronunciationAssessment.ErrorType
+              }
+            }))
+          }]
+        };
+
+        const newMessage = {
+          id: Date.now().toString(),
+          role: 'user' as const,
+          text: currentPrompt.text,
+          transliteration: currentPrompt.transliteration,
+          translation: currentPrompt.translation,
+          tts_audio_url: currentPrompt.tts_audio_url,
+          user_audio_url: uploadedAudioUrl,
+          score: assessment.pronunciationScore * 100,
+          feedback
+        };
+
         onRecordingComplete(uploadedAudioUrl, audioBlob);
         setAudioUrl(null);
         setAudioBlob(null);
