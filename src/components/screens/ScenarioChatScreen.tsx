@@ -212,29 +212,43 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
         setMessages(prevMessages => [...prevMessages, newMessage]);
         setCurrentPrompt(null);
 
-        // Handle next line immediately after assessment
-        if (currentLineIndex < scriptLines.length) {
-          const nextLine = scriptLines[currentLineIndex];
+        // Handle next line
+        const nextIndex = currentLineIndex + 1;
+        if (nextIndex < scriptLines.length) {
+          const nextLine = scriptLines[nextIndex];
+          setCurrentLineIndex(nextIndex);
           
-          // Add bot message immediately if it's next
+          // If next line is bot's line, add it immediately
           if (nextLine.role === 'bot') {
             setMessages(prevMessages => [...prevMessages, nextLine]);
-            setCurrentLineIndex(prevIndex => prevIndex + 1);
             
-            // Set up the next user prompt if available
-            const nextUserPrompt = scriptLines.slice(currentLineIndex + 1).find(line => line.role === 'user');
-            if (nextUserPrompt) {
+            // Then set up the next user prompt if available
+            const nextUserIndex = nextIndex + 1;
+            if (nextUserIndex < scriptLines.length && scriptLines[nextUserIndex].role === 'user') {
               setCurrentPrompt({
                 id: Date.now().toString(),
                 role: 'bot',
-                text: nextUserPrompt.text,
-                transliteration: nextUserPrompt.transliteration,
-                translation: nextUserPrompt.translation,
-                tts_audio_url: nextUserPrompt.tts_audio_url,
+                text: scriptLines[nextUserIndex].text,
+                transliteration: scriptLines[nextUserIndex].transliteration,
+                translation: scriptLines[nextUserIndex].translation,
+                tts_audio_url: scriptLines[nextUserIndex].tts_audio_url,
                 user_audio_url: null,
                 score: null,
               });
+              setCurrentLineIndex(nextUserIndex);
             }
+          } else if (nextLine.role === 'user') {
+            // If next line is user's line, set it as the current prompt
+            setCurrentPrompt({
+              id: Date.now().toString(),
+              role: 'bot',
+              text: nextLine.text,
+              transliteration: nextLine.transliteration,
+              translation: nextLine.translation,
+              tts_audio_url: nextLine.tts_audio_url,
+              user_audio_url: null,
+              score: null,
+            });
           }
         } else {
           setIsConversationComplete(true);
