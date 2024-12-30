@@ -24,8 +24,8 @@ interface PronunciationFeedbackModalProps {
       };
       Words: Array<{
         Word: string;
-        Offset: number;
-        Duration: number;
+        Offset?: number;
+        Duration?: number;
         PronunciationAssessment: {
           AccuracyScore: number;
           ErrorType: string;
@@ -129,9 +129,11 @@ const PronunciationFeedbackModal: React.FC<PronunciationFeedbackModalProps> = ({
                       <span className="font-medium">{word.Word}</span>
                       <div className="flex items-center gap-2">
                         <ErrorTypeBadge errorType={word.PronunciationAssessment.ErrorType} />
-                        <span className="text-xs text-gray-500">
-                          Duration: {(word.Duration / 1000000).toFixed(2)}s
-                        </span>
+                        {word.Duration !== undefined && (
+                          <span className="text-xs text-gray-500">
+                            Duration: {(word.Duration / 1000000).toFixed(2)}s
+                          </span>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
