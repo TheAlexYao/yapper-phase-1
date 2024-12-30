@@ -6,6 +6,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
 
 interface PronunciationFeedbackModalProps {
   isOpen: boolean;
@@ -32,6 +33,27 @@ interface PronunciationFeedbackModalProps {
     }>;
   };
 }
+
+const ErrorTypeBadge = ({ errorType }: { errorType: string }) => {
+  const getErrorColor = (type: string) => {
+    switch (type.toLowerCase()) {
+      case 'none':
+        return 'bg-green-100 text-green-800';
+      case 'mispronunciation':
+        return 'bg-red-100 text-red-800';
+      case 'omission':
+        return 'bg-yellow-100 text-yellow-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  return (
+    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getErrorColor(errorType)}`}>
+      {errorType}
+    </span>
+  );
+};
 
 const PronunciationFeedbackModal: React.FC<PronunciationFeedbackModalProps> = ({
   isOpen,
@@ -90,18 +112,30 @@ const PronunciationFeedbackModal: React.FC<PronunciationFeedbackModalProps> = ({
               <h3 className="font-semibold mb-4">Word-by-Word Analysis</h3>
               <div className="grid gap-3">
                 {nBestResult.Words.map((word, index) => (
-                  <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-                    <span className="font-medium">{word.Word}</span>
+                  <div 
+                    key={index} 
+                    className={`flex items-center justify-between p-3 rounded-lg ${
+                      word.PronunciationAssessment.ErrorType.toLowerCase() === 'none'
+                        ? 'bg-green-50'
+                        : word.PronunciationAssessment.ErrorType.toLowerCase() === 'omission'
+                        ? 'bg-yellow-50'
+                        : 'bg-red-50'
+                    }`}
+                  >
+                    <div className="flex flex-col">
+                      <span className="font-medium">{word.Word}</span>
+                      <ErrorTypeBadge errorType={word.PronunciationAssessment.ErrorType} />
+                    </div>
                     <div className="flex items-center gap-3">
-                      <Progress 
-                        value={word.PronunciationAssessment.AccuracyScore} 
-                        className="w-24"
-                      />
-                      {word.PronunciationAssessment.ErrorType !== "None" && (
-                        <span className="text-xs px-2 py-1 bg-red-100 text-red-600 rounded-full">
-                          {word.PronunciationAssessment.ErrorType}
+                      <div className="flex flex-col items-end">
+                        <span className="text-sm font-medium">
+                          {word.PronunciationAssessment.AccuracyScore}%
                         </span>
-                      )}
+                        <Progress 
+                          value={word.PronunciationAssessment.AccuracyScore} 
+                          className="w-24"
+                        />
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -111,9 +145,11 @@ const PronunciationFeedbackModal: React.FC<PronunciationFeedbackModalProps> = ({
 
           {/* Suggestions */}
           {feedback.suggestions && (
-            <div>
+            <div className="mt-6">
               <h3 className="font-semibold mb-2">Suggestions for Improvement</h3>
-              <p className="text-sm text-gray-600">{feedback.suggestions}</p>
+              <p className="text-sm text-gray-600 bg-blue-50 p-4 rounded-lg">
+                {feedback.suggestions}
+              </p>
             </div>
           )}
         </div>
