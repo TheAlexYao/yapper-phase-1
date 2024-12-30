@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Mic } from 'lucide-react';
+import { Mic, Send } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -130,28 +130,31 @@ export const RecordingControls: React.FC<RecordingControlsProps> = ({
         </div>
       )}
 
-      <Button
-        onClick={isRecording ? stopRecording : startRecording}
-        variant={isRecording ? "destructive" : "default"}
-        className="rounded-full w-48 bg-gradient-to-r from-[#38b6ff] to-[#7843e6] hover:opacity-90 transition-opacity duration-200"
-        disabled={isPreparing || isProcessing}
-      >
-        {isPreparing ? 'Preparing...' : 
-         isProcessing ? 'Processing...' :
-         isRecording ? 'Stop Recording' : 'Start Recording'}
-        <Mic className="ml-2 h-5 w-5" />
-      </Button>
-
-      {audioUrl && !isRecording && (
+      <div className="flex gap-2">
         <Button
-          onClick={handleSubmit}
-          disabled={isSubmitting}
-          variant="default"
-          className="w-48 mt-2 bg-gradient-to-r from-[#38b6ff] to-[#7843e6] hover:opacity-90 transition-opacity duration-200"
+          onClick={isRecording ? stopRecording : startRecording}
+          variant={isRecording ? "destructive" : "default"}
+          className="rounded-full w-48 bg-gradient-to-r from-[#38b6ff] to-[#7843e6] hover:opacity-90 transition-opacity duration-200"
+          disabled={isPreparing || isProcessing}
         >
-          {isSubmitting ? 'Submitting...' : 'Submit Recording'}
+          {isPreparing ? 'Preparing...' : 
+           isProcessing ? 'Processing...' :
+           isRecording ? 'Stop Recording' : 'Start Recording'}
+          <Mic className="ml-2 h-5 w-5" />
         </Button>
-      )}
+
+        {audioUrl && !isRecording && (
+          <Button
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            variant="default"
+            className="rounded-full w-48 bg-gradient-to-r from-[#38b6ff] to-[#7843e6] hover:opacity-90 transition-opacity duration-200"
+          >
+            {isSubmitting ? 'Submitting...' : 'Submit'}
+            <Send className="ml-2 h-5 w-5" />
+          </Button>
+        )}
+      </div>
     </div>
   );
 };

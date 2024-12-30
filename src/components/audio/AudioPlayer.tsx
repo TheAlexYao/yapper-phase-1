@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Volume2 } from 'lucide-react';
+import { Play, Pause, Turtle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface AudioPlayerProps {
@@ -57,23 +57,24 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   return (
     <div className="flex items-center gap-2">
       <Button
-        variant="ghost"
+        variant="outline"
         size="sm"
-        className="flex items-center gap-1"
+        className="flex items-center gap-2 border rounded px-2 py-1"
         onClick={togglePlayback}
       >
-        <Volume2 className="h-4 w-4" />
-        {label && <span className="text-xs">{label}</span>}
+        {isPlaying ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
+        <span className="text-xs font-medium">{label === "TTS" ? "Listen" : label}</span>
       </Button>
       
       {showSpeedControl && (
         <Button
-          variant="ghost"
+          variant="outline"
           size="sm"
+          className="border rounded p-1"
           onClick={adjustSpeed}
-          className="text-xs"
         >
-          {playbackRate}x
+          <Turtle className="h-4 w-4" />
+          <span className="ml-1 text-xs">{playbackRate}x</span>
         </Button>
       )}
     </div>
