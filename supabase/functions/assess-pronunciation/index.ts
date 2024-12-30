@@ -95,7 +95,7 @@ serve(async (req) => {
     const result = await new Promise((resolve, reject) => {
       recognizer.recognizeOnceAsync(
         result => {
-          console.log('Assessment completed:', result)
+          console.log('Assessment completed:', JSON.stringify(result, null, 2))
           resolve(result)
         },
         error => reject(error)
@@ -107,7 +107,7 @@ serve(async (req) => {
     if (result && result.privJson) {
       try {
         const jsonData = JSON.parse(result.privJson)
-        console.log('Raw assessment data:', jsonData)
+        console.log('Raw assessment data:', JSON.stringify(jsonData, null, 2))
         
         if (jsonData.NBest && jsonData.NBest[0]) {
           const nBestResult = jsonData.NBest[0]
@@ -160,7 +160,7 @@ serve(async (req) => {
       }
     }
 
-    console.log('Returning assessment:', { publicUrl, assessment })
+    console.log('Returning assessment:', JSON.stringify({ publicUrl, assessment }, null, 2))
 
     return new Response(
       JSON.stringify({ audioUrl: publicUrl, assessment }),
