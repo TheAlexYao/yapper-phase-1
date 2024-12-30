@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Mic, Play, Pause, Turtle } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useToast } from "@/hooks/use-toast";
 
 interface AudioPlayerProps {
   audioUrl: string;
@@ -79,8 +80,10 @@ const RecordingControls: React.FC<RecordingControlsProps> = ({ onRecordingComple
   const [isRecording, setIsRecording] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const { toast } = useToast();
 
   const startRecording = async () => {
     try {
@@ -91,7 +94,7 @@ const RecordingControls: React.FC<RecordingControlsProps> = ({ onRecordingComple
 
       mediaRecorder.ondataavailable = (e) => chunksRef.current.push(e.data);
       mediaRecorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: 'audio/ogg; codecs=opus' });
+        const blob = new Blob(chunksRef.current, { type: 'audio/wav' });
         const url = URL.createObjectURL(blob);
         setAudioUrl(url);
         setAudioBlob(blob);
@@ -101,6 +104,11 @@ const RecordingControls: React.FC<RecordingControlsProps> = ({ onRecordingComple
       setIsRecording(true);
     } catch (err) {
       console.error('Error accessing microphone:', err);
+      toast({
+        title: "Error",
+        description: "Could not access microphone",
+        variant: "destructive"
+      });
     }
   };
 
@@ -111,11 +119,43 @@ const RecordingControls: React.FC<RecordingControlsProps> = ({ onRecordingComple
     }
   };
 
-  const handleSubmit = () => {
-    if (audioUrl && audioBlob) {
-      onRecordingComplete(audioUrl, audioBlob);
-      setAudioUrl(null);
-      setAudioBlob(null);
+  const handleSubmit = async () => {
+    if (!audioBlob || !currentPrompt) return;
+    
+    setIsSubmitting(true);
+    try {
+      const formData = new FormData();
+      formData.append('audio', audioBlob);
+      formData.append('text', currentPrompt.text);
+      formData.append('languageCode', 'es-ES'); // TODO: Make this dynamic based on selected language
+
+      const response = await fetch('https://jgxvzzyfjpntsbhxfcjv.supabase.co/functions/v1/assess-pronunciation', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to assess pronunciation');
+      }
+
+      const { audioUrl: uploadedAudioUrl, assessment } = await response.json();
+      
+      if (uploadedAudioUrl && assessment) {
+        onRecordingComplete(uploadedAudioUrl, audioBlob);
+        setAudioUrl(null);
+        setAudioBlob(null);
+      } else {
+        throw new Error('Invalid response from pronunciation assessment');
+      }
+    } catch (error) {
+      console.error('Error submitting recording:', error);
+      toast({
+        title: "Error",
+        description: "Failed to assess pronunciation. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -152,7 +192,7 @@ const RecordingControls: React.FC<RecordingControlsProps> = ({ onRecordingComple
       <Button
         onClick={isRecording ? stopRecording : startRecording}
         variant={isRecording ? "destructive" : "default"}
-        className="rounded-full w-48 hover:bg-opacity-80 transition-colors duration-200 border-2 border-[#38b6ff]"
+        className="rounded-full w-48 bg-gradient-to-r from-[#38b6ff] to-[#7843e6] hover:opacity-90 transition-opacity duration-200"
       >
         {isRecording ? 'Stop Recording' : 'Start Recording'}
         <Mic className="ml-2 h-5 w-5" />
@@ -161,10 +201,11 @@ const RecordingControls: React.FC<RecordingControlsProps> = ({ onRecordingComple
       {audioUrl && !isRecording && (
         <Button
           onClick={handleSubmit}
+          disabled={isSubmitting}
           variant="default"
-          className="w-48 mt-2"
+          className="w-48 mt-2 bg-gradient-to-r from-[#38b6ff] to-[#7843e6] hover:opacity-90 transition-opacity duration-200"
         >
-          Submit Recording
+          {isSubmitting ? 'Submitting...' : 'Submit Recording'}
         </Button>
       )}
     </div>
