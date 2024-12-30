@@ -1,7 +1,7 @@
 export const convertToWav = async (audioBuffer: AudioBuffer): Promise<Blob> => {
   const numOfChannels = audioBuffer.numberOfChannels;
   const sampleRate = 16000; // Azure expects 16kHz
-  const silenceDuration = 0.3; // 300ms silence padding
+  const silenceDuration = 0.1; // Reduced from 0.3 to 0.1 seconds (100ms)
   const silenceSamples = Math.floor(sampleRate * silenceDuration);
   
   // Calculate total length including silence padding
