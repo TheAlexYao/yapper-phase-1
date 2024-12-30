@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,6 +14,7 @@ serve(async (req) => {
   }
 
   try {
+    console.log('Starting pronunciation assessment...')
     const formData = await req.formData()
     const audioFile = formData.get('audio')
     const referenceText = formData.get('text')
@@ -28,32 +30,60 @@ serve(async (req) => {
       throw new Error('Missing required fields')
     }
 
-    // For now, return a mock response while we debug
+    // Upload audio file to Supabase Storage
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    )
+
+    const fileName = `${crypto.randomUUID()}.wav`
+    const filePath = `recordings/${fileName}`
+
+    console.log('Uploading audio file to storage...')
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('audio')
+      .upload(filePath, audioFile, {
+        contentType: 'audio/wav',
+        upsert: false
+      })
+
+    if (uploadError) {
+      console.error('Error uploading audio:', uploadError)
+      throw new Error('Failed to upload audio file')
+    }
+
+    // Get public URL for the uploaded audio
+    const { data: { publicUrl } } = supabase.storage
+      .from('audio')
+      .getPublicUrl(filePath)
+
+    console.log('Audio file uploaded successfully:', publicUrl)
+
+    // For now, return a mock assessment while we implement the actual Azure Speech Service integration
     const mockAssessment = {
       NBest: [{
         PronunciationAssessment: {
-          AccuracyScore: 80,
-          FluencyScore: 85,
-          CompletenessScore: 90,
-          PronScore: 85
+          AccuracyScore: Math.floor(Math.random() * 20) + 80, // Random score between 80-100
+          FluencyScore: Math.floor(Math.random() * 20) + 80,
+          CompletenessScore: Math.floor(Math.random() * 20) + 80,
+          PronScore: Math.floor(Math.random() * 20) + 80
         },
-        Words: [{
-          Word: referenceText,
+        Words: referenceText.split(' ').map(word => ({
+          Word: word,
           PronunciationAssessment: {
-            AccuracyScore: 80,
+            AccuracyScore: Math.floor(Math.random() * 20) + 80,
             ErrorType: "None"
           }
-        }]
+        }))
       }],
-      pronunciationScore: 85
+      pronunciationScore: Math.floor(Math.random() * 20) + 80
     }
 
-    // Store the audio file
-    const audioUrl = `https://example.com/mock-audio-url.wav` // This will be replaced with actual storage logic
+    console.log('Returning assessment:', { publicUrl, mockAssessment })
 
     return new Response(
       JSON.stringify({ 
-        audioUrl, 
+        audioUrl: publicUrl, 
         assessment: mockAssessment 
       }),
       { 
