@@ -139,14 +139,22 @@ const RecordingControls: React.FC<RecordingControlsProps> = ({ onRecordingComple
         throw new Error('Audio file too large. Please record a shorter message.');
       }
 
+      console.log('Submitting audio:', {
+        blobSize: wavBlob.size,
+        text: currentPrompt.text,
+        languageCode: 'es-ES'
+      });
+
       const formData = new FormData();
       formData.append('audio', wavBlob, 'recording.wav');
       formData.append('text', currentPrompt.text);
-      formData.append('languageCode', 'es-ES'); // TODO: Make this dynamic based on selected language
+      formData.append('languageCode', 'es-ES');
 
       const { data, error } = await supabase.functions.invoke('assess-pronunciation', {
         body: formData,
       });
+
+      console.log('Response received:', { data, error });
 
       if (error) {
         console.error('Supabase function error:', error);
