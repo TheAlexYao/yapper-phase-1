@@ -180,7 +180,11 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
   const handleRecordingComplete = async (audioUrl: string, audioBlob: Blob) => {
     if (currentPrompt) {
       try {
+        console.log('Starting recording assessment for prompt:', currentPrompt.text);
+        
         const { score, feedback } = await assessPronunciation(audioBlob, currentPrompt.text);
+        
+        console.log('Assessment completed:', { score, feedback });
 
         const newMessage: UserMessage = {
           id: Date.now().toString(),
@@ -193,28 +197,22 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
           score: score,
           feedback: {
             overall_score: score,
-            phoneme_analysis: feedback.phonemeAnalysis || "",
-            word_scores: feedback.wordScores || {},
-            suggestions: feedback.suggestions || "",
+            phoneme_analysis: feedback.phonemeAnalysis,
+            word_scores: feedback.wordScores,
+            suggestions: feedback.suggestions,
             NBest: [{
               PronunciationAssessment: {
-                AccuracyScore: feedback.accuracyScore || 0,
-                FluencyScore: feedback.fluencyScore || 0,
-                CompletenessScore: feedback.completenessScore || 0,
+                AccuracyScore: feedback.accuracyScore,
+                FluencyScore: feedback.fluencyScore,
+                CompletenessScore: feedback.completenessScore,
                 PronScore: score
               },
-              Words: (feedback.words || []).map(word => ({
-                Word: word.Word,
-                Offset: word.Offset || 0,
-                Duration: word.Duration || 0,
-                PronunciationAssessment: {
-                  AccuracyScore: word.PronunciationAssessment.AccuracyScore,
-                  ErrorType: word.PronunciationAssessment.ErrorType
-                }
-              }))
+              Words: feedback.words
             }]
           }
         };
+
+        console.log('Created new message:', JSON.stringify(newMessage, null, 2));
 
         setMessages(prevMessages => [...prevMessages, newMessage]);
         setCurrentPrompt(null);

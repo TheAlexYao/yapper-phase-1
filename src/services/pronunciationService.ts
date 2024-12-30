@@ -18,25 +18,53 @@ export const assessPronunciation = async (audioBlob: Blob, text: string): Promis
     }>;
   };
 }> => {
-  // Mock implementation for now - replace with actual API call
-  return {
-    score: Math.floor(Math.random() * 40) + 60, // Random score between 60-100
-    feedback: {
-      phonemeAnalysis: "Good pronunciation of most sounds",
-      wordScores: { [text]: 80 },
-      suggestions: "Try to speak a bit more slowly",
-      accuracyScore: 85,
-      fluencyScore: 80,
-      completenessScore: 90,
-      words: [{
-        Word: text,
-        Offset: 0,
-        Duration: 1000,
-        PronunciationAssessment: {
-          AccuracyScore: 85,
-          ErrorType: "None"
-        }
-      }]
+  try {
+    console.log('Starting pronunciation assessment for text:', text);
+    
+    const formData = new FormData();
+    formData.append('audio', audioBlob, 'recording.wav');
+    formData.append('text', text);
+    formData.append('languageCode', 'es-ES');
+
+    const { data, error } = await supabase.functions.invoke('assess-pronunciation', {
+      body: formData,
+    });
+
+    if (error) {
+      console.error('Error from assess-pronunciation function:', error);
+      throw error;
     }
-  };
+
+    console.log('Received assessment data:', JSON.stringify(data, null, 2));
+
+    if (!data.assessment?.NBest?.[0]) {
+      console.error('Invalid assessment data structure:', data);
+      throw new Error('Invalid assessment response structure');
+    }
+
+    const nBestResult = data.assessment.NBest[0];
+    const pronunciationScore = data.assessment.pronunciationScore * 100; // Convert to percentage
+
+    // Create word scores object
+    const wordScores: { [word: string]: number } = {};
+    nBestResult.Words.forEach(word => {
+      wordScores[word.Word] = word.PronunciationAssessment.AccuracyScore;
+    });
+
+    return {
+      score: pronunciationScore,
+      feedback: {
+        phonemeAnalysis: "Detailed phoneme analysis will be provided soon",
+        wordScores,
+        suggestions: "Practice speaking more slowly and clearly",
+        accuracyScore: nBestResult.PronunciationAssessment.AccuracyScore,
+        fluencyScore: nBestResult.PronunciationAssessment.FluencyScore,
+        completenessScore: nBestResult.PronunciationAssessment.CompletenessScore,
+        words: nBestResult.Words
+      }
+    };
+  } catch (error) {
+    console.error('Error in assessPronunciation:', error);
+    throw error;
+  }
 };
