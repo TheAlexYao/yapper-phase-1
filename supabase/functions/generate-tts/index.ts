@@ -53,103 +53,115 @@ serve(async (req) => {
     console.log(`Processing ${scripts.length} scripts...`)
 
     for (const script of scripts) {
-      // Fetch language voices
-      const { data: languageData, error: languageError } = await supabase
-        .from('languages')
-        .select('male_voice, female_voice')
-        .eq('code', script.language_code)
-        .single()
+      try {
+        // Fetch language voices with more specific query
+        const { data: languageData, error: languageError } = await supabase
+          .from('languages')
+          .select('male_voice, female_voice')
+          .eq('code', script.language_code)
+          .maybeSingle()
 
-      if (languageError) {
-        throw new Error(`Error fetching language data: ${languageError.message}`)
-      }
+        if (languageError) {
+          console.error(`Error fetching language data for code ${script.language_code}:`, languageError)
+          continue // Skip this script and continue with others
+        }
 
-      if (!languageData.male_voice || !languageData.female_voice) {
-        console.warn(`Missing voice configuration for language ${script.language_code}`)
-        continue
-      }
+        if (!languageData) {
+          console.error(`No language configuration found for code ${script.language_code}`)
+          continue
+        }
 
-      const scriptData: ScriptData = script.script_data
-      let modified = false
+        if (!languageData.male_voice || !languageData.female_voice) {
+          console.warn(`Missing voice configuration for language ${script.language_code}`)
+          continue
+        }
 
-      for (const line of scriptData.lines) {
-        if (!line.audioUrl) {
-          try {
-            // Select voice based on speaker
-            const voiceName = line.speaker === 'character' 
-              ? (script.character_id % 2 === 0 ? languageData.female_voice : languageData.male_voice)
-              : (script.user_gender === 'female' ? languageData.female_voice : languageData.male_voice)
+        const scriptData: ScriptData = script.script_data
+        let modified = false
 
-            const ssml = `
-              <speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${script.language_code}">
-                <voice name="${voiceName}">
-                  <prosody rate="0.9">
-                    ${line.targetText}
-                  </prosody>
-                </voice>
-              </speak>`
+        for (const line of scriptData.lines) {
+          if (!line.audioUrl) {
+            try {
+              // Select voice based on speaker
+              const voiceName = line.speaker === 'character' 
+                ? (script.character_id % 2 === 0 ? languageData.female_voice : languageData.male_voice)
+                : (script.user_gender === 'female' ? languageData.female_voice : languageData.male_voice)
 
-            const response = await fetch(
-              `https://${Deno.env.get('AZURE_SPEECH_REGION')}.tts.speech.microsoft.com/cognitiveservices/v1`,
-              {
-                method: 'POST',
-                headers: {
-                  'Ocp-Apim-Subscription-Key': Deno.env.get('AZURE_SPEECH_KEY') ?? '',
-                  'Content-Type': 'application/ssml+xml',
-                  'X-Microsoft-OutputFormat': 'audio-16khz-128kbitrate-mono-mp3',
-                },
-                body: ssml,
+              const ssml = `
+                <speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${script.language_code}">
+                  <voice name="${voiceName}">
+                    <prosody rate="0.9">
+                      ${line.targetText}
+                    </prosody>
+                  </voice>
+                </speak>`
+
+              const response = await fetch(
+                `https://${Deno.env.get('AZURE_SPEECH_REGION')}.tts.speech.microsoft.com/cognitiveservices/v1`,
+                {
+                  method: 'POST',
+                  headers: {
+                    'Ocp-Apim-Subscription-Key': Deno.env.get('AZURE_SPEECH_KEY') ?? '',
+                    'Content-Type': 'application/ssml+xml',
+                    'X-Microsoft-OutputFormat': 'audio-16khz-128kbitrate-mono-mp3',
+                  },
+                  body: ssml,
+                }
+              )
+
+              if (!response.ok) {
+                throw new Error(`Azure TTS API error: ${response.statusText}`)
               }
-            )
 
-            if (!response.ok) {
-              throw new Error(`Azure TTS API error: ${response.statusText}`)
+              const audioBuffer = await response.arrayBuffer()
+              const audioBlob = new Blob([audioBuffer], { type: 'audio/mpeg' })
+
+              const fileName = `${script.id}_line${line.lineNumber}_${Date.now()}.mp3`
+              const { data: uploadData, error: uploadError } = await supabase.storage
+                .from('tts_cache')
+                .upload(fileName, audioBlob, {
+                  contentType: 'audio/mpeg',
+                  cacheControl: '3600',
+                })
+
+              if (uploadError) {
+                throw new Error(`Storage upload error: ${uploadError.message}`)
+              }
+
+              const { data: publicUrl } = supabase.storage
+                .from('tts_cache')
+                .getPublicUrl(fileName)
+
+              line.audioUrl = publicUrl.publicUrl
+              modified = true
+
+              console.log(`Generated TTS for line ${line.lineNumber} in script ${script.id}`)
+            } catch (error) {
+              console.error(`Error processing line ${line.lineNumber} in script ${script.id}:`, error)
+              continue // Skip this line and continue with others
             }
-
-            const audioBuffer = await response.arrayBuffer()
-            const audioBlob = new Blob([audioBuffer], { type: 'audio/mpeg' })
-
-            const fileName = `${script.id}_line${line.lineNumber}_${Date.now()}.mp3`
-            const { data: uploadData, error: uploadError } = await supabase.storage
-              .from('tts_cache')
-              .upload(fileName, audioBlob, {
-                contentType: 'audio/mpeg',
-                cacheControl: '3600',
-              })
-
-            if (uploadError) {
-              throw new Error(`Storage upload error: ${uploadError.message}`)
-            }
-
-            const { data: publicUrl } = supabase.storage
-              .from('tts_cache')
-              .getPublicUrl(fileName)
-
-            line.audioUrl = publicUrl.publicUrl
-            modified = true
-
-            console.log(`Generated TTS for line ${line.lineNumber} in script ${script.id}`)
-          } catch (error) {
-            console.error(`Error processing line ${line.lineNumber} in script ${script.id}:`, error)
-            throw error
           }
         }
-      }
 
-      if (modified) {
-        const { error: updateError } = await supabase
-          .from('scripts')
-          .update({
-            script_data: scriptData,
-            audio_generated: true,
-          })
-          .eq('id', script.id)
+        if (modified) {
+          const { error: updateError } = await supabase
+            .from('scripts')
+            .update({
+              script_data: scriptData,
+              audio_generated: true,
+            })
+            .eq('id', script.id)
 
-        if (updateError) {
-          throw new Error(`Error updating script: ${updateError.message}`)
+          if (updateError) {
+            console.error(`Error updating script ${script.id}:`, updateError)
+            continue
+          }
+
+          console.log(`Updated script ${script.id} with TTS audio URLs`)
         }
-
-        console.log(`Updated script ${script.id} with TTS audio URLs`)
+      } catch (error) {
+        console.error(`Error processing script ${script.id}:`, error)
+        continue // Skip this script and continue with others
       }
     }
 
