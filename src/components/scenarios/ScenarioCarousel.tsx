@@ -62,7 +62,7 @@ const ScenarioCarousel: React.FC<ScenarioCarouselProps> = ({
             <div key={scenario.id} className="w-full h-full flex-shrink-0">
               <ScenarioCard
                 scenario={scenario}
-                onSelect={() => onSelect(scenario.id)}
+                onSelect={() => onSelect(scenario.id.toString())}
               />
             </div>
           ))}

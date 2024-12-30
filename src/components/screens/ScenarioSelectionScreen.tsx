@@ -5,6 +5,7 @@ import FloatingElements from '@/components/FloatingElements';
 import { supabase } from "@/integrations/supabase/client";
 import ScenarioCarousel from '@/components/scenarios/ScenarioCarousel';
 import { Scenario } from "@/types/scenario";
+import { Database } from "@/integrations/supabase/types";
 
 interface ScenarioSelectionScreenProps {
   topicTitle: string;
@@ -35,7 +36,7 @@ const ScenarioSelectionScreen: React.FC<ScenarioSelectionScreenProps> = ({
       if (fetchError) throw fetchError;
 
       if (data) {
-        setScenarios(data as Scenario[]);
+        setScenarios(data as unknown as Scenario[]);
         setError(null);
       }
     } catch (err) {
