@@ -67,12 +67,12 @@ const PronunciationFeedbackModal: React.FC<PronunciationFeedbackModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle>Pronunciation Assessment</DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-6 py-4">
+        <div className="space-y-6 py-4 flex-1 overflow-y-auto">
           {/* Overall Scores */}
           <div className="space-y-4">
             <h3 className="font-semibold">Overall Scores</h3>
