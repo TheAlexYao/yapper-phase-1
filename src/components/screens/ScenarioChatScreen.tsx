@@ -50,8 +50,10 @@ interface UserMessage extends ChatMessage {
 }
 
 interface ScenarioChatScreenProps {
-  scenarioId: string;
+  scenarioId: number;  // Changed from string to number
   scenarioTitle: string;
+  topicId: number;     // Added to match the new prop
+  characterId: number; // Added to match the new prop
   characterName: string;
   selectedLanguage: string;
   onBackToCharacters: () => void;
