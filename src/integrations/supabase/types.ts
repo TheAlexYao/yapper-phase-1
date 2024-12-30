@@ -157,36 +157,6 @@ export type Database = {
           },
         ]
       }
-      default_scenarios: {
-        Row: {
-          created_at: string | null
-          description: string | null
-          id: string
-          image_url: string | null
-          title: string
-          topic: string
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          image_url?: string | null
-          title: string
-          topic: string
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          image_url?: string | null
-          title?: string
-          topic?: string
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
       guided_conversation_messages: {
         Row: {
           audio_url: string | null
@@ -455,13 +425,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "languages"
             referencedColumns: ["code"]
-          },
-          {
-            foreignKeyName: "scenario_images_scenario_id_fkey"
-            columns: ["scenario_id"]
-            isOneToOne: false
-            referencedRelation: "default_scenarios"
-            referencedColumns: ["id"]
           },
         ]
       }
