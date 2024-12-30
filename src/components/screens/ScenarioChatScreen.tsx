@@ -339,6 +339,8 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
 }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [currentPrompt, setCurrentPrompt] = useState<BotMessage | null>(null);
+  const [scriptLines, setScriptLines] = useState<ChatMessage[]>([]);
+  const [currentLineIndex, setCurrentLineIndex] = useState(0);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const [isConversationEnded, setIsConversationEnded] = useState(false);
   const [conversationStartTime, setConversationStartTime] = useState(Date.now());
@@ -347,8 +349,8 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
 
   useEffect(() => {
     if (script) {
-      // Initialize messages from script data
-      const initialMessages: ChatMessage[] = script.script_data.lines.map((line, index) => ({
+      // Initialize script lines from script data
+      const initialScriptLines: ChatMessage[] = script.script_data.lines.map((line, index) => ({
         id: `${index}`,
         role: line.speaker === 'character' ? 'bot' : 'user',
         text: line.targetText,
@@ -358,47 +360,28 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
         user_audio_url: null,
         score: null,
       }));
-      setMessages(initialMessages);
+      setScriptLines(initialScriptLines);
       
-      // Set the first user prompt if it exists
-      const firstUserPrompt = script.script_data.lines.find(line => line.speaker === 'user');
-      if (firstUserPrompt) {
-        setCurrentPrompt({
-          id: 'initial-prompt',
-          role: 'bot',
-          text: firstUserPrompt.targetText,
-          transliteration: firstUserPrompt.transliteration,
-          translation: firstUserPrompt.translation,
-          tts_audio_url: firstUserPrompt.audioUrl || '',
-          user_audio_url: null,
-          score: null,
-        });
-      }
-    } else {
-      // Fallback to existing mock data if no script is provided
-      const fetchedMessages: ChatMessage[] = [
-        {
-          id: '1',
-          role: 'bot',
-          text: 'Hello! Welcome to our chat. How can I assist you today?',
-          transliteration: 'Halo! Selamat datang di obrolan kita. Bagaimana saya bisa membantu Anda hari ini?',
-          translation: 'Hello! Welcome to our chat. How can I help you today?',
-          tts_audio_url: '/audio/welcome.mp3',
-          user_audio_url: null,
-          score: null,
+      // Display the first message if it's a bot message
+      if (initialScriptLines.length > 0 && initialScriptLines[0].role === 'bot') {
+        setMessages([initialScriptLines[0]]);
+        setCurrentLineIndex(1);
+        
+        // Set the first user prompt if it exists
+        const firstUserPrompt = initialScriptLines.find(line => line.role === 'user');
+        if (firstUserPrompt) {
+          setCurrentPrompt({
+            id: 'initial-prompt',
+            role: 'bot',
+            text: firstUserPrompt.text,
+            transliteration: firstUserPrompt.transliteration,
+            translation: firstUserPrompt.translation,
+            tts_audio_url: firstUserPrompt.tts_audio_url,
+            user_audio_url: null,
+            score: null,
+          });
         }
-      ];
-      setMessages(fetchedMessages);
-      setCurrentPrompt({
-        id: '2',
-        role: 'bot',
-        text: 'Hi! I\'d like to practice ordering coffee.',
-        transliteration: 'Hai! Saya ingin berlatih memesan kopi.',
-        translation: 'Hi! I want to practice ordering coffee.',
-        tts_audio_url: '/audio/user-prompt.mp3',
-        user_audio_url: null,
-        score: null,
-      });
+      }
     }
     setConversationStartTime(Date.now());
   }, [script]);
@@ -408,7 +391,8 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
   }, [messages]);
 
   const handleRecordingComplete = (audioUrl: string, score: number) => {
-    if (currentPrompt) {
+    if (currentPrompt && currentLineIndex < scriptLines.length) {
+      // Add the user's message with recording
       const newMessage: UserMessage = {
         id: Date.now().toString(),
         role: 'user',
@@ -456,36 +440,39 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
           }]
         }
       };
+      
       setMessages(prevMessages => [...prevMessages, newMessage]);
       setCurrentPrompt(null);
-      if (messages.length + 1 >= 5) {  // Assuming 5 messages complete the conversation
+
+      // Check if there are more lines to display
+      if (currentLineIndex < scriptLines.length) {
+        const nextLine = scriptLines[currentLineIndex];
+        
+        // Add a delay before showing the next bot message
+        setTimeout(() => {
+          if (nextLine.role === 'bot') {
+            setMessages(prevMessages => [...prevMessages, nextLine]);
+            setCurrentLineIndex(prevIndex => prevIndex + 1);
+            
+            // Find the next user prompt
+            const nextUserPrompt = scriptLines.slice(currentLineIndex + 1).find(line => line.role === 'user');
+            if (nextUserPrompt) {
+              setCurrentPrompt({
+                id: Date.now().toString(),
+                role: 'bot',
+                text: nextUserPrompt.text,
+                transliteration: nextUserPrompt.transliteration,
+                translation: nextUserPrompt.translation,
+                tts_audio_url: nextUserPrompt.tts_audio_url,
+                user_audio_url: null,
+                score: null,
+              });
+            }
+          }
+        }, 1000);
+      } else {
         setIsConversationComplete(true);
       }
-
-      // Simulate bot response
-      setTimeout(() => {
-        const botResponse: BotMessage = {
-          id: Date.now().toString(),
-          role: 'bot',
-          text: 'Great! Let\'s practice ordering coffee. What would you like to order?',
-          transliteration: 'Bagus! Mari kita berlatih memesan kopi. Apa yang ingin Anda pesan?',
-          translation: 'Great! Let\'s practice ordering coffee. What would you like to order?',
-          tts_audio_url: '/audio/bot-response.mp3',
-          user_audio_url: null,
-          score: null,
-        };
-        setMessages(prevMessages => [...prevMessages, botResponse]);
-        setCurrentPrompt({
-          id: Date.now().toString(),
-          role: 'bot',
-          text: 'I would like a cappuccino, please.',
-          transliteration: 'Saya ingin cappuccino, tolong.',
-          translation: 'I would like a cappuccino, please.',
-          tts_audio_url: '/audio/user-prompt-2.mp3',
-          user_audio_url: null,
-          score: null,
-        });
-      }, 1000);
     }
   };
 
