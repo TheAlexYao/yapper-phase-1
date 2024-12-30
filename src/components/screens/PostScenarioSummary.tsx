@@ -92,6 +92,20 @@ const PostScenarioSummary: React.FC<PostScenarioSummaryProps> = ({
     setCurrentCard(prev => Math.max(0, Math.min(2, prev + direction)));
   };
 
+  // Handle keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') {
+        handleSwipe(-1);
+      } else if (e.key === 'ArrowRight') {
+        handleSwipe(1);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -126,7 +140,7 @@ const PostScenarioSummary: React.FC<PostScenarioSummaryProps> = ({
     {
       title: "Conversation Review",
       content: (
-        <div className="space-y-4 h-full overflow-y-auto px-4">
+        <div className="space-y-4 h-[calc(100vh-20rem)] overflow-y-auto px-4 pb-16">
           {transcript.map((line, index) => (
             <motion.div
               key={index}
@@ -330,38 +344,40 @@ const PostScenarioSummary: React.FC<PostScenarioSummaryProps> = ({
       </main>
 
       <footer className="sticky bottom-0 bg-white border-t shadow-lg">
-        <div className="container mx-auto px-4 py-3 flex justify-between items-center">
-          <Button 
-            onClick={() => handleSwipe(-1)} 
-            disabled={currentCard === 0}
-            variant="ghost"
-            size="icon"
-            className="text-[#38b6ff]"
-          >
-            <ChevronLeft className="h-6 w-6" />
-          </Button>
-          <div className="flex gap-2">
-            {cards.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentCard(index)}
-                className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                  currentCard === index 
-                    ? 'bg-gradient-to-r from-[#38b6ff] to-[#7843e6] w-6' 
-                    : 'bg-gray-300'
-                }`}
-              />
-            ))}
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex justify-center items-center gap-8">
+            <Button 
+              onClick={() => handleSwipe(-1)} 
+              disabled={currentCard === 0}
+              variant="outline"
+              size="icon"
+              className="w-10 h-10 rounded-full border-2 border-[#38b6ff] text-[#38b6ff] hover:bg-[#38b6ff] hover:text-white transition-all duration-300"
+            >
+              <ChevronLeft className="h-6 w-6" />
+            </Button>
+            <div className="flex gap-2">
+              {cards.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentCard(index)}
+                  className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                    currentCard === index 
+                      ? 'bg-gradient-to-r from-[#38b6ff] to-[#7843e6] w-6' 
+                      : 'bg-gray-300'
+                  }`}
+                />
+              ))}
+            </div>
+            <Button 
+              onClick={() => handleSwipe(1)} 
+              disabled={currentCard === 2}
+              variant="outline"
+              size="icon"
+              className="w-10 h-10 rounded-full border-2 border-[#38b6ff] text-[#38b6ff] hover:bg-[#38b6ff] hover:text-white transition-all duration-300"
+            >
+              <ChevronRight className="h-6 w-6" />
+            </Button>
           </div>
-          <Button 
-            onClick={() => handleSwipe(1)} 
-            disabled={currentCard === 2}
-            variant="ghost"
-            size="icon"
-            className="text-[#38b6ff]"
-          >
-            <ChevronRight className="h-6 w-6" />
-          </Button>
         </div>
       </footer>
     </div>
