@@ -4,12 +4,11 @@ import PostScenarioSummary from './PostScenarioSummary';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { RecordingControls } from "@/components/chat/RecordingControls";
-import { ChatMessage, BotMessage, UserMessage } from '@/types/chat';
+import { ChatMessage, BotMessage, UserMessage, Script } from '@/types/chat';
 import { assessPronunciation } from '@/services/pronunciationService';
 import { handleRestartScenario, handleNextScenario } from '@/services/scenarioService';
 import ChatHeader from '@/components/chat/ChatHeader';
 import ChatMessages from '@/components/chat/ChatMessages';
-import { Script } from '@/types/chat';
 
 interface ScenarioChatScreenProps {
   scenarioId: number;
@@ -124,7 +123,7 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
         const { error } = await supabase
           .from('chat_sessions')
           .update({
-            messages: messages as unknown as Json[],
+            messages: messages as any[], // Changed from Json[] to any[]
             current_line_index: currentLineIndex,
             updated_at: new Date().toISOString()
           })

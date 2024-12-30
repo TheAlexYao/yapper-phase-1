@@ -38,3 +38,18 @@ export interface UserMessage extends ChatMessage {
   role: 'user';
   feedback: NonNullable<ChatMessage['feedback']>;
 }
+
+export interface ScriptLine {
+  speaker: 'character' | 'user';
+  targetText: string;
+  transliteration: string;
+  translation: string;
+  audioUrl?: string;
+}
+
+export interface Script {
+  script_data: {
+    lines: ScriptLine[];
+    languageCode: string;
+  };
+}
