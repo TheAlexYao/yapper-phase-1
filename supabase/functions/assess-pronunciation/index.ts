@@ -146,7 +146,15 @@ serve(async (req) => {
             CompletenessScore: 0,
             PronScore: 0
           },
-          Words: []
+          Words: referenceText.split(' ').map(word => ({
+            Word: word,
+            Offset: 0,
+            Duration: 0,
+            PronunciationAssessment: {
+              AccuracyScore: 0,
+              ErrorType: "NoAssessment"
+            }
+          }))
         }],
         pronunciationScore: 0
       }

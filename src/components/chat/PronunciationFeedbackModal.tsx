@@ -107,7 +107,7 @@ const PronunciationFeedbackModal: React.FC<PronunciationFeedbackModalProps> = ({
           </div>
 
           {/* Word-by-Word Analysis */}
-          {nBestResult && (
+          {nBestResult && nBestResult.Words && (
             <div>
               <h3 className="font-semibold mb-4">Word-by-Word Analysis</h3>
               <div className="grid gap-3">
