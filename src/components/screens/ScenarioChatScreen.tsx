@@ -309,10 +309,10 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
 
       const messageCount = userMessages.length;
       return {
-        accuracyScore: Math.round(scores.accuracyScore / messageCount) || 0,
-        fluencyScore: Math.round(scores.fluencyScore / messageCount) || 0,
-        completenessScore: Math.round(scores.completenessScore / messageCount) || 0,
-        pronScore: Math.round(scores.pronScore / messageCount) || 0
+        accuracyScore: Math.round(scores.accuracyScore / messageCount),
+        fluencyScore: Math.round(scores.fluencyScore / messageCount),
+        completenessScore: Math.round(scores.completenessScore / messageCount),
+        pronScore: Math.round(scores.pronScore / messageCount)
       };
     };
 
@@ -322,7 +322,10 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
        detailedScores.fluencyScore + 
        detailedScores.completenessScore + 
        detailedScores.pronScore) / 4
-    ) || 0;
+    );
+
+    console.log('Detailed scores:', detailedScores);
+    console.log('Messages being passed:', messages);
 
     return (
       <PostScenarioSummary
@@ -338,14 +341,14 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
         detailedScores={detailedScores}
         wordLevelFeedback={messages
           .filter((msg): msg is UserMessage => 
-            msg.role === 'user' && Boolean(msg.feedback?.NBest?.[0]?.Words)
+            msg.role === 'user'
           )
           .flatMap(msg => 
-            msg.feedback.NBest[0].Words.map(word => ({
+            msg.feedback?.NBest?.[0]?.Words?.map(word => ({
               word: word.Word,
               accuracyScore: word.PronunciationAssessment?.AccuracyScore || 0,
               errorType: word.PronunciationAssessment?.ErrorType || 'none'
-            }))
+            })) || []
           )}
         progressData={mockProgressData}
         onRestart={() => sessionId && handleRestartScenario(sessionId)}
