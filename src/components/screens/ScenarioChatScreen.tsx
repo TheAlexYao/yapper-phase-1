@@ -40,7 +40,6 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
   useEffect(() => {
     const loadOrCreateSession = async () => {
       try {
-        // Get current user
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
           toast({
@@ -123,7 +122,7 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
         const { error } = await supabase
           .from('chat_sessions')
           .update({
-            messages: messages as any[], // Changed from Json[] to any[]
+            messages: messages as any[],
             current_line_index: currentLineIndex,
             updated_at: new Date().toISOString()
           })
@@ -206,8 +205,8 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
               },
               Words: (feedback.words || []).map(word => ({
                 Word: word.Word,
-                Offset: 0, // Default value since it might not exist in the feedback
-                Duration: 0, // Default value since it might not exist in the feedback
+                Offset: word.Offset || 0,
+                Duration: word.Duration || 0,
                 PronunciationAssessment: {
                   AccuracyScore: word.PronunciationAssessment.AccuracyScore,
                   ErrorType: word.PronunciationAssessment.ErrorType
@@ -220,17 +219,14 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
         setMessages(prevMessages => [...prevMessages, newMessage]);
         setCurrentPrompt(null);
 
-        // Handle next line
         const nextIndex = currentLineIndex + 1;
         if (nextIndex < scriptLines.length) {
           const nextLine = scriptLines[nextIndex];
           setCurrentLineIndex(nextIndex);
           
-          // If next line is bot's line, add it immediately
           if (nextLine.role === 'bot') {
             setMessages(prevMessages => [...prevMessages, nextLine]);
             
-            // Then set up the next user prompt if available
             const nextUserIndex = nextIndex + 1;
             if (nextUserIndex < scriptLines.length && scriptLines[nextUserIndex].role === 'user') {
               setCurrentPrompt({
@@ -246,7 +242,6 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
               setCurrentLineIndex(nextUserIndex);
             }
           } else if (nextLine.role === 'user') {
-            // If next line is user's line, set it as the current prompt
             setCurrentPrompt({
               id: Date.now().toString(),
               role: 'bot',
