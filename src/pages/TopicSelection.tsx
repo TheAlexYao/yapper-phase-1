@@ -19,7 +19,12 @@ const TopicSelection = () => {
   const handleTopicSelect = (topicTitle: string) => {
     const [title, lang] = topicTitle.split('?lang=');
     const topicId = TOPIC_ID_MAP[title];
+    
+    // Store both topic and language in React Query cache
     queryClient.setQueryData(['selectedTopic'], { title, id: topicId });
+    queryClient.setQueryData(['selectedLanguage'], lang);
+    queryClient.setQueryData(['userGender'], 'male'); // Set default gender
+    
     navigate('/scenarios');
   };
 

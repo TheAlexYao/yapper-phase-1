@@ -21,8 +21,8 @@ const ScenarioChat = () => {
     name: string 
   } | undefined;
 
-  const selectedLanguage = "en"; // TODO: This should be tracked through the app flow
-  const userGender = "male"; // TODO: This should be configurable by the user
+  const selectedLanguage = queryClient.getQueryData(['selectedLanguage']) as string || "en";
+  const userGender = queryClient.getQueryData(['userGender']) as string || "male";
 
   // Query for the script
   const { data: script, isLoading: isLoadingScript } = useQuery({
