@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 import * as sdk from "npm:microsoft-cognitiveservices-speech-sdk@1.32.0"
 
 const corsHeaders = {
@@ -37,13 +36,12 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const fileName = `${crypto.randomUUID()}.wav`
-    const filePath = `recordings/${fileName}`
-
+    const fileName = `recordings/${crypto.randomUUID()}.wav`
+    
     console.log('Uploading audio file to storage...')
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('audio')
-      .upload(filePath, audioFile, {
+      .upload(fileName, audioFile, {
         contentType: 'audio/wav',
         upsert: false
       })
@@ -56,7 +54,7 @@ serve(async (req) => {
     // Get public URL for the uploaded audio
     const { data: { publicUrl } } = supabase.storage
       .from('audio')
-      .getPublicUrl(filePath)
+      .getPublicUrl(fileName)
 
     console.log('Audio file uploaded successfully:', publicUrl)
 
@@ -85,7 +83,7 @@ serve(async (req) => {
     
     // Configure pronunciation assessment
     const pronunciationAssessmentConfig = new sdk.PronunciationAssessmentConfig(
-      referenceText as string,
+      referenceText,
       sdk.PronunciationAssessmentGradingSystem.HundredMark,
       sdk.PronunciationAssessmentGranularity.Word,
       true
@@ -97,6 +95,7 @@ serve(async (req) => {
     const result = await new Promise((resolve, reject) => {
       recognizer.recognizeOnceAsync(
         result => {
+          console.log('Assessment completed:', result)
           if (result.errorDetails) {
             reject(new Error(result.errorDetails))
             return
@@ -107,41 +106,13 @@ serve(async (req) => {
       )
     })
 
-    console.log('Assessment completed:', result)
-
-    // Process and return results
-    const assessment = {
-      NBest: [{
-        PronunciationAssessment: {
-          AccuracyScore: result.pronunciationAssessment?.accuracyScore ?? 0,
-          FluencyScore: result.pronunciationAssessment?.fluencyScore ?? 0,
-          CompletenessScore: result.pronunciationAssessment?.completenessScore ?? 0,
-          PronScore: result.pronunciationAssessment?.pronScore ?? 0
-        },
-        Words: result.pronunciationAssessment?.detailedWords?.map(word => ({
-          Word: word.word,
-          PronunciationAssessment: {
-            AccuracyScore: word.accuracyScore,
-            ErrorType: word.errorType
-          }
-        })) ?? []
-      }],
-      pronunciationScore: result.pronunciationAssessment?.pronScore ?? 0
-    }
-
+    // Extract assessment data
+    const assessment = extractAssessmentData(result)
     console.log('Returning assessment:', { publicUrl, assessment })
 
     return new Response(
-      JSON.stringify({ 
-        audioUrl: publicUrl, 
-        assessment 
-      }),
-      { 
-        headers: { 
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        } 
-      }
+      JSON.stringify({ audioUrl: publicUrl, assessment }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
 
   } catch (error) {
@@ -153,11 +124,58 @@ serve(async (req) => {
       }),
       { 
         status: 500,
-        headers: { 
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     )
   }
 })
+
+// Helper function to extract assessment data
+function extractAssessmentData(result: any) {
+  try {
+    if (!result.privJson) {
+      throw new Error('No assessment data available')
+    }
+
+    const data = JSON.parse(result.privJson)
+    console.log('Raw assessment data:', data)
+
+    if (!data.NBest || !data.NBest[0]) {
+      throw new Error('Invalid assessment data structure')
+    }
+
+    const nBestResult = data.NBest[0]
+    return {
+      NBest: [{
+        PronunciationAssessment: {
+          AccuracyScore: nBestResult.PronunciationAssessment?.AccuracyScore || 0,
+          FluencyScore: nBestResult.PronunciationAssessment?.FluencyScore || 0,
+          CompletenessScore: nBestResult.PronunciationAssessment?.CompletenessScore || 0,
+          PronScore: nBestResult.PronunciationAssessment?.PronScore || 0
+        },
+        Words: nBestResult.Words?.map((word: any) => ({
+          Word: word.Word,
+          PronunciationAssessment: {
+            AccuracyScore: word.PronunciationAssessment?.AccuracyScore || 0,
+            ErrorType: word.PronunciationAssessment?.ErrorType || "None"
+          }
+        })) || []
+      }],
+      pronunciationScore: nBestResult.PronunciationAssessment?.PronScore || 0
+    }
+  } catch (error) {
+    console.error('Error extracting assessment data:', error)
+    return {
+      NBest: [{
+        PronunciationAssessment: {
+          AccuracyScore: 0,
+          FluencyScore: 0,
+          CompletenessScore: 0,
+          PronScore: 0
+        },
+        Words: []
+      }],
+      pronunciationScore: 0
+    }
+  }
+}
