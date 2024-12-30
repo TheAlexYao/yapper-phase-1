@@ -94,13 +94,26 @@ serve(async (req) => {
           reason: e.reason,
           errorDetails: e.errorDetails
         })
-        reject(new Error(`Recognition canceled: ${e.errorDetails}`))
+        
+        // Handle specific cancellation cases
+        if (e.reason === sdk.CancellationReason.Error) {
+          if (e.errorDetails.includes('InitialSilenceTimeout')) {
+            reject(new Error('No speech detected. Please speak louder or check your microphone.'))
+          } else {
+            reject(new Error(`Recognition error: ${e.errorDetails}`))
+          }
+        }
       }
 
       recognizer.recognizeOnceAsync(
         result => {
           recognizer.close()
-          resolve(result)
+          if (result.reason === sdk.ResultReason.NoMatch) {
+            const noMatchDetail = sdk.NoMatchDetails.fromResult(result);
+            reject(new Error(`No speech could be recognized: ${noMatchDetail.reason}`));
+          } else {
+            resolve(result)
+          }
         },
         error => {
           console.error('Recognition error:', error)
@@ -118,10 +131,17 @@ serve(async (req) => {
       sdk.PropertyId.SpeechServiceResponse_JsonResult
     )
 
+    // Validate the assessment result
+    const assessment = JSON.parse(jsonResult)
+    if (!assessment.NBest?.[0]?.PronunciationAssessment) {
+      console.error('Invalid assessment format:', assessment)
+      throw new Error('Invalid assessment response format')
+    }
+
     console.log('Recognition completed successfully')
 
     return new Response(
-      JSON.stringify({ assessment: JSON.parse(jsonResult) }),
+      JSON.stringify({ assessment }),
       { 
         headers: { 
           ...corsHeaders,
