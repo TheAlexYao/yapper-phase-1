@@ -625,6 +625,7 @@ export type Database = {
       }
       scripts: {
         Row: {
+          audio_generated: boolean | null
           character_id: number
           created_at: string | null
           id: string
@@ -636,6 +637,7 @@ export type Database = {
           user_gender: Database["public"]["Enums"]["user_gender"]
         }
         Insert: {
+          audio_generated?: boolean | null
           character_id: number
           created_at?: string | null
           id?: string
@@ -647,6 +649,7 @@ export type Database = {
           user_gender: Database["public"]["Enums"]["user_gender"]
         }
         Update: {
+          audio_generated?: boolean | null
           character_id?: number
           created_at?: string | null
           id?: string
