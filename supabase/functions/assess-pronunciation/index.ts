@@ -48,18 +48,25 @@ serve(async (req) => {
     
     // Get audio data and write to stream
     const arrayBuffer = await audioFile.arrayBuffer()
-    pushStream.write(new Uint8Array(arrayBuffer))
+    
+    // Convert WAV to raw PCM data by skipping WAV header (44 bytes)
+    const audioData = new Uint8Array(arrayBuffer).slice(44)
+    pushStream.write(audioData)
     pushStream.close()
 
-    console.log('Audio data processed and written to stream')
+    console.log('Audio data processed and written to stream:', {
+      originalSize: arrayBuffer.byteLength,
+      processedSize: audioData.length
+    })
 
     // Create audio config from push stream
     const audioConfig = sdk.AudioConfig.fromStreamInput(pushStream)
 
-    // Create recognizer
+    // Create recognizer with detailed logging
     const recognizer = new sdk.SpeechRecognizer(speechConfig, audioConfig)
+    console.log('Speech recognizer created')
 
-    // Configure pronunciation assessment
+    // Configure pronunciation assessment with detailed settings
     const pronunciationConfig = new sdk.PronunciationAssessmentConfig(
       referenceText,
       sdk.PronunciationAssessmentGradingSystem.HundredMark,
@@ -75,21 +82,29 @@ serve(async (req) => {
 
     pronunciationConfig.applyTo(recognizer)
 
-    // Perform recognition and assessment
+    // Perform recognition and assessment with detailed error handling
     const result = await new Promise((resolve, reject) => {
       recognizer.recognizeOnceAsync(
         result => {
-          console.log('Assessment completed:', JSON.stringify(result, null, 2))
+          console.log('Recognition completed:', {
+            resultText: result.text,
+            hasJson: !!result.privJson,
+            resultDuration: result.duration
+          })
           resolve(result)
         },
         error => {
-          console.error('Error during assessment:', error)
+          console.error('Recognition error:', {
+            name: error.name,
+            message: error.message,
+            stack: error.stack
+          })
           reject(error)
         }
       )
     })
 
-    // Extract assessment data
+    // Extract and validate assessment data
     let assessment = null
     if (result && result.privJson) {
       try {
