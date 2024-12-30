@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
-import { SpeechConfig, AudioConfig, SpeechRecognizer, PronunciationAssessment } from "npm:microsoft-cognitiveservices-speech-sdk@1.32.0"
+import * as sdk from "npm:microsoft-cognitiveservices-speech-sdk@1.32.0"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -61,24 +61,27 @@ serve(async (req) => {
     console.log('Audio file uploaded successfully:', publicUrl)
 
     // Configure Azure Speech Service
-    const speechConfig = SpeechConfig.fromSubscription(
+    const speechConfig = sdk.SpeechConfig.fromSubscription(
       Deno.env.get('AZURE_SPEECH_KEY') ?? '',
       Deno.env.get('AZURE_SPEECH_REGION') ?? ''
     )
     speechConfig.speechRecognitionLanguage = languageCode
 
     // Create audio config from the uploaded file
-    const audioConfig = AudioConfig.fromWavFileInput(await audioFile.arrayBuffer())
+    const audioConfig = sdk.AudioConfig.fromWavFileInput(await audioFile.arrayBuffer())
 
-    // Create recognizer
-    const recognizer = new SpeechRecognizer(speechConfig, audioConfig)
-
+    // Create recognizer and configure pronunciation assessment
+    const recognizer = new sdk.SpeechRecognizer(speechConfig, audioConfig)
+    
     // Configure pronunciation assessment
-    const pronunciationAssessment = new PronunciationAssessment(
-      referenceText,
-      languageCode
+    const pronunciationAssessmentConfig = new sdk.PronunciationAssessmentConfig(
+      referenceText as string,
+      sdk.PronunciationAssessmentGradingSystem.HundredMark,
+      sdk.PronunciationAssessmentGranularity.Word,
+      true
     )
-    pronunciationAssessment.applyTo(recognizer)
+    
+    pronunciationAssessmentConfig.applyTo(recognizer)
 
     // Perform recognition and assessment
     const result = await new Promise((resolve, reject) => {
