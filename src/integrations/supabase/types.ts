@@ -157,6 +157,30 @@ export type Database = {
           },
         ]
       }
+      default_scenarios: {
+        Row: {
+          description: string | null
+          id: number
+          image_url: string | null
+          title: string
+          topic: string
+        }
+        Insert: {
+          description?: string | null
+          id: number
+          image_url?: string | null
+          title: string
+          topic: string
+        }
+        Update: {
+          description?: string | null
+          id?: number
+          image_url?: string | null
+          title?: string
+          topic?: string
+        }
+        Relationships: []
+      }
       guided_conversation_messages: {
         Row: {
           audio_url: string | null

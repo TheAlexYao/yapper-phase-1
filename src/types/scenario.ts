@@ -1,5 +1,5 @@
 export interface Scenario {
-  id: string;
+  id: number;
   title: string;
   description: string | null;
   image_url: string | null;

@@ -35,7 +35,7 @@ const ScenarioSelectionScreen: React.FC<ScenarioSelectionScreenProps> = ({
       if (fetchError) throw fetchError;
 
       if (data) {
-        setScenarios(data);
+        setScenarios(data as Scenario[]);
         setError(null);
       }
     } catch (err) {
@@ -51,9 +51,9 @@ const ScenarioSelectionScreen: React.FC<ScenarioSelectionScreenProps> = ({
   }, [topicTitle]);
 
   const handleScenarioSelect = useCallback((scenarioId: string) => {
-    const selectedScenario = scenarios.find(scenario => scenario.id === scenarioId);
+    const selectedScenario = scenarios.find(scenario => scenario.id.toString() === scenarioId);
     if (selectedScenario) {
-      onScenarioSelect(selectedScenario.title, selectedScenario.id);
+      onScenarioSelect(selectedScenario.title, scenarioId);
     }
   }, [scenarios, onScenarioSelect]);
 
@@ -76,7 +76,7 @@ const ScenarioSelectionScreen: React.FC<ScenarioSelectionScreenProps> = ({
       } else if (event.key === 'Enter') {
         const selectedScenario = scenarios[currentIndex];
         if (selectedScenario) {
-          handleScenarioSelect(selectedScenario.id);
+          handleScenarioSelect(selectedScenario.id.toString());
         }
       } else if (event.key === 'Backspace') {
         onBackToTopics();
