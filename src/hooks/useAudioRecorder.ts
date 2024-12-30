@@ -9,9 +9,9 @@ interface AudioRecorderConfig {
 
 export const useAudioRecorder = (config: AudioRecorderConfig = {}) => {
   const {
-    preRollDelay = 500,   // Increased from default
-    postRollDelay = 300,  // Added post-roll delay
-    chunkInterval = 500   // Reduced chunk interval for more frequent updates
+    preRollDelay = 500,   // Pre-roll delay before starting recording
+    postRollDelay = 300,  // Post-roll delay after stopping recording
+    chunkInterval = 500   // Interval for requesting data chunks
   } = config;
 
   const [isRecording, setIsRecording] = useState(false);
@@ -31,6 +31,7 @@ export const useAudioRecorder = (config: AudioRecorderConfig = {}) => {
   };
 
   const cleanup = () => {
+    // Clear the chunk request interval
     if (chunkIntervalRef.current) {
       clearInterval(chunkIntervalRef.current);
       chunkIntervalRef.current = undefined;
@@ -111,22 +112,29 @@ export const useAudioRecorder = (config: AudioRecorderConfig = {}) => {
       setIsProcessing(true);
       console.log('Processing final recording...');
 
-      // Clear the chunk request interval
+      // Clear the chunk request interval first
       if (chunkIntervalRef.current) {
         clearInterval(chunkIntervalRef.current);
       }
 
+      // Request final data chunk
+      requestData();
+
       // Add post-roll delay before stopping
       setTimeout(() => {
         if (mediaRecorderRef.current) {
+          // Stop recording but don't cleanup yet
           mediaRecorderRef.current.stop();
           setIsRecording(false);
           
-          // Cleanup after a short delay to ensure all data is captured
-          setTimeout(() => {
-            cleanup();
-            setIsProcessing(false);
-          }, 100);
+          // Wait for the final data to be processed before cleanup
+          mediaRecorderRef.current.onstop = () => {
+            // Additional delay to ensure all data is captured
+            setTimeout(() => {
+              cleanup();
+              setIsProcessing(false);
+            }, 500); // Extra safety margin after stop
+          };
         }
       }, postRollDelay);
     }
