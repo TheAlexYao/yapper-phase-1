@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Volume2, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AudioPlayer } from './RecordingControls';
+import PronunciationFeedbackModal from './PronunciationFeedbackModal';
 
 interface ChatBubbleProps {
   message: ChatMessage;
@@ -11,6 +12,7 @@ interface ChatBubbleProps {
 
 const ChatBubble = ({ message }: ChatBubbleProps) => {
   const [showTranslation, setShowTranslation] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
   const isUser = message.role === 'user';
 
   return (
@@ -73,42 +75,33 @@ const ChatBubble = ({ message }: ChatBubbleProps) => {
           </div>
 
           {message.score !== null && (
-            <div className={`mt-2 p-2 rounded-md ${
-              isUser ? 'bg-white/10' : 'bg-gray-50'
-            }`}>
+            <div 
+              className={`mt-2 p-2 rounded-md cursor-pointer transition-colors ${
+                isUser 
+                  ? 'bg-white/10 hover:bg-white/20' 
+                  : 'bg-gray-50 hover:bg-gray-100'
+              }`}
+              onClick={() => setShowFeedback(true)}
+            >
               <p className={`text-sm font-medium ${
                 isUser ? 'text-white' : 'text-gray-700'
               }`}>
                 Score: {message.score}
               </p>
-              {message.feedback && (
-                <div className="mt-1 space-y-1">
-                  <p className={`text-xs ${
-                    isUser ? 'text-white/80' : 'text-gray-600'
-                  }`}>
-                    {message.feedback.suggestions}
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {message.feedback.NBest?.[0].Words.map((word, index) => (
-                      <span
-                        key={index}
-                        className={`text-xs px-2 py-1 rounded-full ${
-                          word.PronunciationAssessment.ErrorType === 'None'
-                            ? isUser 
-                              ? 'bg-white/20 text-white' 
-                              : 'bg-green-100 text-green-800'
-                            : isUser
-                              ? 'bg-red-400/20 text-white'
-                              : 'bg-red-100 text-red-800'
-                        }`}
-                      >
-                        {word.Word}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
+              <p className={`text-xs ${
+                isUser ? 'text-white/80' : 'text-gray-500'
+              }`}>
+                Click for detailed feedback
+              </p>
             </div>
+          )}
+
+          {message.feedback && (
+            <PronunciationFeedbackModal
+              isOpen={showFeedback}
+              onClose={() => setShowFeedback(false)}
+              feedback={message.feedback}
+            />
           )}
         </div>
       </div>
