@@ -3,7 +3,7 @@ import { ChatMessage } from '@/types/chat';
 import { useState } from 'react';
 import { Volume2, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { AudioPlayer } from './RecordingControls';
+import { AudioPlayer } from '@/components/audio/AudioPlayer';
 import PronunciationFeedbackModal from './PronunciationFeedbackModal';
 
 interface ChatBubbleProps {
