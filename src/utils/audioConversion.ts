@@ -1,6 +1,6 @@
 export const convertToWav = async (audioBuffer: AudioBuffer): Promise<Blob> => {
   const numOfChannels = audioBuffer.numberOfChannels;
-  const sampleRate = 16000; // Azure expects 16kHz
+  const sampleRate = audioBuffer.sampleRate; // Use original sample rate
   const silenceDuration = 0.1; // Reduced from 0.3 to 0.1 seconds (100ms)
   const silenceSamples = Math.floor(sampleRate * silenceDuration);
   
@@ -66,4 +66,26 @@ export const convertToWav = async (audioBuffer: AudioBuffer): Promise<Blob> => {
   });
 
   return new Blob([buffer], { type: 'audio/wav' });
+};
+
+// New function to create a 16kHz version for Azure
+export const createAzureCompatibleWav = async (audioBuffer: AudioBuffer): Promise<Blob> => {
+  // Create an offline audio context at 16kHz
+  const offlineCtx = new OfflineAudioContext(
+    audioBuffer.numberOfChannels,
+    audioBuffer.duration * 16000,
+    16000
+  );
+
+  // Create a buffer source
+  const source = offlineCtx.createBufferSource();
+  source.buffer = audioBuffer;
+  source.connect(offlineCtx.destination);
+  source.start();
+
+  // Render the audio
+  const renderedBuffer = await offlineCtx.startRendering();
+  
+  // Convert the 16kHz buffer to WAV
+  return convertToWav(renderedBuffer);
 };

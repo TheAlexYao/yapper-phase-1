@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
-import { convertToWav } from '@/utils/audioConversion';
+import { convertToWav, createAzureCompatibleWav } from '@/utils/audioConversion';
 import { AudioPlayer } from '@/components/audio/AudioPlayer';
 
 interface RecordingControlsProps {
@@ -57,15 +57,16 @@ export const RecordingControls: React.FC<RecordingControlsProps> = ({
         sampleRate: audioBuffer.sampleRate
       });
       
-      const wavBlob = await convertToWav(audioBuffer);
-      console.log('WAV conversion complete. Size:', wavBlob.size, 'bytes');
+      // Create Azure-compatible WAV (16kHz) for assessment
+      const azureWavBlob = await createAzureCompatibleWav(audioBuffer);
+      console.log('Azure WAV conversion complete. Size:', azureWavBlob.size, 'bytes');
       
-      if (wavBlob.size > 1024 * 1024 * 10) {
+      if (azureWavBlob.size > 1024 * 1024 * 10) {
         throw new Error('Audio file too large. Please record a shorter message.');
       }
 
       const formData = new FormData();
-      formData.append('audio', wavBlob, 'recording.wav');
+      formData.append('audio', azureWavBlob, 'recording.wav');
       formData.append('text', currentPrompt.text);
       formData.append('languageCode', 'es-ES');
 
@@ -83,9 +84,10 @@ export const RecordingControls: React.FC<RecordingControlsProps> = ({
         throw new Error('Invalid response from pronunciation assessment');
       }
 
-      // Create audio URL from the blob and pass it to the parent
-      const newAudioUrl = URL.createObjectURL(audioBlob);
-      onRecordingComplete(newAudioUrl, wavBlob);
+      // Create high-quality WAV for playback
+      const highQualityWav = await convertToWav(audioBuffer);
+      const newAudioUrl = URL.createObjectURL(highQualityWav);
+      onRecordingComplete(newAudioUrl, azureWavBlob);
       setAudioUrl(null);
       
     } catch (error) {
