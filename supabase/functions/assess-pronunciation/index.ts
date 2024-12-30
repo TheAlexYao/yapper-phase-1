@@ -42,22 +42,32 @@ serve(async (req) => {
     // Configure Azure Speech Services
     const speechConfig = sdk.SpeechConfig.fromSubscription(speechKey, speechRegion)
     speechConfig.speechRecognitionLanguage = languageCode
+    
+    // Set recognition timeout to 15 seconds
+    speechConfig.setProperty(sdk.PropertyId.Speech_SegmentationSilenceTimeoutMs, "15000")
 
     // Create a push stream for the audio data
-    const pushStream = sdk.AudioInputStream.createPushStream()
+    const pushStream = sdk.AudioInputStream.createPushStream(
+      sdk.AudioStreamFormat.getWaveFormatPCM(16000, 16, 1)
+    )
     
     // Get audio data and write to stream
     const arrayBuffer = await audioFile.arrayBuffer()
+    console.log('Audio buffer size:', arrayBuffer.byteLength)
     
     // Convert WAV to raw PCM data by skipping WAV header (44 bytes)
     const audioData = new Uint8Array(arrayBuffer).slice(44)
-    pushStream.write(audioData)
+    console.log('PCM data size:', audioData.length)
+    
+    // Write audio data in chunks to prevent memory issues
+    const chunkSize = 32000 // 32KB chunks
+    for (let i = 0; i < audioData.length; i += chunkSize) {
+      const chunk = audioData.slice(i, i + chunkSize)
+      pushStream.write(chunk)
+    }
     pushStream.close()
 
-    console.log('Audio data processed and written to stream:', {
-      originalSize: arrayBuffer.byteLength,
-      processedSize: audioData.length
-    })
+    console.log('Audio data processed and written to stream')
 
     // Create audio config from push stream
     const audioConfig = sdk.AudioConfig.fromStreamInput(pushStream)
@@ -112,26 +122,25 @@ serve(async (req) => {
         console.log('Raw assessment data:', JSON.stringify(jsonData, null, 2))
         
         if (jsonData.NBest && jsonData.NBest[0]) {
-          const nBestResult = jsonData.NBest[0]
           assessment = {
             NBest: [{
               PronunciationAssessment: {
-                AccuracyScore: nBestResult.PronunciationAssessment.AccuracyScore,
-                FluencyScore: nBestResult.PronunciationAssessment.FluencyScore,
-                CompletenessScore: nBestResult.PronunciationAssessment.CompletenessScore,
-                PronScore: nBestResult.PronunciationAssessment.PronScore
+                AccuracyScore: jsonData.NBest[0].PronunciationAssessment?.AccuracyScore || 0,
+                FluencyScore: jsonData.NBest[0].PronunciationAssessment?.FluencyScore || 0,
+                CompletenessScore: jsonData.NBest[0].PronunciationAssessment?.CompletenessScore || 0,
+                PronScore: jsonData.NBest[0].PronunciationAssessment?.PronScore || 0
               },
-              Words: nBestResult.Words.map((word: any) => ({
+              Words: jsonData.NBest[0].Words?.map((word: any) => ({
                 Word: word.Word,
                 Offset: word.Offset || 0,
                 Duration: word.Duration || 0,
                 PronunciationAssessment: {
                   AccuracyScore: word.PronunciationAssessment?.AccuracyScore || 0,
-                  ErrorType: word.PronunciationAssessment?.ErrorType || "None"
+                  ErrorType: word.PronunciationAssessment?.ErrorType || "NoAssessment"
                 }
-              }))
+              })) || []
             }],
-            pronunciationScore: nBestResult.PronunciationAssessment.PronScore
+            pronunciationScore: jsonData.NBest[0].PronunciationAssessment?.PronScore || 0
           }
         }
       } catch (error) {
