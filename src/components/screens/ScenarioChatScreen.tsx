@@ -80,7 +80,8 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
         if (existingSessions && existingSessions.length > 0) {
           const session = existingSessions[0];
           setSessionId(session.id);
-          setMessages(session.messages as ChatMessage[] || []);
+          // Type assertion to ensure proper conversion
+          setMessages((session.messages as unknown as ChatMessage[]) || []);
           setCurrentLineIndex(session.current_line_index || 0);
           
           if (scriptLines.length > (session.current_line_index || 0)) {
@@ -101,14 +102,12 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
         } else {
           const { data: newSession, error: createError } = await supabase
             .from('chat_sessions')
-            .insert([
-              {
-                scenario_id: scenarioId,
-                character_id: characterId,
-                messages: [],
-                current_line_index: 0
-              }
-            ])
+            .insert([{
+              scenario_id: scenarioId,
+              character_id: characterId,
+              messages: [],
+              current_line_index: 0
+            }])
             .select()
             .single();
 
@@ -312,13 +311,7 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
             errorType: word.PronunciationAssessment.ErrorType
           })))
         }
-        progressData={[
-          { date: '2023-05-01', score: 75 },
-          { date: '2023-05-02', score: 80 },
-          { date: '2023-05-03', score: 85 },
-          { date: '2023-05-04', score: calculateAverageScore() }
-        ]}
-        onRestart={handleRestartScenario}
+        onRestart={() => sessionId && handleRestartScenario(sessionId)}
         onExit={onBackToCharacters}
         onNextScenario={handleNextScenario}
       />

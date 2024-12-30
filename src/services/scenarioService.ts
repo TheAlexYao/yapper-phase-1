@@ -1,3 +1,5 @@
+import { supabase } from "@/integrations/supabase/client";
+
 export const handleRestartScenario = async (sessionId: string) => {
   // Delete the current session
   const { error } = await supabase
