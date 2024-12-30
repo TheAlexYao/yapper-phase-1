@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import ScenarioChatScreen from "@/components/screens/ScenarioChatScreen";
+import { supabase } from "@/integrations/supabase/client";
 
 const ScenarioChat = () => {
   const navigate = useNavigate();
@@ -17,6 +18,35 @@ const ScenarioChat = () => {
     name: string 
   } | undefined;
 
+  const selectedLanguage = "en"; // TODO: This should be tracked through the app flow
+  const userGender = "male"; // TODO: This should be configurable by the user
+
+  // Query for the script
+  const { data: script, isLoading: isLoadingScript } = useQuery({
+    queryKey: ['script', selectedScenario?.id, selectedCharacter?.id, selectedLanguage],
+    queryFn: async () => {
+      if (!selectedScenario || !selectedCharacter) return null;
+
+      const { data, error } = await supabase
+        .from('scripts')
+        .select('*')
+        .eq('language_code', selectedLanguage)
+        .eq('scenario_id', selectedScenario.id)
+        .eq('topic_id', selectedScenario.topicId)
+        .eq('character_id', selectedCharacter.id)
+        .eq('user_gender', userGender)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching script:', error);
+        throw error;
+      }
+
+      return data;
+    },
+    enabled: !!selectedScenario && !!selectedCharacter,
+  });
+
   const handleBackToCharacters = () => {
     queryClient.removeQueries({ queryKey: ['selectedCharacter'] });
     navigate('/characters');
@@ -27,6 +57,10 @@ const ScenarioChat = () => {
     return null;
   }
 
+  if (isLoadingScript) {
+    return <div>Loading script...</div>; // TODO: Add proper loading UI
+  }
+
   return (
     <ScenarioChatScreen
       scenarioId={selectedScenario.id}
@@ -34,8 +68,9 @@ const ScenarioChat = () => {
       topicId={selectedScenario.topicId}
       characterId={selectedCharacter.id}
       characterName={selectedCharacter.name}
-      selectedLanguage="en"
+      selectedLanguage={selectedLanguage}
       onBackToCharacters={handleBackToCharacters}
+      script={script}
     />
   );
 };
