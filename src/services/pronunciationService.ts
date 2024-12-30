@@ -45,7 +45,7 @@ export const assessPronunciation = async (audioBlob: Blob, text: string): Promis
     }
 
     const nBestResult = data.assessment.NBest[0];
-    const pronunciationScore = data.assessment.pronunciationScore * 100; // Convert to percentage
+    const pronunciationScore = data.assessment.pronunciationScore;
 
     // Create word scores object
     const wordScores: { [word: string]: number } = {};
@@ -53,12 +53,15 @@ export const assessPronunciation = async (audioBlob: Blob, text: string): Promis
       wordScores[word.Word] = word.PronunciationAssessment.AccuracyScore;
     });
 
+    // Generate suggestions based on word scores
+    const suggestions = generateSuggestions(nBestResult.Words);
+
     return {
       score: pronunciationScore,
       feedback: {
         phonemeAnalysis: "Detailed phoneme analysis will be provided soon",
         wordScores,
-        suggestions: "Practice speaking more slowly and clearly",
+        suggestions,
         accuracyScore: nBestResult.PronunciationAssessment.AccuracyScore,
         fluencyScore: nBestResult.PronunciationAssessment.FluencyScore,
         completenessScore: nBestResult.PronunciationAssessment.CompletenessScore,
@@ -70,3 +73,35 @@ export const assessPronunciation = async (audioBlob: Blob, text: string): Promis
     throw error;
   }
 };
+
+function generateSuggestions(words: Array<{
+  Word: string;
+  PronunciationAssessment: {
+    AccuracyScore: number;
+    ErrorType: string;
+  };
+}>): string {
+  const problematicWords = words.filter(
+    word => word.PronunciationAssessment.ErrorType !== 'None'
+  );
+
+  if (problematicWords.length === 0) {
+    return "Great pronunciation! Keep practicing to maintain your skills.";
+  }
+
+  const suggestions = problematicWords.map(word => {
+    const { Word, PronunciationAssessment } = word;
+    const { ErrorType, AccuracyScore } = PronunciationAssessment;
+
+    switch (ErrorType.toLowerCase()) {
+      case 'omission':
+        return `Make sure to pronounce "${Word}" - it was missed in your recording.`;
+      case 'mispronunciation':
+        return `Focus on improving the pronunciation of "${Word}" (${AccuracyScore}% accuracy).`;
+      default:
+        return `Practice the word "${Word}" more.`;
+    }
+  });
+
+  return suggestions.join(' ');
+}
