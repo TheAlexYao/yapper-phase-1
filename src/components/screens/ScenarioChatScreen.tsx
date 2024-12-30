@@ -354,12 +354,12 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
           // Restore session state
           const session = existingSessions[0];
           setSessionId(session.id);
-          setMessages(session.messages);
-          setCurrentLineIndex(session.current_line_index);
+          setMessages(session.messages as ChatMessage[] || []);
+          setCurrentLineIndex(session.current_line_index || 0);
           
           // Find the next user prompt if any
-          if (scriptLines.length > session.current_line_index) {
-            const nextUserPrompt = scriptLines.slice(session.current_line_index).find(line => line.role === 'user');
+          if (scriptLines.length > (session.current_line_index || 0)) {
+            const nextUserPrompt = scriptLines.slice(session.current_line_index || 0).find(line => line.role === 'user');
             if (nextUserPrompt) {
               setCurrentPrompt({
                 id: Date.now().toString(),
@@ -389,7 +389,9 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
             .single();
 
           if (createError) throw createError;
-          setSessionId(newSession.id);
+          if (newSession) {
+            setSessionId(newSession.id);
+          }
         }
       } catch (error) {
         console.error('Error managing session:', error);
@@ -629,7 +631,9 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
         .single();
 
       if (createError) throw createError;
-      setSessionId(newSession.id);
+      if (newSession) {
+        setSessionId(newSession.id);
+      }
     } catch (error) {
       console.error('Error restarting scenario:', error);
       toast({
