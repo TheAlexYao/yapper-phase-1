@@ -6,7 +6,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
 
 interface PronunciationFeedbackModalProps {
   isOpen: boolean;
@@ -25,6 +24,8 @@ interface PronunciationFeedbackModalProps {
       };
       Words: Array<{
         Word: string;
+        Offset: number;
+        Duration: number;
         PronunciationAssessment: {
           AccuracyScore: number;
           ErrorType: string;
@@ -43,6 +44,8 @@ const ErrorTypeBadge = ({ errorType }: { errorType: string }) => {
         return 'bg-red-100 text-red-800';
       case 'omission':
         return 'bg-yellow-100 text-yellow-800';
+      case 'noassessment':
+        return 'bg-gray-100 text-gray-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -107,7 +110,7 @@ const PronunciationFeedbackModal: React.FC<PronunciationFeedbackModalProps> = ({
           </div>
 
           {/* Word-by-Word Analysis */}
-          {nBestResult && nBestResult.Words && (
+          {nBestResult && nBestResult.Words && nBestResult.Words.length > 0 && (
             <div>
               <h3 className="font-semibold mb-4">Word-by-Word Analysis</h3>
               <div className="grid gap-3">
@@ -122,9 +125,14 @@ const PronunciationFeedbackModal: React.FC<PronunciationFeedbackModalProps> = ({
                         : 'bg-red-50'
                     }`}
                   >
-                    <div className="flex flex-col">
+                    <div className="flex flex-col gap-1">
                       <span className="font-medium">{word.Word}</span>
-                      <ErrorTypeBadge errorType={word.PronunciationAssessment.ErrorType} />
+                      <div className="flex items-center gap-2">
+                        <ErrorTypeBadge errorType={word.PronunciationAssessment.ErrorType} />
+                        <span className="text-xs text-gray-500">
+                          Duration: {(word.Duration / 1000000).toFixed(2)}s
+                        </span>
+                      </div>
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="flex flex-col items-end">

@@ -121,8 +121,8 @@ serve(async (req) => {
               },
               Words: nBestResult.Words.map((word: any) => ({
                 Word: word.Word,
-                Offset: word.Offset,
-                Duration: word.Duration,
+                Offset: word.Offset || 0,
+                Duration: word.Duration || 0,
                 PronunciationAssessment: {
                   AccuracyScore: word.PronunciationAssessment?.AccuracyScore || 0,
                   ErrorType: word.PronunciationAssessment?.ErrorType || "None"
