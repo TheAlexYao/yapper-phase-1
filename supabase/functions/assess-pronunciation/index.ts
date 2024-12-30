@@ -4,33 +4,21 @@ import * as sdk from "npm:microsoft-cognitiveservices-speech-sdk@1.32.0"
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
 serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
 
   try {
-    // Validate request method
     if (req.method !== 'POST') {
       throw new Error('Method not allowed')
     }
 
     console.log('Starting pronunciation assessment...')
 
-    // Get form data with explicit error handling
-    let formData: FormData
-    try {
-      formData = await req.formData()
-    } catch (error) {
-      console.error('Error parsing form data:', error)
-      throw new Error('Invalid form data')
-    }
-
-    // Extract and validate required fields
+    const formData = await req.formData()
     const audioFile = formData.get('audio') as File
     const referenceText = formData.get('text') as string
     const languageCode = formData.get('languageCode') as string
@@ -39,14 +27,13 @@ serve(async (req) => {
       throw new Error('Missing required fields')
     }
 
-    console.log('Processing request with:', {
+    console.log('Processing request:', {
       audioType: audioFile.type,
       audioSize: audioFile.size,
       referenceText,
       languageCode
     })
 
-    // Get Azure credentials
     const speechKey = Deno.env.get('AZURE_SPEECH_KEY')
     const speechRegion = Deno.env.get('AZURE_SPEECH_REGION')
 
@@ -66,17 +53,11 @@ serve(async (req) => {
       true
     )
 
-    console.log('Pronunciation assessment configured with:', {
-      referenceText,
-      gradingSystem: "HundredMark",
-      granularity: "Word"
-    })
-
     // Create audio config from the WAV file
     const audioData = await audioFile.arrayBuffer()
     const pushStream = sdk.AudioInputStream.createPushStream()
     
-    // Write audio data in chunks to prevent memory issues
+    // Write audio data in chunks
     const chunkSize = 32 * 1024 // 32KB chunks
     const audioArray = new Uint8Array(audioData)
     
@@ -93,18 +74,27 @@ serve(async (req) => {
     pronunciationConfig.applyTo(recognizer)
 
     // Perform recognition with detailed logging
-    const result = await new Promise((resolve) => {
+    const result = await new Promise((resolve, reject) => {
+      recognizer.recognizing = (s, e) => {
+        console.log('Recognition in progress:', e.result.text)
+      }
+
       recognizer.recognized = (s, e) => {
-        console.log('Recognition completed:', {
-          resultText: e.result.text,
-          hasJson: !!e.result.properties.getProperty(sdk.PropertyId.SpeechServiceResponse_JsonResult),
-          resultDuration: e.result.duration
+        if (e.result.reason === sdk.ResultReason.RecognizedSpeech) {
+          console.log('Recognition successful:', {
+            text: e.result.text,
+            properties: e.result.properties.getPropertyList()
+          })
+          resolve(e.result)
+        }
+      }
+
+      recognizer.canceled = (s, e) => {
+        console.error('Recognition canceled:', {
+          reason: e.reason,
+          errorDetails: e.errorDetails
         })
-        
-        const rawJson = e.result.properties.getProperty(sdk.PropertyId.SpeechServiceResponse_JsonResult)
-        console.log('Raw assessment data:', rawJson)
-        
-        resolve(e.result)
+        reject(new Error(`Recognition canceled: ${e.errorDetails}`))
       }
 
       recognizer.recognizeOnceAsync(
@@ -115,58 +105,29 @@ serve(async (req) => {
         error => {
           console.error('Recognition error:', error)
           recognizer.close()
-          resolve(null)
+          reject(error)
         }
       )
     })
 
-    // Process results
     if (!result) {
       throw new Error('Recognition failed')
     }
 
-    const assessment = {
-      NBest: [{
-        PronunciationAssessment: {
-          AccuracyScore: 0,
-          FluencyScore: 0,
-          CompletenessScore: 0,
-          PronScore: 0
-        },
-        Words: referenceText.split(' ').map(word => ({
-          Word: word,
-          Offset: 0,
-          Duration: 0,
-          PronunciationAssessment: {
-            AccuracyScore: 0,
-            ErrorType: "NoAssessment"
-          }
-        }))
-      }],
-      pronunciationScore: 0
-    }
+    const jsonResult = result.properties.getProperty(
+      sdk.PropertyId.SpeechServiceResponse_JsonResult
+    )
 
-    if (result.properties) {
-      const jsonResult = result.properties.getProperty(sdk.PropertyId.SpeechServiceResponse_JsonResult)
-      if (jsonResult) {
-        try {
-          const parsedResult = JSON.parse(jsonResult)
-          console.log('Returning assessment:', { assessment: parsedResult })
-          return new Response(
-            JSON.stringify({ assessment: parsedResult }),
-            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          )
-        } catch (error) {
-          console.error('Error parsing JSON result:', error)
-        }
-      }
-    }
+    console.log('Recognition completed successfully')
 
-    // Return default assessment if no valid results
-    console.log('Returning assessment:', { assessment })
     return new Response(
-      JSON.stringify({ assessment }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ assessment: JSON.parse(jsonResult) }),
+      { 
+        headers: { 
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        } 
+      }
     )
 
   } catch (error) {
@@ -178,7 +139,10 @@ serve(async (req) => {
       }),
       { 
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { 
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        }
       }
     )
   }
