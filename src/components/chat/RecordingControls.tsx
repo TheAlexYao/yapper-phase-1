@@ -89,13 +89,15 @@ const RecordingControls: React.FC<RecordingControlsProps> = ({ onRecordingComple
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: 'audio/webm;codecs=opus'
+      });
       mediaRecorderRef.current = mediaRecorder;
       chunksRef.current = [];
 
       mediaRecorder.ondataavailable = (e) => chunksRef.current.push(e.data);
       mediaRecorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: 'audio/wav' });
+        const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
         const url = URL.createObjectURL(blob);
         setAudioUrl(url);
         setAudioBlob(blob);
@@ -125,8 +127,20 @@ const RecordingControls: React.FC<RecordingControlsProps> = ({ onRecordingComple
     
     setIsSubmitting(true);
     try {
+      // Convert audio to WAV format with proper settings
+      const audioContext = new AudioContext();
+      const audioData = await audioBlob.arrayBuffer();
+      const audioBuffer = await audioContext.decodeAudioData(audioData);
+      
+      // Create WAV file with proper format
+      const wavBlob = await convertToWav(audioBuffer);
+      
+      if (wavBlob.size > 1024 * 1024 * 10) { // 10MB limit
+        throw new Error('Audio file too large. Please record a shorter message.');
+      }
+
       const formData = new FormData();
-      formData.append('audio', audioBlob);
+      formData.append('audio', wavBlob, 'recording.wav');
       formData.append('text', currentPrompt.text);
       formData.append('languageCode', 'es-ES'); // TODO: Make this dynamic based on selected language
 
@@ -135,7 +149,8 @@ const RecordingControls: React.FC<RecordingControlsProps> = ({ onRecordingComple
       });
 
       if (error) {
-        throw error;
+        console.error('Supabase function error:', error);
+        throw new Error('Failed to assess pronunciation. Please try again.');
       }
 
       const { audioUrl: uploadedAudioUrl, assessment } = data;
@@ -151,11 +166,56 @@ const RecordingControls: React.FC<RecordingControlsProps> = ({ onRecordingComple
       console.error('Error submitting recording:', error);
       toast({
         title: "Error",
-        description: "Failed to assess pronunciation. Please try again.",
+        description: error.message || "Failed to assess pronunciation. Please try again.",
         variant: "destructive"
       });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // Helper function to convert AudioBuffer to WAV format
+  const convertToWav = async (audioBuffer: AudioBuffer): Promise<Blob> => {
+    const numOfChannels = audioBuffer.numberOfChannels;
+    const length = audioBuffer.length * numOfChannels * 2;
+    const buffer = new ArrayBuffer(44 + length);
+    const view = new DataView(buffer);
+    
+    // Write WAV header
+    writeUTFBytes(view, 0, 'RIFF');
+    view.setUint32(4, 36 + length, true);
+    writeUTFBytes(view, 8, 'WAVE');
+    writeUTFBytes(view, 12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, numOfChannels, true);
+    view.setUint32(24, audioBuffer.sampleRate, true);
+    view.setUint32(28, audioBuffer.sampleRate * numOfChannels * 2, true);
+    view.setUint16(32, numOfChannels * 2, true);
+    view.setUint16(34, 16, true);
+    writeUTFBytes(view, 36, 'data');
+    view.setUint32(40, length, true);
+
+    // Write audio data
+    const data = new Float32Array(audioBuffer.length * numOfChannels);
+    let offset = 44;
+    
+    for (let i = 0; i < audioBuffer.numberOfChannels; i++) {
+      data.set(audioBuffer.getChannelData(i), i * audioBuffer.length);
+    }
+
+    for (let i = 0; i < data.length; i++) {
+      const sample = Math.max(-1, Math.min(1, data[i]));
+      view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+      offset += 2;
+    }
+
+    return new Blob([buffer], { type: 'audio/wav' });
+  };
+
+  const writeUTFBytes = (view: DataView, offset: number, string: string) => {
+    for (let i = 0; i < string.length; i++) {
+      view.setUint8(offset + i, string.charCodeAt(i));
     }
   };
 
