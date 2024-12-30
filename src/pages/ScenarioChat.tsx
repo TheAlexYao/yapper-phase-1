@@ -26,9 +26,17 @@ const ScenarioChat = () => {
 
   // Query for the script
   const { data: script, isLoading: isLoadingScript } = useQuery({
-    queryKey: ['script', selectedScenario?.id, selectedCharacter?.id, selectedLanguage],
+    queryKey: ['script', selectedScenario?.id, selectedCharacter?.id, selectedLanguage, userGender],
     queryFn: async () => {
       if (!selectedScenario || !selectedCharacter) return null;
+
+      console.log('Fetching script with params:', {
+        language_code: selectedLanguage,
+        scenario_id: selectedScenario.id,
+        topic_id: selectedScenario.topicId,
+        character_id: selectedCharacter.id,
+        user_gender: userGender
+      });
 
       const { data, error } = await supabase
         .from('scripts')
@@ -45,7 +53,10 @@ const ScenarioChat = () => {
         throw error;
       }
 
-      if (!data) return null;
+      if (!data) {
+        console.log('No script found for the given parameters');
+        return null;
+      }
 
       // Transform the data to match the Script interface
       const transformedScript = {
@@ -55,6 +66,7 @@ const ScenarioChat = () => {
           : data.script_data
       };
 
+      console.log('Found script:', transformedScript);
       return transformedScript;
     },
     enabled: !!selectedScenario && !!selectedCharacter,
