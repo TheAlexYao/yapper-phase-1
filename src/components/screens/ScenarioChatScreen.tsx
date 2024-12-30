@@ -6,47 +6,11 @@ import PostScenarioSummary from './PostScenarioSummary';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { RecordingControls } from "@/components/chat/RecordingControls";
-
-interface ChatMessage {
-  id: string;
-  role: 'bot' | 'user';
-  text: string;
-  transliteration: string | null;
-  translation: string;
-  tts_audio_url: string;
-  user_audio_url: string | null;
-  score: number | null;
-  feedback?: {
-    overall_score: number;
-    phoneme_analysis: string;
-    word_scores: { [word: string]: number };
-    suggestions: string;
-    NBest?: Array<{
-      PronunciationAssessment: {
-        AccuracyScore: number;
-        FluencyScore: number;
-        CompletenessScore: number;
-        PronScore: number;
-      };
-      Words: Array<{
-        Word: string;
-        PronunciationAssessment: {
-          AccuracyScore: number;
-          ErrorType: string;
-        };
-      }>;
-    }>;
-  };
-}
-
-interface BotMessage extends ChatMessage {
-  role: 'bot';
-}
-
-interface UserMessage extends ChatMessage {
-  role: 'user';
-  feedback: NonNullable<ChatMessage['feedback']>;
-}
+import { ChatMessage, BotMessage, UserMessage } from '@/types/chat';
+import ChatBubble from '@/components/chat/ChatBubble';
+import { assessPronunciation } from '@/services/pronunciationService';
+import { handleRestartScenario, handleNextScenario } from '@/services/scenarioService';
+import { Json } from '@/integrations/supabase/types';
 
 interface Script {
   id: string;
@@ -88,7 +52,8 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
   scenarioTitle,
   characterName,
   onBackToCharacters,
-  script
+  script,
+  characterId
 }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [currentPrompt, setCurrentPrompt] = useState<BotMessage | null>(null);
@@ -139,6 +104,7 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
             .insert([
               {
                 scenario_id: scenarioId,
+                character_id: characterId,
                 messages: [],
                 current_line_index: 0
               }
@@ -164,7 +130,7 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
     if (script) {
       loadOrCreateSession();
     }
-  }, [script, scenarioId]);
+  }, [script, scenarioId, characterId]);
 
   // Update session when messages or currentLineIndex changes
   useEffect(() => {
