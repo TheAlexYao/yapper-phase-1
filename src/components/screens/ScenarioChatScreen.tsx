@@ -68,10 +68,22 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
   useEffect(() => {
     const loadOrCreateSession = async () => {
       try {
+        // Get current user
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          toast({
+            title: "Error",
+            description: "You must be logged in to use this feature",
+            variant: "destructive"
+          });
+          return;
+        }
+
         const { data: existingSessions, error: fetchError } = await supabase
           .from('chat_sessions')
           .select('*')
           .eq('scenario_id', scenarioId)
+          .eq('user_id', user.id)
           .order('created_at', { ascending: false })
           .limit(1);
 
@@ -80,7 +92,6 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
         if (existingSessions && existingSessions.length > 0) {
           const session = existingSessions[0];
           setSessionId(session.id);
-          // Type assertion to ensure proper conversion
           setMessages((session.messages as unknown as ChatMessage[]) || []);
           setCurrentLineIndex(session.current_line_index || 0);
           
@@ -105,6 +116,7 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
             .insert([{
               scenario_id: scenarioId,
               character_id: characterId,
+              user_id: user.id,
               messages: [],
               current_line_index: 0
             }])
@@ -286,6 +298,14 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
   );
 
   if (isConversationComplete) {
+    // Mock progress data - in a real app, this would come from your backend
+    const mockProgressData = [
+      { date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], score: 75 },
+      { date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], score: 80 },
+      { date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], score: 85 },
+      { date: new Date().toISOString().split('T')[0], score: calculateAverageScore() }
+    ];
+
     return (
       <PostScenarioSummary
         scenarioTitle={scenarioTitle}
@@ -309,8 +329,8 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
             word: word.Word,
             accuracyScore: word.PronunciationAssessment.AccuracyScore,
             errorType: word.PronunciationAssessment.ErrorType
-          })))
-        }
+          })))}
+        progressData={mockProgressData}
         onRestart={() => sessionId && handleRestartScenario(sessionId)}
         onExit={onBackToCharacters}
         onNextScenario={handleNextScenario}
