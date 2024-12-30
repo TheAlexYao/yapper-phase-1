@@ -158,7 +158,7 @@ const PostScenarioSummary: React.FC<PostScenarioSummaryProps> = ({
                 <div className="flex flex-wrap gap-2 items-center">
                   {line.audioUrl && <AudioPlayer audioUrl={line.audioUrl} label="Your Recording" />}
                   {line.ttsUrl && <AudioPlayer audioUrl={line.ttsUrl} label="Reference Audio" />}
-                  {typeof line.score === 'number' && (
+                  {line.score !== undefined && line.score !== null && (
                     <span className="text-sm bg-gradient-to-r from-[#38b6ff] to-[#7843e6] text-white px-3 py-1 rounded-full">
                       Score: {Math.round(line.score)}%
                     </span>
@@ -317,7 +317,7 @@ const PostScenarioSummary: React.FC<PostScenarioSummaryProps> = ({
               </div>
             </div>
             <div className="bg-white/20 px-4 py-2 rounded-full">
-              <span className="font-semibold">Score: {overallScore || 0}%</span>
+              <span className="font-semibold">Score: {Math.round(overallScore)}%</span>
             </div>
           </div>
         </div>
