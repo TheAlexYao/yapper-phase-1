@@ -1,40 +1,15 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Button } from "@/components/ui/button";
-import { ArrowLeft } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import PostScenarioSummary from './PostScenarioSummary';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { RecordingControls } from "@/components/chat/RecordingControls";
 import { ChatMessage, BotMessage, UserMessage } from '@/types/chat';
-import ChatBubble from '@/components/chat/ChatBubble';
 import { assessPronunciation } from '@/services/pronunciationService';
 import { handleRestartScenario, handleNextScenario } from '@/services/scenarioService';
-import { Json } from '@/integrations/supabase/types';
-
-interface Script {
-  id: string;
-  language_code: string;
-  scenario_id: number;
-  topic_id: number;
-  character_id: number;
-  user_gender: 'male' | 'female';
-  script_data: {
-    languageCode: string;
-    lines: Array<{
-      lineNumber: number;
-      speaker: 'character' | 'user';
-      targetText: string;
-      transliteration: string | null;
-      translation: string;
-      audioUrl: string | null;
-    }>;
-  };
-  audio_generated: boolean;
-  created_at?: string;
-  updated_at?: string;
-  transliteration?: string | null;
-}
+import ChatHeader from '@/components/chat/ChatHeader';
+import ChatMessages from '@/components/chat/ChatMessages';
+import { Script } from '@/types/chat';
 
 interface ScenarioChatScreenProps {
   scenarioId: number;
@@ -59,12 +34,10 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
   const [currentPrompt, setCurrentPrompt] = useState<BotMessage | null>(null);
   const [scriptLines, setScriptLines] = useState<ChatMessage[]>([]);
   const [currentLineIndex, setCurrentLineIndex] = useState(0);
-  const chatEndRef = useRef<HTMLDivElement>(null);
   const [isConversationComplete, setIsConversationComplete] = useState(false);
   const { toast } = useToast();
   const [sessionId, setSessionId] = useState<string | null>(null);
 
-  // Load or create session
   useEffect(() => {
     const loadOrCreateSession = async () => {
       try {
@@ -143,7 +116,6 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
     }
   }, [script, scenarioId, characterId]);
 
-  // Update session when messages or currentLineIndex changes
   useEffect(() => {
     const updateSession = async () => {
       if (!sessionId) return;
@@ -207,10 +179,6 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
     }
   }, [script]);
 
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
   const handleRecordingComplete = async (audioUrl: string, audioBlob: Blob) => {
     if (currentPrompt) {
       try {
@@ -245,29 +213,30 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
         setMessages(prevMessages => [...prevMessages, newMessage]);
         setCurrentPrompt(null);
 
+        // Handle next line immediately after assessment
         if (currentLineIndex < scriptLines.length) {
           const nextLine = scriptLines[currentLineIndex];
           
-          setTimeout(() => {
-            if (nextLine.role === 'bot') {
-              setMessages(prevMessages => [...prevMessages, nextLine]);
-              setCurrentLineIndex(prevIndex => prevIndex + 1);
-              
-              const nextUserPrompt = scriptLines.slice(currentLineIndex + 1).find(line => line.role === 'user');
-              if (nextUserPrompt) {
-                setCurrentPrompt({
-                  id: Date.now().toString(),
-                  role: 'bot',
-                  text: nextUserPrompt.text,
-                  transliteration: nextUserPrompt.transliteration,
-                  translation: nextUserPrompt.translation,
-                  tts_audio_url: nextUserPrompt.tts_audio_url,
-                  user_audio_url: null,
-                  score: null,
-                });
-              }
+          // Add bot message immediately if it's next
+          if (nextLine.role === 'bot') {
+            setMessages(prevMessages => [...prevMessages, nextLine]);
+            setCurrentLineIndex(prevIndex => prevIndex + 1);
+            
+            // Set up the next user prompt if available
+            const nextUserPrompt = scriptLines.slice(currentLineIndex + 1).find(line => line.role === 'user');
+            if (nextUserPrompt) {
+              setCurrentPrompt({
+                id: Date.now().toString(),
+                role: 'bot',
+                text: nextUserPrompt.text,
+                transliteration: nextUserPrompt.transliteration,
+                translation: nextUserPrompt.translation,
+                tts_audio_url: nextUserPrompt.tts_audio_url,
+                user_audio_url: null,
+                score: null,
+              });
             }
-          }, 1000);
+          }
         } else {
           setIsConversationComplete(true);
         }
@@ -289,16 +258,7 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
     return totalScore / userMessages.length;
   };
 
-  const ConversationEndUI: React.FC<{ onSummary: () => void }> = ({ onSummary }) => (
-    <div className="fixed inset-x-0 bottom-0 bg-white border-t p-4 flex flex-col items-center space-y-4">
-      <h3 className="text-xl font-bold text-center">Conversation Complete!</h3>
-      <p className="text-center text-gray-600">Great job! You've completed this conversation scenario.</p>
-      <Button onClick={onSummary}>View Summary</Button>
-    </div>
-  );
-
   if (isConversationComplete) {
-    // Mock progress data - in a real app, this would come from your backend
     const mockProgressData = [
       { date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], score: 75 },
       { date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], score: 80 },
@@ -345,29 +305,13 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
       </div>
 
       <div className="relative z-20 flex flex-col h-full">
-        <div className="flex items-center justify-between p-4 border-b bg-white/80 backdrop-blur-sm">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-gray-600 hover:text-gray-800 hover:bg-opacity-80 transition-colors duration-200"
-            onClick={onBackToCharacters}
-          >
-            <ArrowLeft className="h-6 w-6" />
-          </Button>
-          <h1 className="text-xl font-bold text-center flex-grow">
-            Chat with {characterName}: {scenarioTitle}
-          </h1>
-          <div className="w-10"></div>
-        </div>
+        <ChatHeader
+          characterName={characterName}
+          scenarioTitle={scenarioTitle}
+          onBackToCharacters={onBackToCharacters}
+        />
 
-        <div className="flex-grow overflow-y-auto p-4 bg-white/80">
-          <AnimatePresence>
-            {messages.map(message => (
-              <ChatBubble key={message.id} message={message} />
-            ))}
-          </AnimatePresence>
-          <div ref={chatEndRef} />
-        </div>
+        <ChatMessages messages={messages} />
 
         <RecordingControls
           currentPrompt={currentPrompt}
