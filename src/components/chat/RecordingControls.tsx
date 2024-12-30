@@ -88,6 +88,7 @@ const RecordingControls: React.FC<RecordingControlsProps> = ({ onRecordingComple
 
   const startRecording = async () => {
     try {
+      console.log('Starting recording...');
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mediaRecorder = new MediaRecorder(stream, {
         mimeType: 'audio/webm;codecs=opus'
@@ -95,16 +96,23 @@ const RecordingControls: React.FC<RecordingControlsProps> = ({ onRecordingComple
       mediaRecorderRef.current = mediaRecorder;
       chunksRef.current = [];
 
-      mediaRecorder.ondataavailable = (e) => chunksRef.current.push(e.data);
+      mediaRecorder.ondataavailable = (e) => {
+        console.log('Data available:', e.data.size, 'bytes');
+        chunksRef.current.push(e.data);
+      };
+      
       mediaRecorder.onstop = () => {
+        console.log('Recording stopped, processing chunks...');
         const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
         const url = URL.createObjectURL(blob);
+        console.log('Created blob URL:', url);
         setAudioUrl(url);
         setAudioBlob(blob);
       };
 
       mediaRecorder.start();
       setIsRecording(true);
+      console.log('Recording started successfully');
     } catch (err) {
       console.error('Error accessing microphone:', err);
       toast({
@@ -117,6 +125,7 @@ const RecordingControls: React.FC<RecordingControlsProps> = ({ onRecordingComple
 
   const stopRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
+      console.log('Stopping recording...');
       mediaRecorderRef.current.stop();
       setIsRecording(false);
     }
@@ -127,16 +136,26 @@ const RecordingControls: React.FC<RecordingControlsProps> = ({ onRecordingComple
     
     setIsSubmitting(true);
     try {
+      console.log('Starting audio processing...');
       const audioContext = new AudioContext();
       const audioData = await audioBlob.arrayBuffer();
+      console.log('Audio data size:', audioData.byteLength, 'bytes');
+      
       const audioBuffer = await audioContext.decodeAudioData(audioData);
+      console.log('Audio decoded:', {
+        duration: audioBuffer.duration,
+        numberOfChannels: audioBuffer.numberOfChannels,
+        sampleRate: audioBuffer.sampleRate
+      });
+      
       const wavBlob = await convertToWav(audioBuffer);
+      console.log('WAV conversion complete. Size:', wavBlob.size, 'bytes');
       
       if (wavBlob.size > 1024 * 1024 * 10) {
         throw new Error('Audio file too large. Please record a shorter message.');
       }
 
-      console.log('Submitting audio:', {
+      console.log('Submitting audio for assessment:', {
         blobSize: wavBlob.size,
         text: currentPrompt.text,
         languageCode: 'es-ES'
@@ -151,7 +170,7 @@ const RecordingControls: React.FC<RecordingControlsProps> = ({ onRecordingComple
         body: formData,
       });
 
-      console.log('Response received:', { data, error });
+      console.log('Assessment response received:', { data, error });
 
       if (error) {
         console.error('Supabase function error:', error);
@@ -159,9 +178,15 @@ const RecordingControls: React.FC<RecordingControlsProps> = ({ onRecordingComple
       }
 
       const { audioUrl: uploadedAudioUrl, assessment } = data;
+      console.log('Processing assessment data:', {
+        uploadedAudioUrl,
+        assessment: JSON.stringify(assessment, null, 2)
+      });
       
       if (uploadedAudioUrl && assessment?.NBest?.[0]) {
         const nBestResult = assessment.NBest[0];
+        console.log('NBest result:', JSON.stringify(nBestResult, null, 2));
+        
         const feedback = {
           overall_score: assessment.pronunciationScore * 100,
           phoneme_analysis: "",
@@ -174,17 +199,22 @@ const RecordingControls: React.FC<RecordingControlsProps> = ({ onRecordingComple
               CompletenessScore: nBestResult.PronunciationAssessment.CompletenessScore,
               PronScore: nBestResult.PronunciationAssessment.PronScore
             },
-            Words: nBestResult.Words.map(word => ({
-              Word: word.Word,
-              Offset: word.Offset || 0,
-              Duration: word.Duration || 0,
-              PronunciationAssessment: {
-                AccuracyScore: word.PronunciationAssessment.AccuracyScore,
-                ErrorType: word.PronunciationAssessment.ErrorType
-              }
-            }))
+            Words: nBestResult.Words.map(word => {
+              console.log('Processing word:', word);
+              return {
+                Word: word.Word,
+                Offset: word.Offset || 0,
+                Duration: word.Duration || 0,
+                PronunciationAssessment: {
+                  AccuracyScore: word.PronunciationAssessment.AccuracyScore,
+                  ErrorType: word.PronunciationAssessment.ErrorType
+                }
+              };
+            })
           }]
         };
+
+        console.log('Created feedback object:', JSON.stringify(feedback, null, 2));
 
         const newMessage = {
           id: Date.now().toString(),
@@ -198,10 +228,13 @@ const RecordingControls: React.FC<RecordingControlsProps> = ({ onRecordingComple
           feedback
         };
 
+        console.log('Created new message:', JSON.stringify(newMessage, null, 2));
+
         onRecordingComplete(uploadedAudioUrl, audioBlob);
         setAudioUrl(null);
         setAudioBlob(null);
       } else {
+        console.error('Invalid assessment data:', assessment);
         throw new Error('Invalid response from pronunciation assessment');
       }
     } catch (error) {
