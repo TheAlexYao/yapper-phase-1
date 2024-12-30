@@ -633,6 +633,7 @@ export type Database = {
           scenario_id: number
           script_data: Json
           topic_id: number
+          transliteration: string | null
           updated_at: string | null
           user_gender: Database["public"]["Enums"]["user_gender"]
         }
@@ -645,6 +646,7 @@ export type Database = {
           scenario_id: number
           script_data: Json
           topic_id: number
+          transliteration?: string | null
           updated_at?: string | null
           user_gender: Database["public"]["Enums"]["user_gender"]
         }
@@ -657,6 +659,7 @@ export type Database = {
           scenario_id?: number
           script_data?: Json
           topic_id?: number
+          transliteration?: string | null
           updated_at?: string | null
           user_gender?: Database["public"]["Enums"]["user_gender"]
         }
