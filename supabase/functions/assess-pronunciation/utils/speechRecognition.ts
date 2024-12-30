@@ -3,90 +3,71 @@ import {
   AudioConfig, 
   PronunciationAssessment, 
   PronunciationAssessmentConfig, 
-  SpeechRecognizer 
+  SpeechRecognizer,
+  AudioStreamFormat
 } from "npm:microsoft-cognitiveservices-speech-sdk@1.32.0";
 
-export async function performSpeechRecognition(audioData: ArrayBuffer, referenceText: string) {
-  console.log("Starting speech recognition with reference text:", referenceText);
-  
-  const speechConfig = SpeechConfig.fromSubscription(
-    Deno.env.get("AZURE_SPEECH_KEY") || "",
-    Deno.env.get("AZURE_SPEECH_REGION") || ""
-  );
-  
-  // Set pronunciation assessment configuration
+interface SpeechRecognitionParams {
+  speechKey: string;
+  speechRegion: string;
+  languageCode: string;
+  referenceText: string;
+  audioData: ArrayBuffer;
+  sampleRate: number;
+  channels: number;
+  bitsPerSample: number;
+}
+
+export async function performSpeechRecognition(params: SpeechRecognitionParams) {
+  console.log("Starting speech recognition with params:", {
+    ...params,
+    speechKey: '***',
+    audioData: `${params.audioData.byteLength} bytes`
+  });
+
+  const speechConfig = SpeechConfig.fromSubscription(params.speechKey, params.speechRegion);
+  speechConfig.speechRecognitionLanguage = params.languageCode;
+
+  // Configure pronunciation assessment
   const pronunciationConfig = new PronunciationAssessmentConfig(
-    referenceText,
+    params.referenceText,
     PronunciationAssessment.GradingSystem.HundredMark,
     PronunciationAssessment.Granularity.Word,
     true
   );
 
-  const audioConfig = AudioConfig.fromWavFileInput(audioData);
-  const recognizer = new SpeechRecognizer(speechConfig);
+  // Create audio format
+  const format = AudioStreamFormat.getWaveFormatPCM(
+    params.sampleRate,
+    params.bitsPerSample,
+    params.channels
+  );
+
+  // Create audio config from PCM data
+  const audioConfig = AudioConfig.fromStreamInput(params.audioData, format);
   
-  // Apply pronunciation assessment config to the recognizer
+  // Create recognizer and apply pronunciation assessment
+  const recognizer = new SpeechRecognizer(speechConfig, audioConfig);
   PronunciationAssessment.applyTo(recognizer);
-  
+
   return new Promise((resolve, reject) => {
-    console.log("Starting recognition...");
+    console.log("Starting recognition process...");
+    
     recognizer.recognizeOnceAsync(
-      async (result) => {
+      result => {
         if (result.errorDetails) {
           console.error("Recognition error:", result.errorDetails);
           reject(new Error(result.errorDetails));
           return;
         }
 
-        console.log("Recognition successful, getting assessment result");
-        const pronunciationAssessmentResult = PronunciationAssessment.getAssessmentResultFromResult(result);
-        
-        // Get detailed word-level assessment
-        const wordLevelDetails = pronunciationAssessmentResult.detailedResults.map(word => ({
-          Word: word.word,
-          PronunciationAssessment: {
-            AccuracyScore: word.accuracyScore,
-            ErrorType: word.errorType
-          }
-        }));
-
-        const response = {
-          NBest: [{
-            PronunciationAssessment: {
-              AccuracyScore: pronunciationAssessmentResult.accuracyScore,
-              FluencyScore: pronunciationAssessmentResult.fluencyScore,
-              CompletenessScore: pronunciationAssessmentResult.completenessScore,
-              PronScore: pronunciationAssessmentResult.pronunciationScore
-            },
-            Words: wordLevelDetails
-          }],
-          overallScore: pronunciationAssessmentResult.pronunciationScore,
-          suggestions: generateSuggestions(pronunciationAssessmentResult)
-        };
-
-        console.log("Assessment complete:", response);
-        resolve(response);
+        console.log("Recognition successful, processing results");
+        resolve(result);
       },
-      (error) => {
+      error => {
         console.error("Recognition error:", error);
         reject(error);
       }
     );
   });
-}
-
-function generateSuggestions(result: any) {
-  const suggestions = [];
-  
-  if (result.accuracyScore < 80) {
-    suggestions.push("Focus on pronouncing each word clearly and correctly.");
-  }
-  if (result.fluencyScore < 80) {
-    suggestions.push("Try to speak more smoothly and naturally.");
-  }
-  if (result.completenessScore < 80) {
-    suggestions.push("Make sure to pronounce all parts of each word.");
-  }
-  
-  return suggestions.join(" ");
 }
