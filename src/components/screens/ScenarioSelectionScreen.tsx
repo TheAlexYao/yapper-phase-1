@@ -51,10 +51,10 @@ const ScenarioSelectionScreen: React.FC<ScenarioSelectionScreenProps> = ({
     fetchScenarios();
   }, [topicTitle]);
 
-  const handleScenarioSelect = useCallback((scenarioId: string) => {
-    const selectedScenario = scenarios.find(scenario => scenario.id.toString() === scenarioId);
+  const handleScenarioSelect = useCallback((scenarioId: number) => {
+    const selectedScenario = scenarios.find(scenario => scenario.id === scenarioId);
     if (selectedScenario) {
-      onScenarioSelect(selectedScenario.title, scenarioId);
+      onScenarioSelect(selectedScenario.title, scenarioId.toString());
     }
   }, [scenarios, onScenarioSelect]);
 
