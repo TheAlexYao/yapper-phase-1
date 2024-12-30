@@ -282,7 +282,7 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
 
     const calculateDetailedScores = () => {
       const userMessages = messages.filter(msg => 
-        msg.role === 'user' && msg.feedback !== undefined
+        msg.role === 'user' && msg.feedback?.NBest?.[0]?.PronunciationAssessment
       ) as UserMessage[];
       
       if (userMessages.length === 0) return {
@@ -295,10 +295,10 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
       const scores = userMessages.reduce((acc, msg) => {
         const assessment = msg.feedback.NBest[0].PronunciationAssessment;
         return {
-          accuracyScore: acc.accuracyScore + assessment.AccuracyScore,
-          fluencyScore: acc.fluencyScore + assessment.FluencyScore,
-          completenessScore: acc.completenessScore + assessment.CompletenessScore,
-          pronScore: acc.pronScore + assessment.PronScore
+          accuracyScore: acc.accuracyScore + (assessment.AccuracyScore || 0),
+          fluencyScore: acc.fluencyScore + (assessment.FluencyScore || 0),
+          completenessScore: acc.completenessScore + (assessment.CompletenessScore || 0),
+          pronScore: acc.pronScore + (assessment.PronScore || 0)
         };
       }, {
         accuracyScore: 0,
@@ -309,10 +309,10 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
 
       const messageCount = userMessages.length;
       return {
-        accuracyScore: Math.round(scores.accuracyScore / messageCount),
-        fluencyScore: Math.round(scores.fluencyScore / messageCount),
-        completenessScore: Math.round(scores.completenessScore / messageCount),
-        pronScore: Math.round(scores.pronScore / messageCount)
+        accuracyScore: Math.round(scores.accuracyScore / messageCount) || 0,
+        fluencyScore: Math.round(scores.fluencyScore / messageCount) || 0,
+        completenessScore: Math.round(scores.completenessScore / messageCount) || 0,
+        pronScore: Math.round(scores.pronScore / messageCount) || 0
       };
     };
 
@@ -322,7 +322,7 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
        detailedScores.fluencyScore + 
        detailedScores.completenessScore + 
        detailedScores.pronScore) / 4
-    );
+    ) || 0;
 
     return (
       <PostScenarioSummary
@@ -333,18 +333,20 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
           text: msg.text,
           audioUrl: msg.user_audio_url || undefined,
           ttsUrl: msg.tts_audio_url,
-          score: msg.role === 'user' ? msg.feedback?.overall_score : undefined
+          score: msg.role === 'user' && msg.feedback?.NBest?.[0]?.PronunciationAssessment?.PronScore 
+            ? Math.round(msg.feedback.NBest[0].PronunciationAssessment.PronScore) 
+            : undefined
         }))}
         detailedScores={detailedScores}
         wordLevelFeedback={messages
           .filter((msg): msg is UserMessage => 
-            msg.role === 'user' && msg.feedback !== undefined
+            msg.role === 'user' && msg.feedback?.NBest?.[0]?.Words
           )
           .flatMap(msg => 
             msg.feedback.NBest[0].Words.map(word => ({
               word: word.Word,
-              accuracyScore: word.PronunciationAssessment.AccuracyScore,
-              errorType: word.PronunciationAssessment.ErrorType || 'none'
+              accuracyScore: word.PronunciationAssessment?.AccuracyScore || 0,
+              errorType: word.PronunciationAssessment?.ErrorType || 'none'
             }))
           )}
         progressData={mockProgressData}

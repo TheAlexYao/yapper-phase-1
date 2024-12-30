@@ -317,7 +317,7 @@ const PostScenarioSummary: React.FC<PostScenarioSummaryProps> = ({
               </div>
             </div>
             <div className="bg-white/20 px-4 py-2 rounded-full">
-              <span className="font-semibold">Score: {overallScore}%</span>
+              <span className="font-semibold">Score: {overallScore || 0}%</span>
             </div>
           </div>
         </div>
