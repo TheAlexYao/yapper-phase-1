@@ -1,14 +1,11 @@
-'use client'
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowLeft, Mic, Play, Pause, ChevronDown, ChevronUp, Volume2, Info, ChevronRight, Turtle } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowLeft } from 'lucide-react';
+import { AnimatePresence } from 'framer-motion';
 import PostScenarioSummary from './PostScenarioSummary';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { RecordingControls } from "@/components/chat/RecordingControls";
 
 interface ChatMessage {
   id: string;
@@ -86,237 +83,6 @@ interface ScenarioChatScreenProps {
   script: Script | null;
 }
 
-const AudioPlayer: React.FC<{ audioUrl: string; label: string; showSpeedControl?: boolean }> = ({ audioUrl, label, showSpeedControl = true }) => {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-
-  useEffect(() => {
-    audioRef.current = new Audio(audioUrl);
-    audioRef.current.onended = () => setIsPlaying(false);
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.onended = null;
-      }
-    };
-  }, [audioUrl]);
-
-  const togglePlayback = () => {
-    if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.pause();
-      } else {
-        audioRef.current.play();
-      }
-      setIsPlaying(!isPlaying);
-    }
-  };
-
-  return (
-    <div className="flex items-center gap-2">
-      <Button
-        variant="outline"
-        size="sm"
-        className="flex items-center gap-2 border rounded px-2 py-1"
-        onClick={togglePlayback}
-      >
-        {isPlaying ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
-        <span className="text-xs font-medium">{label === "TTS" ? "Audio" : label}</span>
-      </Button>
-      {showSpeedControl && (
-        <Button
-          variant="outline"
-          size="sm"
-          className="border rounded p-1"
-          onClick={() => {
-            if (audioRef.current) {
-              audioRef.current.playbackRate = 0.7;
-              audioRef.current.play();
-            }
-          }}
-        >
-          <Turtle className="h-4 w-4" />
-        </Button>
-      )}
-    </div>
-  );
-};
-
-const FeedbackModal: React.FC<{ feedback: UserMessage['feedback'] }> = ({ feedback }) => {
-  if (!feedback || !feedback.NBest || feedback.NBest.length === 0) {
-    return null;
-  }
-
-  const nBest = feedback.NBest[0];
-  const pronAssessment = nBest.PronunciationAssessment;
-  const words = nBest.Words || [];
-
-  return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button size="sm" variant="outline" className="mt-2 hover:bg-opacity-80 transition-colors duration-200">
-          <Info className="h-4 w-4 mr-2" />
-          Score: {pronAssessment.PronScore}%
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px] bg-white border shadow-lg">
-        <DialogHeader>
-          <DialogTitle>Pronunciation Feedback</DialogTitle>
-        </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <h4 className="mb-2 font-semibold">Accuracy</h4>
-              <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
-                <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${pronAssessment.AccuracyScore}%` }}></div>
-              </div>
-              <p className="mt-1 text-sm">{pronAssessment.AccuracyScore}%</p>
-            </div>
-            <div>
-              <h4 className="mb-2 font-semibold">Fluency</h4>
-              <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
-                <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${pronAssessment.FluencyScore}%` }}></div>
-              </div>
-              <p className="mt-1 text-sm">{pronAssessment.FluencyScore}%</p>
-            </div>
-          </div>
-          <div>
-            <h4 className="mb-2 font-semibold">Word Analysis:</h4>
-            <ul className="grid gap-2">
-              {words.map((word, index) => (
-                <li key={index} className="flex items-center justify-between">
-                  <span className="text-sm">{word.Word}:</span>
-                  <div className="flex items-center gap-2">
-                    <div className="w-16 bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
-                      <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${word.PronunciationAssessment.AccuracyScore}%` }}></div>
-                    </div>
-                    {word.PronunciationAssessment.ErrorType !== 'none' && (
-                      <span className="text-xs text-destructive">{word.PronunciationAssessment.ErrorType}</span>
-                    )}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-};
-
-const ChatBubble: React.FC<{ message: ChatMessage }> = ({ message }) => {
-  const [showTranslation, setShowTranslation] = useState(false);
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      transition={{ duration: 0.3 }}
-      className={`flex ${message.role === 'bot' ? 'justify-start' : 'justify-end'} mb-4`}
-    >
-      <Card className={`max-w-[80%] ${message.role === 'bot' ? 'bg-gradient-to-r from-[#38b6ff] to-[#7843e6] text-white' : 'bg-white'} overflow-hidden`}>
-        <CardContent className="p-3">
-          <p className="mb-1 text-sm md:text-base">{message.text}</p>
-          {message.transliteration && (
-            <p className="text-xs md:text-sm opacity-80 mb-1">{message.transliteration}</p>
-          )}
-          <AnimatePresence>
-            {showTranslation && (
-              <motion.p
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="text-xs md:text-sm italic mb-2"
-              >
-                {message.translation}
-              </motion.p>
-            )}
-          </AnimatePresence>
-          <div className="flex items-center justify-between gap-2 mt-2">
-            <AudioPlayer audioUrl={message.tts_audio_url} label="Audio" />
-            {message.role === 'user' && message.user_audio_url && (
-              <AudioPlayer audioUrl={message.user_audio_url} label="Your Recording" showSpeedControl={false} />
-            )}
-            {message.role === 'user' && message.feedback && message.feedback.NBest && message.feedback.NBest.length > 0 && (
-              <FeedbackModal feedback={message.feedback} />
-            )}
-            <Button size="sm" variant="ghost" className="p-0" onClick={() => setShowTranslation(!showTranslation)}>
-              {showTranslation ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    </motion.div>
-  );
-};
-
-const RecordingInterface: React.FC<{
-  onRecordingComplete: (audioUrl: string, audioBlob: Blob) => void;
-}> = ({ onRecordingComplete }) => {
-  const [isRecording, setIsRecording] = useState(false);
-  const [audioUrl, setAudioUrl] = useState<string | null>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const chunksRef = useRef<Blob[]>([]);
-
-  const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = mediaRecorder;
-      chunksRef.current = [];
-
-      mediaRecorder.ondataavailable = (e) => chunksRef.current.push(e.data);
-      mediaRecorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: 'audio/ogg; codecs=opus' });
-        const url = URL.createObjectURL(blob);
-        setAudioUrl(url);
-        onRecordingComplete(url, blob);
-      };
-
-      mediaRecorder.start();
-      setIsRecording(true);
-    } catch (err) {
-      console.error('Error accessing microphone:', err);
-    }
-  };
-
-  const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-    }
-  };
-
-  return (
-    <div className="flex flex-col items-center gap-4 p-4 bg-gradient-to-r from-[#38b6ff]/10 to-[#7843e6]/10 rounded-t-lg w-full">
-      {audioUrl && (
-        <div className="mb-2 w-full flex justify-center">
-          <AudioPlayer audioUrl={audioUrl} label="Your Recording" showSpeedControl={false} />
-        </div>
-      )}
-      {isRecording && (
-        <div className="h-8 bg-gray-200 rounded-full overflow-hidden w-48 mb-2">
-          <motion.div
-            className="h-full bg-gradient-to-r from-[#38b6ff] to-[#7843e6]"
-            initial={{ width: "0%" }}
-            animate={{ width: "100%" }}
-            transition={{ duration: 2, repeat: Infinity }}
-          />
-        </div>
-      )}
-      <Button
-        onClick={isRecording ? stopRecording : startRecording}
-        variant={isRecording ? "destructive" : "default"}
-        className="rounded-full w-48 hover:bg-opacity-80 transition-colors duration-200 border-2 border-[#38b6ff]"
-      >
-        {isRecording ? 'Stop Recording' : 'Start Recording'}
-        <Mic className="ml-2 h-5 w-5" />
-      </Button>
-    </div>
-  );
-};
-
 const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
   scenarioId,
   scenarioTitle,
@@ -329,10 +95,7 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
   const [scriptLines, setScriptLines] = useState<ChatMessage[]>([]);
   const [currentLineIndex, setCurrentLineIndex] = useState(0);
   const chatEndRef = useRef<HTMLDivElement>(null);
-  const [isConversationEnded, setIsConversationEnded] = useState(false);
-  const [conversationStartTime, setConversationStartTime] = useState(Date.now());
   const [isConversationComplete, setIsConversationComplete] = useState(false);
-  const [showSummary, setShowSummary] = useState(false);
   const { toast } = useToast();
   const [sessionId, setSessionId] = useState<string | null>(null);
 
@@ -340,7 +103,6 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
   useEffect(() => {
     const loadOrCreateSession = async () => {
       try {
-        // Try to find existing session
         const { data: existingSessions, error: fetchError } = await supabase
           .from('chat_sessions')
           .select('*')
@@ -351,13 +113,11 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
         if (fetchError) throw fetchError;
 
         if (existingSessions && existingSessions.length > 0) {
-          // Restore session state
           const session = existingSessions[0];
           setSessionId(session.id);
           setMessages(session.messages as ChatMessage[] || []);
           setCurrentLineIndex(session.current_line_index || 0);
           
-          // Find the next user prompt if any
           if (scriptLines.length > (session.current_line_index || 0)) {
             const nextUserPrompt = scriptLines.slice(session.current_line_index || 0).find(line => line.role === 'user');
             if (nextUserPrompt) {
@@ -374,13 +134,11 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
             }
           }
         } else {
-          // Create new session
           const { data: newSession, error: createError } = await supabase
             .from('chat_sessions')
             .insert([
               {
                 scenario_id: scenarioId,
-                character_id: characterId,
                 messages: [],
                 current_line_index: 0
               }
@@ -417,7 +175,7 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
         const { error } = await supabase
           .from('chat_sessions')
           .update({
-            messages: messages,
+            messages: messages as unknown as Json[],
             current_line_index: currentLineIndex,
             updated_at: new Date().toISOString()
           })
@@ -470,59 +228,15 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
         }
       }
     }
-    setConversationStartTime(Date.now());
   }, [script]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const assessPronunciation = async (audioBlob: Blob, targetText: string): Promise<{
-    score: number;
-    feedback: any;
-  }> => {
-    try {
-      console.log('Starting pronunciation assessment with:', {
-        audioBlob,
-        targetText
-      });
-
-      const formData = new FormData();
-      // Ensure we're sending the audio file with the correct filename and type
-      formData.append('audio', audioBlob, 'recording.wav');
-      formData.append('targetText', targetText);
-
-      console.log('Sending FormData to assess-pronunciation:', {
-        hasAudio: formData.has('audio'),
-        hasTargetText: formData.has('targetText'),
-        targetText
-      });
-
-      const { data: assessmentData, error } = await supabase.functions.invoke('assess-pronunciation', {
-        body: formData,
-      });
-
-      if (error) {
-        console.error('Error assessing pronunciation:', error);
-        throw error;
-      }
-
-      console.log('Pronunciation assessment result:', assessmentData);
-      return {
-        score: assessmentData.score,
-        feedback: assessmentData.feedback
-      };
-    } catch (err) {
-      console.error('Error in pronunciation assessment:', err);
-      throw err;
-    }
-  };
-
   const handleRecordingComplete = async (audioUrl: string, audioBlob: Blob) => {
     if (currentPrompt) {
       try {
-        console.log('Starting recording completion with prompt:', currentPrompt);
-        
         const { score, feedback } = await assessPronunciation(audioBlob, currentPrompt.text);
 
         const newMessage: UserMessage = {
@@ -591,63 +305,6 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
     }
   };
 
-  const handleViewSummary = () => {
-    setShowSummary(true);
-  };
-
-  const handleRestartScenario = async () => {
-    try {
-      if (sessionId) {
-        // Delete existing session
-        const { error } = await supabase
-          .from('chat_sessions')
-          .delete()
-          .eq('id', sessionId);
-
-        if (error) throw error;
-      }
-
-      // Reset all states
-      setShowSummary(false);
-      setMessages([]);
-      setCurrentPrompt(null);
-      setIsConversationEnded(false);
-      setIsConversationComplete(false);
-      setConversationStartTime(Date.now());
-      setSessionId(null);
-      
-      // Create new session
-      const { data: newSession, error: createError } = await supabase
-        .from('chat_sessions')
-        .insert([
-          {
-            scenario_id: scenarioId,
-            character_id: characterId,
-            messages: [],
-            current_line_index: 0
-          }
-        ])
-        .select()
-        .single();
-
-      if (createError) throw createError;
-      if (newSession) {
-        setSessionId(newSession.id);
-      }
-    } catch (error) {
-      console.error('Error restarting scenario:', error);
-      toast({
-        title: "Error",
-        description: "Failed to restart scenario",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleNextScenario = () => {
-    console.log("Moving to next scenario");
-  };
-
   const calculateAverageScore = () => {
     const userMessages = messages.filter(message => message.role === 'user' && message.score !== null);
     if (userMessages.length === 0) return 0;
@@ -663,7 +320,7 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
     </div>
   );
 
-  if (showSummary) {
+  if (isConversationComplete) {
     return (
       <PostScenarioSummary
         scenarioTitle={scenarioTitle}
@@ -733,23 +390,10 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
           <div ref={chatEndRef} />
         </div>
 
-        {isConversationComplete ? (
-          <ConversationEndUI onSummary={handleViewSummary} />
-        ) : (
-          currentPrompt && (
-            <div className="border-t bg-white flex flex-col items-center w-full">
-              <div className="p-4 w-full flex flex-col items-center">
-                <h3 className="font-semibold mb-2 text-center">Your turn:</h3>
-                <p className="text-sm md:text-base text-center">{currentPrompt.text}</p>
-                <p className="text-xs md:text-sm text-gray-600 mt-1 text-center">{currentPrompt.transliteration}</p>
-                <div className="mt-2 flex flex-col items-center gap-2">
-                  <AudioPlayer audioUrl={currentPrompt.tts_audio_url} label="TTS" />
-                  <RecordingInterface onRecordingComplete={handleRecordingComplete} />
-                </div>
-              </div>
-            </div>
-          )
-        )}
+        <RecordingControls
+          currentPrompt={currentPrompt}
+          onRecordingComplete={handleRecordingComplete}
+        />
       </div>
     </div>
   );

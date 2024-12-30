@@ -83,43 +83,36 @@ export type Database = {
       }
       chat_sessions: {
         Row: {
-          id: string;
-          user_id: string | null;
-          scenario_id: number;
-          character_id: number;
-          current_line_index: number | null;
-          messages: Json | null;
-          created_at: string | null;
-          updated_at: string | null;
-        };
+          character_id: number
+          created_at: string | null
+          current_line_index: number | null
+          id: string
+          messages: Json | null
+          scenario_id: number
+          updated_at: string | null
+          user_id: string | null
+        }
         Insert: {
-          id?: string;
-          user_id?: string | null;
-          scenario_id: number;
-          character_id: number;
-          current_line_index?: number | null;
-          messages?: Json | null;
-          created_at?: string | null;
-          updated_at?: string | null;
-        };
+          character_id: number
+          created_at?: string | null
+          current_line_index?: number | null
+          id?: string
+          messages?: Json | null
+          scenario_id: number
+          updated_at?: string | null
+          user_id?: string | null
+        }
         Update: {
-          id?: string;
-          user_id?: string | null;
-          scenario_id?: number;
-          character_id?: number;
-          current_line_index?: number | null;
-          messages?: Json | null;
-          created_at?: string | null;
-          updated_at?: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "chat_sessions_user_id_fkey"
-            columns: ["user_id"]
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          }
-        ];
+          character_id?: number
+          created_at?: string | null
+          current_line_index?: number | null
+          id?: string
+          messages?: Json | null
+          scenario_id?: number
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
       }
       cities: {
         Row: {
@@ -424,21 +417,6 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
-          created_at: string
-          custom_goals?: string[] | null
-          full_name?: string | null
-          id: string
-          languages_learning?: string[] | null
-          learning_goals?: string[] | null
-          native_language?: string | null
-          onboarding_completed?: boolean | null
-          target_language?: string | null
-          updated_at: string
-          username?: string | null
-          voice_preference?: string | null
-        }
-        Update: {
-          avatar_url?: string | null
           created_at?: string
           custom_goals?: string[] | null
           full_name?: string | null
@@ -448,7 +426,22 @@ export type Database = {
           native_language?: string | null
           onboarding_completed?: boolean | null
           target_language?: string | null
-          updated_at: string
+          updated_at?: string
+          username?: string | null
+          voice_preference?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          custom_goals?: string[] | null
+          full_name?: string | null
+          id?: string
+          languages_learning?: string[] | null
+          learning_goals?: string[] | null
+          native_language?: string | null
+          onboarding_completed?: boolean | null
+          target_language?: string | null
+          updated_at?: string
           username?: string | null
           voice_preference?: string | null
         }
@@ -518,7 +511,7 @@ export type Database = {
           cultural_notes_translations?: Json | null
           description?: string | null
           description_translations?: Json | null
-          id: string
+          id?: string
           location_details?: string | null
           location_details_translations?: Json | null
           primary_goal?: string | null
@@ -723,7 +716,7 @@ export type Database = {
           description?: string | null
           description_translations?: Json | null
           display_order?: number | null
-          id: string
+          id?: string
           image_url?: string | null
           is_active?: boolean | null
           title: string
@@ -780,9 +773,9 @@ export type Database = {
           id?: string
           language_code?: string
           text_content?: string
-          text_hash?: string;
+          text_hash?: string
           updated_at?: string | null
-          voice_gender?: string;
+          voice_gender?: string
         }
         Relationships: []
       }
@@ -803,7 +796,7 @@ export type Database = {
           id?: string
           scenario_id: string
           started_at?: string | null
-          status: string
+          status?: string
           updated_at?: string | null
           user_id: string
         }
@@ -813,9 +806,9 @@ export type Database = {
           id?: string
           scenario_id?: string
           started_at?: string | null
-          status?: string;
-          updated_at?: string | null;
-          user_id?: string;
+          status?: string
+          updated_at?: string | null
+          user_id?: string
         }
         Relationships: [
           {
@@ -881,7 +874,7 @@ export type Tables<
   TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
     ? keyof (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
         Database[PublicTableNameOrOptions["schema"]]["Views"])
-    : never,
+    : never = never,
 > = PublicTableNameOrOptions extends { schema: keyof Database }
   ? (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
       Database[PublicTableNameOrOptions["schema"]]["Views"])[TableName] extends {
