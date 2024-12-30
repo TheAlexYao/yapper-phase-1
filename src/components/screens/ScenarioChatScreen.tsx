@@ -280,30 +280,73 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
       { date: new Date().toISOString().split('T')[0], score: calculateAverageScore() }
     ];
 
+    const calculateDetailedScores = () => {
+      const userMessages = messages.filter(msg => 
+        msg.role === 'user' && msg.feedback !== undefined
+      ) as UserMessage[];
+      
+      if (userMessages.length === 0) return {
+        accuracyScore: 0,
+        fluencyScore: 0,
+        completenessScore: 0,
+        pronScore: 0
+      };
+
+      const scores = userMessages.reduce((acc, msg) => {
+        const assessment = msg.feedback.NBest[0].PronunciationAssessment;
+        return {
+          accuracyScore: acc.accuracyScore + assessment.AccuracyScore,
+          fluencyScore: acc.fluencyScore + assessment.FluencyScore,
+          completenessScore: acc.completenessScore + assessment.CompletenessScore,
+          pronScore: acc.pronScore + assessment.PronScore
+        };
+      }, {
+        accuracyScore: 0,
+        fluencyScore: 0,
+        completenessScore: 0,
+        pronScore: 0
+      });
+
+      const messageCount = userMessages.length;
+      return {
+        accuracyScore: Math.round(scores.accuracyScore / messageCount),
+        fluencyScore: Math.round(scores.fluencyScore / messageCount),
+        completenessScore: Math.round(scores.completenessScore / messageCount),
+        pronScore: Math.round(scores.pronScore / messageCount)
+      };
+    };
+
+    const detailedScores = calculateDetailedScores();
+    const overallScore = Math.round(
+      (detailedScores.accuracyScore + 
+       detailedScores.fluencyScore + 
+       detailedScores.completenessScore + 
+       detailedScores.pronScore) / 4
+    );
+
     return (
       <PostScenarioSummary
         scenarioTitle={scenarioTitle}
-        overallScore={calculateAverageScore()}
+        overallScore={overallScore}
         transcript={messages.map(msg => ({
           role: msg.role,
           text: msg.text,
           audioUrl: msg.user_audio_url || undefined,
           ttsUrl: msg.tts_audio_url,
-          score: msg.score || undefined
+          score: msg.role === 'user' ? msg.feedback?.overall_score : undefined
         }))}
-        detailedScores={{
-          accuracyScore: 85,
-          fluencyScore: 80,
-          completenessScore: 90,
-          pronScore: calculateAverageScore()
-        }}
+        detailedScores={detailedScores}
         wordLevelFeedback={messages
-          .filter((msg): msg is UserMessage => msg.role === 'user' && msg.feedback !== undefined)
-          .flatMap(msg => msg.feedback.NBest[0].Words.map(word => ({
-            word: word.Word,
-            accuracyScore: word.PronunciationAssessment.AccuracyScore,
-            errorType: word.PronunciationAssessment.ErrorType
-          })))}
+          .filter((msg): msg is UserMessage => 
+            msg.role === 'user' && msg.feedback !== undefined
+          )
+          .flatMap(msg => 
+            msg.feedback.NBest[0].Words.map(word => ({
+              word: word.Word,
+              accuracyScore: word.PronunciationAssessment.AccuracyScore,
+              errorType: word.PronunciationAssessment.ErrorType || 'none'
+            }))
+          )}
         progressData={mockProgressData}
         onRestart={() => sessionId && handleRestartScenario(sessionId)}
         onExit={onBackToCharacters}
