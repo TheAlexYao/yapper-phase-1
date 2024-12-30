@@ -83,7 +83,7 @@ export const RecordingControls: React.FC<RecordingControlsProps> = ({
         throw new Error('Invalid response from pronunciation assessment');
       }
 
-      // Create audio URL from the blob
+      // Create audio URL from the blob and pass it to the parent
       const newAudioUrl = URL.createObjectURL(audioBlob);
       onRecordingComplete(newAudioUrl, wavBlob);
       setAudioUrl(null);
@@ -97,6 +97,15 @@ export const RecordingControls: React.FC<RecordingControlsProps> = ({
       });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleStopRecording = async () => {
+    await stopRecording();
+    const blob = getRecordingBlob();
+    if (blob) {
+      const url = URL.createObjectURL(blob);
+      setAudioUrl(url);
     }
   };
 
@@ -132,7 +141,7 @@ export const RecordingControls: React.FC<RecordingControlsProps> = ({
 
       <div className="flex gap-2">
         <Button
-          onClick={isRecording ? stopRecording : startRecording}
+          onClick={isRecording ? handleStopRecording : startRecording}
           variant={isRecording ? "destructive" : "default"}
           className="rounded-full w-48 bg-gradient-to-r from-[#38b6ff] to-[#7843e6] hover:opacity-90 transition-opacity duration-200"
           disabled={isPreparing || isProcessing}
