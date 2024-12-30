@@ -6,8 +6,16 @@ const ScenarioChat = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   
-  const selectedScenario = queryClient.getQueryData(['selectedScenario']) as { id: string; title: string } | undefined;
-  const selectedCharacter = queryClient.getQueryData(['selectedCharacter']) as { id: string; name: string } | undefined;
+  const selectedScenario = queryClient.getQueryData(['selectedScenario']) as { 
+    id: number; 
+    title: string;
+    topicId: number;
+  } | undefined;
+  
+  const selectedCharacter = queryClient.getQueryData(['selectedCharacter']) as { 
+    id: number; 
+    name: string 
+  } | undefined;
 
   const handleBackToCharacters = () => {
     queryClient.removeQueries({ queryKey: ['selectedCharacter'] });
@@ -23,6 +31,8 @@ const ScenarioChat = () => {
     <ScenarioChatScreen
       scenarioId={selectedScenario.id}
       scenarioTitle={selectedScenario.title}
+      topicId={selectedScenario.topicId}
+      characterId={selectedCharacter.id}
       characterName={selectedCharacter.name}
       selectedLanguage="en"
       onBackToCharacters={handleBackToCharacters}

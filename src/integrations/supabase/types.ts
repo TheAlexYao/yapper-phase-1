@@ -636,6 +636,42 @@ export type Database = {
           },
         ]
       }
+      scripts: {
+        Row: {
+          character_id: number
+          created_at: string | null
+          id: string
+          language_code: string
+          scenario_id: number
+          script_data: Json
+          topic_id: number
+          updated_at: string | null
+          user_gender: Database["public"]["Enums"]["user_gender"]
+        }
+        Insert: {
+          character_id: number
+          created_at?: string | null
+          id?: string
+          language_code: string
+          scenario_id: number
+          script_data: Json
+          topic_id: number
+          updated_at?: string | null
+          user_gender: Database["public"]["Enums"]["user_gender"]
+        }
+        Update: {
+          character_id?: number
+          created_at?: string | null
+          id?: string
+          language_code?: string
+          scenario_id?: number
+          script_data?: Json
+          topic_id?: number
+          updated_at?: string | null
+          user_gender?: Database["public"]["Enums"]["user_gender"]
+        }
+        Relationships: []
+      }
       topics: {
         Row: {
           created_at: string | null
@@ -795,6 +831,7 @@ export type Database = {
     }
     Enums: {
       sender_type: "user" | "agent"
+      user_gender: "male" | "female"
     }
     CompositeTypes: {
       [_ in never]: never

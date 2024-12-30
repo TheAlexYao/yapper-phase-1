@@ -5,7 +5,7 @@ import ScenarioSelectionScreen from "@/components/screens/ScenarioSelectionScree
 const ScenarioSelection = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const selectedTopic = queryClient.getQueryData(['selectedTopic']) as { title: string } | undefined;
+  const selectedTopic = queryClient.getQueryData(['selectedTopic']) as { title: string; id: number } | undefined;
 
   const handleBackToTopics = () => {
     queryClient.removeQueries({ queryKey: ['selectedTopic'] });
@@ -13,7 +13,13 @@ const ScenarioSelection = () => {
   };
 
   const handleScenarioSelect = (scenarioTitle: string, scenarioId: string) => {
-    queryClient.setQueryData(['selectedScenario'], { id: scenarioId, title: scenarioTitle });
+    // Convert string ID to number for the scripts table
+    const numericScenarioId = parseInt(scenarioId);
+    queryClient.setQueryData(['selectedScenario'], { 
+      id: numericScenarioId, 
+      title: scenarioTitle,
+      topicId: selectedTopic?.id 
+    });
     navigate('/characters');
   };
 
