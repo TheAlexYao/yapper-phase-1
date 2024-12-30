@@ -68,13 +68,13 @@ export const convertToWav = async (audioBuffer: AudioBuffer): Promise<Blob> => {
   return new Blob([buffer], { type: 'audio/wav' });
 };
 
-// New function to create a 16kHz version for Azure
+// Create a high-quality version for Azure (24kHz)
 export const createAzureCompatibleWav = async (audioBuffer: AudioBuffer): Promise<Blob> => {
-  // Create an offline audio context at 16kHz
+  // Create an offline audio context at 24kHz for better quality
   const offlineCtx = new OfflineAudioContext(
     audioBuffer.numberOfChannels,
-    audioBuffer.duration * 16000,
-    16000
+    audioBuffer.duration * 24000,
+    24000 // Using 24kHz for Azure
   );
 
   // Create a buffer source
@@ -86,6 +86,6 @@ export const createAzureCompatibleWav = async (audioBuffer: AudioBuffer): Promis
   // Render the audio
   const renderedBuffer = await offlineCtx.startRendering();
   
-  // Convert the 16kHz buffer to WAV
+  // Convert the 24kHz buffer to WAV
   return convertToWav(renderedBuffer);
 };
