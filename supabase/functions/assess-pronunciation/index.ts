@@ -5,11 +5,9 @@ import * as sdk from "npm:microsoft-cognitiveservices-speech-sdk@1.32.0"
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
@@ -24,7 +22,9 @@ serve(async (req) => {
     console.log('Received request:', {
       hasAudio: !!audioFile,
       referenceText,
-      languageCode
+      languageCode,
+      audioType: audioFile?.type,
+      audioSize: audioFile?.size
     })
 
     if (!audioFile || !referenceText || !languageCode) {
@@ -67,8 +67,18 @@ serve(async (req) => {
     )
     speechConfig.speechRecognitionLanguage = languageCode
 
-    // Create audio config from the uploaded file
-    const audioConfig = sdk.AudioConfig.fromWavFileInput(await audioFile.arrayBuffer())
+    // Convert audio file to ArrayBuffer
+    const arrayBuffer = await audioFile.arrayBuffer()
+    
+    // Create a Push Stream for the audio data
+    const pushStream = sdk.AudioInputStream.createPushStream()
+    
+    // Write the WAV file data to the push stream
+    pushStream.write(new Uint8Array(arrayBuffer))
+    pushStream.close()
+
+    // Create audio config from push stream
+    const audioConfig = sdk.AudioConfig.fromStreamInput(pushStream)
 
     // Create recognizer and configure pronunciation assessment
     const recognizer = new sdk.SpeechRecognizer(speechConfig, audioConfig)
