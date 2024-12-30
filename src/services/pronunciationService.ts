@@ -9,6 +9,8 @@ export const assessPronunciation = async (audioBlob: Blob, text: string): Promis
     completenessScore: number;
     words: Array<{
       Word: string;
+      Offset?: number;
+      Duration?: number;
       PronunciationAssessment: {
         AccuracyScore: number;
         ErrorType: string;
@@ -28,6 +30,8 @@ export const assessPronunciation = async (audioBlob: Blob, text: string): Promis
       completenessScore: 90,
       words: [{
         Word: text,
+        Offset: 0,
+        Duration: 1000,
         PronunciationAssessment: {
           AccuracyScore: 85,
           ErrorType: "None"
