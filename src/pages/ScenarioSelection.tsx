@@ -5,14 +5,14 @@ import ScenarioSelectionScreen from "@/components/screens/ScenarioSelectionScree
 const ScenarioSelection = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const selectedTopic = queryClient.getQueryData(['selectedTopic']) as { id: string; title: string } | undefined;
+  const selectedTopic = queryClient.getQueryData(['selectedTopic']) as { title: string } | undefined;
 
   const handleBackToTopics = () => {
-    queryClient.removeQueries(['selectedTopic']);
+    queryClient.removeQueries({ queryKey: ['selectedTopic'] });
     navigate('/topics');
   };
 
-  const handleScenarioSelect = (scenarioId: string, scenarioTitle: string) => {
+  const handleScenarioSelect = (scenarioTitle: string, scenarioId: string) => {
     queryClient.setQueryData(['selectedScenario'], { id: scenarioId, title: scenarioTitle });
     navigate('/characters');
   };

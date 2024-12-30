@@ -10,7 +10,7 @@ const ScenarioChat = () => {
   const selectedCharacter = queryClient.getQueryData(['selectedCharacter']) as { id: string; name: string } | undefined;
 
   const handleBackToCharacters = () => {
-    queryClient.removeQueries(['selectedCharacter']);
+    queryClient.removeQueries({ queryKey: ['selectedCharacter'] });
     navigate('/characters');
   };
 

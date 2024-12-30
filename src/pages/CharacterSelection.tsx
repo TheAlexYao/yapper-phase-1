@@ -8,7 +8,7 @@ const CharacterSelection = () => {
   const selectedScenario = queryClient.getQueryData(['selectedScenario']) as { id: string; title: string } | undefined;
 
   const handleBackToScenarios = () => {
-    queryClient.removeQueries(['selectedScenario']);
+    queryClient.removeQueries({ queryKey: ['selectedScenario'] });
     navigate('/scenarios');
   };
 

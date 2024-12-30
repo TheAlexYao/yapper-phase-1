@@ -6,8 +6,9 @@ const TopicSelection = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const handleTopicSelect = (topicId: string, topicTitle: string) => {
-    queryClient.setQueryData(['selectedTopic'], { id: topicId, title: topicTitle });
+  const handleTopicSelect = (topicTitle: string) => {
+    const [title, lang] = topicTitle.split('?lang=');
+    queryClient.setQueryData(['selectedTopic'], { title });
     navigate('/scenarios');
   };
 
