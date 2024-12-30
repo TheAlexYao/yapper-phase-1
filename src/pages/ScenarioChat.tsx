@@ -21,11 +21,12 @@ const ScenarioChat = () => {
     name: string 
   } | undefined;
 
-  // Map language codes to their full versions
+  // Use BCP47 language codes from languages table
   const languageMap: { [key: string]: string } = {
     'es': 'es-ES',
     'en': 'en-US',
-    // Add more mappings as needed
+    'th': 'th-TH',
+    'ru': 'ru-RU'
   };
 
   const selectedLanguage = queryClient.getQueryData(['selectedLanguage']) as string || "en";
