@@ -49,14 +49,38 @@ interface UserMessage extends ChatMessage {
   feedback: NonNullable<ChatMessage['feedback']>;
 }
 
+interface Script {
+  id: string;
+  language_code: string;
+  scenario_id: number;
+  topic_id: number;
+  character_id: number;
+  user_gender: 'male' | 'female';
+  script_data: {
+    languageCode: string;
+    lines: Array<{
+      lineNumber: number;
+      speaker: 'character' | 'user';
+      targetText: string;
+      transliteration: string | null;
+      translation: string;
+      audioUrl: string | null;
+    }>;
+  };
+  audio_generated: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
 interface ScenarioChatScreenProps {
-  scenarioId: number;  // Changed from string to number
+  scenarioId: number;
   scenarioTitle: string;
-  topicId: number;     // Added to match the new prop
-  characterId: number; // Added to match the new prop
+  topicId: number;
+  characterId: number;
   characterName: string;
   selectedLanguage: string;
   onBackToCharacters: () => void;
+  script: Script | null;
 }
 
 const AudioPlayer: React.FC<{ audioUrl: string; label: string; showSpeedControl?: boolean }> = ({ audioUrl, label, showSpeedControl = true }) => {
@@ -305,7 +329,13 @@ const RecordingInterface: React.FC<{
   );
 };
 
-const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({ scenarioId, scenarioTitle, characterName, onBackToCharacters }) => {
+const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({ 
+  scenarioId, 
+  scenarioTitle, 
+  characterName, 
+  onBackToCharacters,
+  script 
+}) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [currentPrompt, setCurrentPrompt] = useState<BotMessage | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -315,32 +345,62 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({ scenarioId, sce
   const [showSummary, setShowSummary] = useState(false);
 
   useEffect(() => {
-    // Simulating fetching messages for the scenario
-    const fetchedMessages: ChatMessage[] = [
-      {
-        id: '1',
-        role: 'bot',
-        text: 'Hello! Welcome to our chat. How can I assist you today?',
-        transliteration: 'Halo! Selamat datang di obrolan kita. Bagaimana saya bisa membantu Anda hari ini?',
-        translation: 'Hello! Welcome to our chat. How can I help you today?',
-        tts_audio_url: '/audio/welcome.mp3',
+    if (script) {
+      // Initialize messages from script data
+      const initialMessages: ChatMessage[] = script.script_data.lines.map((line, index) => ({
+        id: `${index}`,
+        role: line.speaker === 'character' ? 'bot' : 'user',
+        text: line.targetText,
+        transliteration: line.transliteration,
+        translation: line.translation,
+        tts_audio_url: line.audioUrl || '',
         user_audio_url: null,
         score: null,
+      }));
+      setMessages(initialMessages);
+      
+      // Set the first user prompt if it exists
+      const firstUserPrompt = script.script_data.lines.find(line => line.speaker === 'user');
+      if (firstUserPrompt) {
+        setCurrentPrompt({
+          id: 'initial-prompt',
+          role: 'bot',
+          text: firstUserPrompt.targetText,
+          transliteration: firstUserPrompt.transliteration,
+          translation: firstUserPrompt.translation,
+          tts_audio_url: firstUserPrompt.audioUrl || '',
+          user_audio_url: null,
+          score: null,
+        });
       }
-    ];
-    setMessages(fetchedMessages);
-    setCurrentPrompt({
-      id: '2',
-      role: 'bot',
-      text: 'Hi! I\'d like to practice ordering coffee.',
-      transliteration: 'Hai! Saya ingin berlatih memesan kopi.',
-      translation: 'Hi! I want to practice ordering coffee.',
-      tts_audio_url: '/audio/user-prompt.mp3',
-      user_audio_url: null,
-      score: null,
-    });
+    } else {
+      // Fallback to existing mock data if no script is provided
+      const fetchedMessages: ChatMessage[] = [
+        {
+          id: '1',
+          role: 'bot',
+          text: 'Hello! Welcome to our chat. How can I assist you today?',
+          transliteration: 'Halo! Selamat datang di obrolan kita. Bagaimana saya bisa membantu Anda hari ini?',
+          translation: 'Hello! Welcome to our chat. How can I help you today?',
+          tts_audio_url: '/audio/welcome.mp3',
+          user_audio_url: null,
+          score: null,
+        }
+      ];
+      setMessages(fetchedMessages);
+      setCurrentPrompt({
+        id: '2',
+        role: 'bot',
+        text: 'Hi! I\'d like to practice ordering coffee.',
+        transliteration: 'Hai! Saya ingin berlatih memesan kopi.',
+        translation: 'Hi! I want to practice ordering coffee.',
+        tts_audio_url: '/audio/user-prompt.mp3',
+        user_audio_url: null,
+        score: null,
+      });
+    }
     setConversationStartTime(Date.now());
-  }, [scenarioId]);
+  }, [script]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -554,4 +614,3 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({ scenarioId, sce
 };
 
 export default ScenarioChatScreen;
-
