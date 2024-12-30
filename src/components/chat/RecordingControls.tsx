@@ -131,6 +131,53 @@ const RecordingControls: React.FC<RecordingControlsProps> = ({ onRecordingComple
     }
   };
 
+  // Helper function to convert AudioBuffer to WAV format
+  const convertToWav = async (audioBuffer: AudioBuffer): Promise<Blob> => {
+    const numOfChannels = audioBuffer.numberOfChannels;
+    const length = audioBuffer.length * numOfChannels * 2;
+    const buffer = new ArrayBuffer(44 + length);
+    const view = new DataView(buffer);
+    
+    // Write WAV header
+    const writeString = (view: DataView, offset: number, string: string) => {
+      for (let i = 0; i < string.length; i++) {
+        view.setUint8(offset + i, string.charCodeAt(i));
+      }
+    };
+
+    writeString(view, 0, 'RIFF');                                    // ChunkID
+    view.setUint32(4, 36 + length, true);                           // ChunkSize
+    writeString(view, 8, 'WAVE');                                   // Format
+    writeString(view, 12, 'fmt ');                                  // Subchunk1ID
+    view.setUint32(16, 16, true);                                  // Subchunk1Size
+    view.setUint16(20, 1, true);                                   // AudioFormat (PCM)
+    view.setUint16(22, numOfChannels, true);                       // NumChannels
+    view.setUint32(24, audioBuffer.sampleRate, true);              // SampleRate
+    view.setUint32(28, audioBuffer.sampleRate * numOfChannels * 2, true); // ByteRate
+    view.setUint16(32, numOfChannels * 2, true);                   // BlockAlign
+    view.setUint16(34, 16, true);                                  // BitsPerSample
+    writeString(view, 36, 'data');                                 // Subchunk2ID
+    view.setUint32(40, length, true);                             // Subchunk2Size
+
+    // Write audio data
+    const channelData = new Float32Array(audioBuffer.length * numOfChannels);
+    let offset = 44;
+    
+    // Interleave channels
+    for (let i = 0; i < audioBuffer.numberOfChannels; i++) {
+      channelData.set(audioBuffer.getChannelData(i), i * audioBuffer.length);
+    }
+
+    // Convert to 16-bit PCM
+    for (let i = 0; i < channelData.length; i++) {
+      const sample = Math.max(-1, Math.min(1, channelData[i]));
+      view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+      offset += 2;
+    }
+
+    return new Blob([buffer], { type: 'audio/wav' });
+  };
+
   const handleSubmit = async () => {
     if (!audioBlob || !currentPrompt) return;
     
@@ -214,7 +261,7 @@ const RecordingControls: React.FC<RecordingControlsProps> = ({ onRecordingComple
       // Create audio URL from the blob
       const audioUrl = URL.createObjectURL(audioBlob);
 
-      onRecordingComplete(audioUrl, audioBlob);
+      onRecordingComplete(audioUrl, wavBlob);
       setAudioUrl(null);
       setAudioBlob(null);
       
@@ -227,51 +274,6 @@ const RecordingControls: React.FC<RecordingControlsProps> = ({ onRecordingComple
       });
     } finally {
       setIsSubmitting(false);
-    }
-  };
-
-  // Helper function to convert AudioBuffer to WAV format
-  const convertToWav = async (audioBuffer: AudioBuffer): Promise<Blob> => {
-    const numOfChannels = audioBuffer.numberOfChannels;
-    const length = audioBuffer.length * numOfChannels * 2;
-    const buffer = new ArrayBuffer(44 + length);
-    const view = new DataView(buffer);
-    
-    // Write WAV header
-    writeUTFBytes(view, 0, 'RIFF');
-    view.setUint32(4, 36 + length, true);
-    writeUTFBytes(view, 8, 'WAVE');
-    writeUTFBytes(view, 12, 'fmt ');
-    view.setUint32(16, 16, true);
-    view.setUint16(20, 1, true);
-    view.setUint16(22, numOfChannels, true);
-    view.setUint32(24, audioBuffer.sampleRate, true);
-    view.setUint32(28, audioBuffer.sampleRate * numOfChannels * 2, true);
-    view.setUint16(32, numOfChannels * 2, true);
-    view.setUint16(34, 16, true);
-    writeUTFBytes(view, 36, 'data');
-    view.setUint32(40, length, true);
-
-    // Write audio data
-    const data = new Float32Array(audioBuffer.length * numOfChannels);
-    let offset = 44;
-    
-    for (let i = 0; i < audioBuffer.numberOfChannels; i++) {
-      data.set(audioBuffer.getChannelData(i), i * audioBuffer.length);
-    }
-
-    for (let i = 0; i < data.length; i++) {
-      const sample = Math.max(-1, Math.min(1, data[i]));
-      view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
-      offset += 2;
-    }
-
-    return new Blob([buffer], { type: 'audio/wav' });
-  };
-
-  const writeUTFBytes = (view: DataView, offset: number, string: string) => {
-    for (let i = 0; i < string.length; i++) {
-      view.setUint8(offset + i, string.charCodeAt(i));
     }
   };
 
