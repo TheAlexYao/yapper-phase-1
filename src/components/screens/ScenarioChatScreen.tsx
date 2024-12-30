@@ -333,14 +333,12 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
           text: msg.text,
           audioUrl: msg.user_audio_url || undefined,
           ttsUrl: msg.tts_audio_url,
-          score: msg.role === 'user' && msg.feedback?.NBest?.[0]?.PronunciationAssessment?.PronScore 
-            ? Math.round(msg.feedback.NBest[0].PronunciationAssessment.PronScore) 
-            : undefined
+          score: msg.role === 'user' ? Math.round(msg.score || 0) : undefined
         }))}
         detailedScores={detailedScores}
         wordLevelFeedback={messages
           .filter((msg): msg is UserMessage => 
-            Boolean(msg.role === 'user' && msg.feedback?.NBest?.[0]?.Words)
+            msg.role === 'user' && Boolean(msg.feedback?.NBest?.[0]?.Words)
           )
           .flatMap(msg => 
             msg.feedback.NBest[0].Words.map(word => ({
