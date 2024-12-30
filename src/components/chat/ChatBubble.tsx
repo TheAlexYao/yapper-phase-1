@@ -15,6 +15,19 @@ const ChatBubble = ({ message }: ChatBubbleProps) => {
   const [showFeedback, setShowFeedback] = useState(false);
   const isUser = message.role === 'user';
 
+  // Calculate the overall score from the NBest array if available
+  const calculateOverallScore = () => {
+    if (message.feedback?.NBest?.[0]?.PronunciationAssessment) {
+      const assessment = message.feedback.NBest[0].PronunciationAssessment;
+      return Math.round(
+        (assessment.AccuracyScore + assessment.FluencyScore + assessment.CompletenessScore) / 3
+      );
+    }
+    return message.score;
+  };
+
+  const overallScore = calculateOverallScore();
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -74,7 +87,7 @@ const ChatBubble = ({ message }: ChatBubbleProps) => {
             )}
           </div>
 
-          {message.score !== null && (
+          {overallScore !== null && message.feedback && (
             <div 
               className={`mt-2 p-2 rounded-md cursor-pointer transition-colors ${
                 isUser 
@@ -86,7 +99,7 @@ const ChatBubble = ({ message }: ChatBubbleProps) => {
               <p className={`text-sm font-medium ${
                 isUser ? 'text-white' : 'text-gray-700'
               }`}>
-                Score: {message.score}
+                Score: {overallScore}%
               </p>
               <p className={`text-xs ${
                 isUser ? 'text-white/80' : 'text-gray-500'
