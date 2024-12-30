@@ -177,66 +177,47 @@ const RecordingControls: React.FC<RecordingControlsProps> = ({ onRecordingComple
         throw new Error('Failed to assess pronunciation. Please try again.');
       }
 
-      const { audioUrl: uploadedAudioUrl, assessment } = data;
-      console.log('Processing assessment data:', {
-        uploadedAudioUrl,
-        assessment: JSON.stringify(assessment, null, 2)
-      });
-      
-      if (uploadedAudioUrl && assessment?.NBest?.[0]) {
-        const nBestResult = assessment.NBest[0];
-        console.log('NBest result:', JSON.stringify(nBestResult, null, 2));
-        
-        const feedback = {
-          overall_score: assessment.pronunciationScore * 100,
-          phoneme_analysis: "",
-          word_scores: {},
-          suggestions: "",
-          NBest: [{
-            PronunciationAssessment: {
-              AccuracyScore: nBestResult.PronunciationAssessment.AccuracyScore,
-              FluencyScore: nBestResult.PronunciationAssessment.FluencyScore,
-              CompletenessScore: nBestResult.PronunciationAssessment.CompletenessScore,
-              PronScore: nBestResult.PronunciationAssessment.PronScore
-            },
-            Words: nBestResult.Words.map(word => {
-              console.log('Processing word:', word);
-              return {
-                Word: word.Word,
-                Offset: word.Offset || 0,
-                Duration: word.Duration || 0,
-                PronunciationAssessment: {
-                  AccuracyScore: word.PronunciationAssessment.AccuracyScore,
-                  ErrorType: word.PronunciationAssessment.ErrorType
-                }
-              };
-            })
-          }]
-        };
-
-        console.log('Created feedback object:', JSON.stringify(feedback, null, 2));
-
-        const newMessage = {
-          id: Date.now().toString(),
-          role: 'user' as const,
-          text: currentPrompt.text,
-          transliteration: currentPrompt.transliteration,
-          translation: currentPrompt.translation,
-          tts_audio_url: currentPrompt.tts_audio_url,
-          user_audio_url: uploadedAudioUrl,
-          score: assessment.pronunciationScore * 100,
-          feedback
-        };
-
-        console.log('Created new message:', JSON.stringify(newMessage, null, 2));
-
-        onRecordingComplete(uploadedAudioUrl, audioBlob);
-        setAudioUrl(null);
-        setAudioBlob(null);
-      } else {
-        console.error('Invalid assessment data:', assessment);
+      if (!data?.assessment?.NBest?.[0]) {
+        console.error('Invalid assessment data:', data);
         throw new Error('Invalid response from pronunciation assessment');
       }
+
+      const nBestResult = data.assessment.NBest[0];
+      console.log('NBest result:', JSON.stringify(nBestResult, null, 2));
+      
+      const feedback = {
+        overall_score: data.assessment.pronunciationScore,
+        phoneme_analysis: "",
+        word_scores: {},
+        suggestions: "",
+        NBest: [{
+          PronunciationAssessment: {
+            AccuracyScore: nBestResult.PronunciationAssessment.AccuracyScore,
+            FluencyScore: nBestResult.PronunciationAssessment.FluencyScore,
+            CompletenessScore: nBestResult.PronunciationAssessment.CompletenessScore,
+            PronScore: nBestResult.PronunciationAssessment.PronScore
+          },
+          Words: nBestResult.Words.map(word => ({
+            Word: word.Word,
+            Offset: word.Offset || 0,
+            Duration: word.Duration || 0,
+            PronunciationAssessment: {
+              AccuracyScore: word.PronunciationAssessment.AccuracyScore,
+              ErrorType: word.PronunciationAssessment.ErrorType
+            }
+          }))
+        }]
+      };
+
+      console.log('Created feedback object:', JSON.stringify(feedback, null, 2));
+
+      // Create audio URL from the blob
+      const audioUrl = URL.createObjectURL(audioBlob);
+
+      onRecordingComplete(audioUrl, audioBlob);
+      setAudioUrl(null);
+      setAudioBlob(null);
+      
     } catch (error) {
       console.error('Error submitting recording:', error);
       toast({
