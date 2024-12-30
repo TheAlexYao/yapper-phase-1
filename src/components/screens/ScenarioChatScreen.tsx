@@ -7,6 +7,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { ArrowLeft, Mic, Play, Pause, ChevronDown, ChevronUp, Volume2, Info, ChevronRight, Turtle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import PostScenarioSummary from './PostScenarioSummary';
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ChatMessage {
   id: string;
@@ -250,7 +252,7 @@ const ChatBubble: React.FC<{ message: ChatMessage }> = ({ message }) => {
 };
 
 const RecordingInterface: React.FC<{
-  onRecordingComplete: (audioUrl: string, score: number) => void;
+  onRecordingComplete: (audioUrl: string, audioBlob: Blob) => void;
 }> = ({ onRecordingComplete }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
@@ -269,6 +271,7 @@ const RecordingInterface: React.FC<{
         const blob = new Blob(chunksRef.current, { type: 'audio/ogg; codecs=opus' });
         const url = URL.createObjectURL(blob);
         setAudioUrl(url);
+        onRecordingComplete(url, blob);
       };
 
       mediaRecorder.start();
@@ -282,14 +285,6 @@ const RecordingInterface: React.FC<{
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
-    }
-  };
-
-  const submitRecording = () => {
-    if (audioUrl) {
-      const score = Math.floor(Math.random() * 31) + 70; // Random score between 70 and 100 for demonstration
-      onRecordingComplete(audioUrl, score);
-      setAudioUrl(null); // Clear the audio URL after submission
     }
   };
 
@@ -318,24 +313,16 @@ const RecordingInterface: React.FC<{
         {isRecording ? 'Stop Recording' : 'Start Recording'}
         <Mic className="ml-2 h-5 w-5" />
       </Button>
-      {audioUrl && (
-        <Button
-          onClick={submitRecording}
-          className="mt-2 rounded-full hover:bg-opacity-80 transition-colors duration-200 border-2 border-[#38b6ff]"
-        >
-          Submit Recording
-        </Button>
-      )}
     </div>
   );
 };
 
-const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({ 
-  scenarioId, 
-  scenarioTitle, 
-  characterName, 
+const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
+  scenarioId,
+  scenarioTitle,
+  characterName,
   onBackToCharacters,
-  script 
+  script
 }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [currentPrompt, setCurrentPrompt] = useState<BotMessage | null>(null);
@@ -346,10 +333,10 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
   const [conversationStartTime, setConversationStartTime] = useState(Date.now());
   const [isConversationComplete, setIsConversationComplete] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (script) {
-      // Initialize script lines from script data
       const initialScriptLines: ChatMessage[] = script.script_data.lines.map((line, index) => ({
         id: `${index}`,
         role: line.speaker === 'character' ? 'bot' : 'user',
@@ -362,12 +349,10 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
       }));
       setScriptLines(initialScriptLines);
       
-      // Display the first message if it's a bot message
       if (initialScriptLines.length > 0 && initialScriptLines[0].role === 'bot') {
         setMessages([initialScriptLines[0]]);
         setCurrentLineIndex(1);
         
-        // Set the first user prompt if it exists
         const firstUserPrompt = initialScriptLines.find(line => line.role === 'user');
         if (firstUserPrompt) {
           setCurrentPrompt({
@@ -390,88 +375,102 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const handleRecordingComplete = (audioUrl: string, score: number) => {
-    if (currentPrompt && currentLineIndex < scriptLines.length) {
-      // Add the user's message with recording
-      const newMessage: UserMessage = {
-        id: Date.now().toString(),
-        role: 'user',
-        text: currentPrompt.text,
-        transliteration: currentPrompt.transliteration,
-        translation: currentPrompt.translation,
-        tts_audio_url: currentPrompt.tts_audio_url,
-        user_audio_url: audioUrl,
-        score: score,
-        feedback: {
-          overall_score: score,
-          phoneme_analysis: "Sample phoneme analysis",
-          word_scores: {},
-          suggestions: "Sample suggestions",
-          NBest: [{
-            PronunciationAssessment: {
-              AccuracyScore: 95,
-              FluencyScore: 90,
-              CompletenessScore: 85,
-              PronScore: score
-            },
-            Words: [
-              {
-                Word: "Hi",
-                PronunciationAssessment: {
-                  AccuracyScore: 95,
-                  ErrorType: "none"
-                }
-              },
-              {
-                Word: "I'd",
-                PronunciationAssessment: {
-                  AccuracyScore: 90,
-                  ErrorType: "none"
-                }
-              },
-              {
-                Word: "like",
-                PronunciationAssessment: {
-                  AccuracyScore: 85,
-                  ErrorType: "stress"
-                }
-              }
-            ]
-          }]
-        }
-      };
-      
-      setMessages(prevMessages => [...prevMessages, newMessage]);
-      setCurrentPrompt(null);
+  const assessPronunciation = async (audioBlob: Blob, targetText: string): Promise<{
+    score: number;
+    feedback: any;
+  }> => {
+    try {
+      const formData = new FormData();
+      formData.append('audio', audioBlob, 'recording.wav');
+      formData.append('targetText', targetText);
 
-      // Check if there are more lines to display
-      if (currentLineIndex < scriptLines.length) {
-        const nextLine = scriptLines[currentLineIndex];
-        
-        // Add a delay before showing the next bot message
-        setTimeout(() => {
-          if (nextLine.role === 'bot') {
-            setMessages(prevMessages => [...prevMessages, nextLine]);
-            setCurrentLineIndex(prevIndex => prevIndex + 1);
-            
-            // Find the next user prompt
-            const nextUserPrompt = scriptLines.slice(currentLineIndex + 1).find(line => line.role === 'user');
-            if (nextUserPrompt) {
-              setCurrentPrompt({
-                id: Date.now().toString(),
-                role: 'bot',
-                text: nextUserPrompt.text,
-                transliteration: nextUserPrompt.transliteration,
-                translation: nextUserPrompt.translation,
-                tts_audio_url: nextUserPrompt.tts_audio_url,
-                user_audio_url: null,
-                score: null,
-              });
-            }
+      const { data: assessmentData, error } = await supabase.functions.invoke('assess-pronunciation', {
+        body: formData,
+      });
+
+      if (error) {
+        console.error('Error assessing pronunciation:', error);
+        throw error;
+      }
+
+      console.log('Pronunciation assessment result:', assessmentData);
+      return {
+        score: assessmentData.score,
+        feedback: assessmentData.feedback
+      };
+    } catch (err) {
+      console.error('Error in pronunciation assessment:', err);
+      throw err;
+    }
+  };
+
+  const handleRecordingComplete = async (audioUrl: string, audioBlob: Blob) => {
+    if (currentPrompt) {
+      try {
+        const { score, feedback } = await assessPronunciation(audioBlob, currentPrompt.text);
+
+        const newMessage: UserMessage = {
+          id: Date.now().toString(),
+          role: 'user',
+          text: currentPrompt.text,
+          transliteration: currentPrompt.transliteration,
+          translation: currentPrompt.translation,
+          tts_audio_url: currentPrompt.tts_audio_url,
+          user_audio_url: audioUrl,
+          score: score,
+          feedback: {
+            overall_score: score,
+            phoneme_analysis: feedback.phonemeAnalysis || "",
+            word_scores: feedback.wordScores || {},
+            suggestions: feedback.suggestions || "",
+            NBest: [{
+              PronunciationAssessment: {
+                AccuracyScore: feedback.accuracyScore || 0,
+                FluencyScore: feedback.fluencyScore || 0,
+                CompletenessScore: feedback.completenessScore || 0,
+                PronScore: score
+              },
+              Words: feedback.words || []
+            }]
           }
-        }, 1000);
-      } else {
-        setIsConversationComplete(true);
+        };
+
+        setMessages(prevMessages => [...prevMessages, newMessage]);
+        setCurrentPrompt(null);
+
+        if (currentLineIndex < scriptLines.length) {
+          const nextLine = scriptLines[currentLineIndex];
+          
+          setTimeout(() => {
+            if (nextLine.role === 'bot') {
+              setMessages(prevMessages => [...prevMessages, nextLine]);
+              setCurrentLineIndex(prevIndex => prevIndex + 1);
+              
+              const nextUserPrompt = scriptLines.slice(currentLineIndex + 1).find(line => line.role === 'user');
+              if (nextUserPrompt) {
+                setCurrentPrompt({
+                  id: Date.now().toString(),
+                  role: 'bot',
+                  text: nextUserPrompt.text,
+                  transliteration: nextUserPrompt.transliteration,
+                  translation: nextUserPrompt.translation,
+                  tts_audio_url: nextUserPrompt.tts_audio_url,
+                  user_audio_url: null,
+                  score: null,
+                });
+              }
+            }
+          }, 1000);
+        } else {
+          setIsConversationComplete(true);
+        }
+      } catch (error) {
+        console.error('Error processing recording:', error);
+        toast({
+          title: "Error",
+          description: "Failed to assess pronunciation. Please try again.",
+          variant: "destructive"
+        });
       }
     }
   };
@@ -490,7 +489,6 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
   };
 
   const handleNextScenario = () => {
-    // Implement logic to move to the next scenario
     console.log("Moving to next scenario");
   };
 
@@ -522,7 +520,7 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
           score: msg.score || undefined
         }))}
         detailedScores={{
-          accuracyScore: 85, // Replace with actual data
+          accuracyScore: 85,
           fluencyScore: 80,
           completenessScore: 90,
           pronScore: calculateAverageScore()
@@ -567,7 +565,7 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
           <h1 className="text-xl font-bold text-center flex-grow">
             Chat with {characterName}: {scenarioTitle}
           </h1>
-          <div className="w-10"></div> {/* Spacer for alignment */}
+          <div className="w-10"></div>
         </div>
 
         <div className="flex-grow overflow-y-auto p-4 bg-white/80">
