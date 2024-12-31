@@ -8,6 +8,7 @@ import LanguageSelector from '@/components/topics/LanguageSelector';
 import TopicCarousel from '@/components/topics/TopicCarousel';
 import { useToast } from "@/components/ui/use-toast";
 import { Database } from '@/integrations/supabase/types';
+import { LanguageCode } from '@/constants/languages';
 
 type Topic = Database['public']['Tables']['topics']['Row'];
 
@@ -16,7 +17,7 @@ interface TopicSelectionScreenProps {
 }
 
 const TopicSelectionScreen: React.FC<TopicSelectionScreenProps> = ({ onTopicSelect }) => {
-  const [selectedLanguage, setSelectedLanguage] = useState('en');
+  const [selectedLanguage, setSelectedLanguage] = useState<LanguageCode>('en-US');
   const [currentIndex, setCurrentIndex] = useState(0);
   const { toast } = useToast();
 
@@ -37,7 +38,7 @@ const TopicSelectionScreen: React.FC<TopicSelectionScreenProps> = ({ onTopicSele
     },
   });
 
-  const handleLanguageChange = (language: string) => {
+  const handleLanguageChange = (language: LanguageCode) => {
     setSelectedLanguage(language);
     setCurrentIndex(0);
   };
