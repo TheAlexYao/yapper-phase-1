@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { ChatMessage, Script } from '@/types/chat';
 import { LanguageCode } from '@/constants/languages';
 
@@ -13,8 +13,10 @@ export const ScriptManager: React.FC<ScriptManagerProps> = ({
   selectedLanguage,
   onScriptLoaded,
 }) => {
+  const hasLoadedRef = useRef(false);
+
   useEffect(() => {
-    if (script) {
+    if (script && !hasLoadedRef.current) {
       const initialScriptLines: ChatMessage[] = script.script_data.lines.map((line, index) => ({
         id: `${index}`,
         role: line.speaker === 'character' ? 'bot' : 'user',
@@ -34,6 +36,7 @@ export const ScriptManager: React.FC<ScriptManagerProps> = ({
       const initialLineIndex = initialMessages.length ? 1 : 0;
 
       onScriptLoaded(initialScriptLines, initialMessages, initialLineIndex);
+      hasLoadedRef.current = true;
     }
   }, [script, selectedLanguage, onScriptLoaded]);
 

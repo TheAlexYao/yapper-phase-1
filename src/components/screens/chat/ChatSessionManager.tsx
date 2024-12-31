@@ -1,7 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { ChatMessage, Script } from '@/types/chat';
+import { Script, ChatMessage } from '@/types/chat';
 import { LanguageCode } from '@/constants/languages';
 
 interface ChatSessionManagerProps {
@@ -19,71 +18,56 @@ export const ChatSessionManager: React.FC<ChatSessionManagerProps> = ({
   script,
   onSessionLoaded,
 }) => {
-  const [sessionId, setSessionId] = useState<string | null>(null);
-  const { toast } = useToast();
-
   useEffect(() => {
-    const loadOrCreateSession = async () => {
+    const loadExistingSession = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          toast({
-            title: "Error",
-            description: "You must be logged in to use this feature",
-            variant: "destructive"
-          });
-          return;
-        }
+        if (!user) return;
 
-        const { data: existingSessions, error: fetchError } = await supabase
+        const { data: session, error } = await supabase
           .from('chat_sessions')
           .select('*')
           .eq('scenario_id', scenarioId)
+          .eq('character_id', characterId)
           .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(1);
+          .maybeSingle();
 
-        if (fetchError) throw fetchError;
+        if (error) throw error;
 
-        if (existingSessions && existingSessions.length > 0) {
-          const session = existingSessions[0];
-          setSessionId(session.id);
-          // Cast the messages to ChatMessage[] type
-          const messages = session.messages as ChatMessage[] || [];
-          onSessionLoaded(messages, session.current_line_index || 0, session.id);
+        if (session) {
+          const messages = session.messages as ChatMessage[];
+          onSessionLoaded(
+            messages || [], 
+            session.current_line_index || 0,
+            session.id
+          );
         } else {
-          const { data: newSession, error: createError } = await supabase
+          // Create new session
+          const { data: newSession, error: insertError } = await supabase
             .from('chat_sessions')
-            .insert([{
+            .insert({
               scenario_id: scenarioId,
               character_id: characterId,
               user_id: user.id,
               messages: [],
               current_line_index: 0
-            }])
+            })
             .select()
             .single();
 
-          if (createError) throw createError;
+          if (insertError) throw insertError;
+
           if (newSession) {
-            setSessionId(newSession.id);
             onSessionLoaded([], 0, newSession.id);
           }
         }
       } catch (error) {
-        console.error('Error managing session:', error);
-        toast({
-          title: "Error",
-          description: "Failed to load or create chat session",
-          variant: "destructive"
-        });
+        console.error('Error loading chat session:', error);
       }
     };
 
-    if (script) {
-      loadOrCreateSession();
-    }
-  }, [script, scenarioId, characterId, onSessionLoaded, toast]);
+    loadExistingSession();
+  }, [scenarioId, characterId, onSessionLoaded]);
 
   return null;
 };
