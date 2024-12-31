@@ -48,7 +48,9 @@ export const ChatSessionManager: React.FC<ChatSessionManagerProps> = ({
         if (existingSessions && existingSessions.length > 0) {
           const session = existingSessions[0];
           setSessionId(session.id);
-          onSessionLoaded(session.messages || [], session.current_line_index || 0);
+          // Cast the messages to ChatMessage[] type
+          const messages = session.messages as ChatMessage[] || [];
+          onSessionLoaded(messages, session.current_line_index || 0);
         } else {
           const { data: newSession, error: createError } = await supabase
             .from('chat_sessions')

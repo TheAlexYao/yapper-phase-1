@@ -38,6 +38,7 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
   const [scriptLines, setScriptLines] = useState<ChatMessage[]>([]);
   const [currentLineIndex, setCurrentLineIndex] = useState(0);
   const [isConversationComplete, setIsConversationComplete] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null); // Add sessionId state
   const { toast } = useToast();
 
   useEffect(() => {
@@ -70,9 +71,10 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
     updateSession();
   }, [messages, currentLineIndex, scenarioId, toast]);
 
-  const handleSessionLoaded = (sessionMessages: ChatMessage[], sessionLineIndex: number) => {
+  const handleSessionLoaded = (sessionMessages: ChatMessage[], sessionLineIndex: number, newSessionId: string) => {
     setMessages(sessionMessages);
     setCurrentLineIndex(sessionLineIndex);
+    setSessionId(newSessionId); // Store the sessionId
     
     if (scriptLines.length > sessionLineIndex) {
       const nextUserPrompt = scriptLines.slice(sessionLineIndex).find(line => line.role === 'user');

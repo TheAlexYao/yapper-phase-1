@@ -1,4 +1,5 @@
 import { LanguageCode } from '@/constants/languages';
+import { Json } from '@/integrations/supabase/types';
 
 export interface ChatMessage {
   id: string;
@@ -33,6 +34,7 @@ export interface ChatMessage {
       }>;
     }>;
   };
+  [key: string]: Json | undefined; // Add index signature to make it compatible with Json type
 }
 
 export interface BotMessage extends ChatMessage {
