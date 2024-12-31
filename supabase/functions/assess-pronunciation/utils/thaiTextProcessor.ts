@@ -1,10 +1,5 @@
-import { thaiDictionary } from './thaiDictionary.ts';
-import wordcut from "npm:wordcut@0.9.1";
-
-// Initialize wordcut with our custom dictionary
-wordcut.init();
-wordcut.dict.clear(); // Clear default dictionary
-thaiDictionary.forEach(word => wordcut.dict.add(word));
+// Simple Thai word segmentation implementation for Deno
+// This uses a basic dictionary-based approach that works without external dependencies
 
 export interface SegmentationResult {
   segmentedText: string;
@@ -16,33 +11,77 @@ export interface SegmentationResult {
   }[];
 }
 
+// Basic Thai characters for word boundary detection
+const thaiConsonants = 'กขฃคฅฆงจฉชซฌญฎฏฐฑฒณดตถทธนบปผฝพฟภมยรลวศษสหฬอฮ';
+const thaiVowels = 'ะัาำิีึืุูเแโใไๅ็่้๊๋์';
+const thaiToneMarks = '่้๊๋';
+
+function isThaiConsonant(char: string): boolean {
+  return thaiConsonants.includes(char);
+}
+
+function isThaiVowel(char: string): boolean {
+  return thaiVowels.includes(char);
+}
+
+function isThaiToneMark(char: string): boolean {
+  return thaiToneMarks.includes(char);
+}
+
 export function segmentThaiText(text: string): SegmentationResult {
   console.log('Segmenting Thai text:', text);
   
   // Remove existing spaces to ensure consistent segmentation
   const cleanText = text.replace(/\s+/g, '');
-  
-  // Segment the text
-  const segmented = wordcut.cut(cleanText);
-  console.log('Segmented result:', segmented);
-  
-  // Split into words and filter empty strings
-  const words = segmented.split('|').filter(word => word.trim());
-  console.log('Words array:', words);
-  
-  // Create word mapping for tracking
+  const words: string[] = [];
+  let currentWord = '';
   let currentIndex = 0;
-  const wordMapping = words.map(word => {
-    const mapping = {
-      original: word,
-      segmented: word,
+  const wordMapping: SegmentationResult['wordMapping'] = [];
+  
+  for (let i = 0; i < cleanText.length; i++) {
+    const char = cleanText[i];
+    currentWord += char;
+    
+    // Check for word boundaries
+    if (i < cleanText.length - 1) {
+      const nextChar = cleanText[i + 1];
+      
+      // Basic rules for word boundaries:
+      // 1. After a vowel followed by a consonant
+      // 2. After certain final consonants
+      // 3. Before certain initial consonants
+      if (
+        (isThaiVowel(char) && isThaiConsonant(nextChar)) ||
+        (isThaiConsonant(char) && !isThaiVowel(nextChar) && !isThaiToneMark(nextChar)) ||
+        i === cleanText.length - 1
+      ) {
+        if (currentWord) {
+          words.push(currentWord);
+          wordMapping.push({
+            original: currentWord,
+            segmented: currentWord,
+            startIndex: currentIndex,
+            endIndex: currentIndex + currentWord.length
+          });
+          currentIndex += currentWord.length;
+          currentWord = '';
+        }
+      }
+    }
+  }
+  
+  // Add the last word if there is one
+  if (currentWord) {
+    words.push(currentWord);
+    wordMapping.push({
+      original: currentWord,
+      segmented: currentWord,
       startIndex: currentIndex,
-      endIndex: currentIndex + word.length
-    };
-    currentIndex += word.length;
-    return mapping;
-  });
+      endIndex: currentIndex + currentWord.length
+    });
+  }
 
+  console.log('Segmented words:', words);
   console.log('Word mapping:', wordMapping);
   
   return {
