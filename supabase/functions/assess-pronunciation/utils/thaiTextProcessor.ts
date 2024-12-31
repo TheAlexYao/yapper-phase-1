@@ -1,4 +1,4 @@
-import wordcut from 'wordcut';
+import wordcut from "npm:wordcut@0.9.1";
 
 // Initialize wordcut with default dictionary
 wordcut.init();
