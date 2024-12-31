@@ -1,5 +1,5 @@
-// Using wordcut-engine which is Deno compatible
-import { WordcutEngine } from "https://esm.sh/wordcut-engine@1.1.1";
+// Using wordcut-engine from npm for Deno compatibility
+import { WordcutEngine } from "npm:wordcut-engine@1.1.1";
 
 export interface SegmentationResult {
   segmentedText: string;
