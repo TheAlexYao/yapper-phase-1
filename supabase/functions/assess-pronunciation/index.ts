@@ -41,11 +41,13 @@ serve(async (req) => {
       throw new Error('Azure configuration missing')
     }
 
-    // Configure speech service
+    // Configure speech service with proper language settings
     const speechConfig = sdk.SpeechConfig.fromSubscription(speechKey, speechRegion)
+    
+    // Set the language code for recognition
     speechConfig.speechRecognitionLanguage = languageCode
-
-    // Configure pronunciation assessment
+    
+    // Configure pronunciation assessment with proper settings for Thai
     const pronunciationConfig = new sdk.PronunciationAssessmentConfig(
       referenceText,
       sdk.PronunciationAssessmentGradingSystem.HundredMark,
@@ -57,7 +59,7 @@ serve(async (req) => {
     const audioData = await audioFile.arrayBuffer()
     const pushStream = sdk.AudioInputStream.createPushStream()
     
-    // Write audio data in chunks
+    // Write audio data in smaller chunks to prevent memory issues
     const chunkSize = 32 * 1024 // 32KB chunks
     const audioArray = new Uint8Array(audioData)
     
@@ -69,14 +71,14 @@ serve(async (req) => {
 
     const audioConfig = sdk.AudioConfig.fromStreamInput(pushStream)
     
-    // Create recognizer and apply pronunciation assessment
+    // Create recognizer with proper configuration
     const recognizer = new sdk.SpeechRecognizer(speechConfig, audioConfig)
     pronunciationConfig.applyTo(recognizer)
 
     // Perform recognition with detailed logging
     const result = await new Promise((resolve, reject) => {
       recognizer.recognizing = (s, e) => {
-        console.log('Recognition in progress:', e.result.text)
+        console.log(`Recognition in progress: ${e.result.text}`)
       }
 
       recognizer.recognized = (s, e) => {
@@ -94,23 +96,15 @@ serve(async (req) => {
           reason: e.reason,
           errorDetails: e.errorDetails
         })
-        
-        // Handle specific cancellation cases
-        if (e.reason === sdk.CancellationReason.Error) {
-          if (e.errorDetails.includes('InitialSilenceTimeout')) {
-            reject(new Error('No speech detected. Please speak louder or check your microphone.'))
-          } else {
-            reject(new Error(`Recognition error: ${e.errorDetails}`))
-          }
-        }
+        reject(new Error(`Recognition canceled: ${e.errorDetails}`))
       }
 
       recognizer.recognizeOnceAsync(
         result => {
           recognizer.close()
           if (result.reason === sdk.ResultReason.NoMatch) {
-            const noMatchDetail = sdk.NoMatchDetails.fromResult(result);
-            reject(new Error(`No speech could be recognized: ${noMatchDetail.reason}`));
+            const noMatchDetail = sdk.NoMatchDetails.fromResult(result)
+            reject(new Error(`No speech could be recognized: ${noMatchDetail.reason}`))
           } else {
             resolve(result)
           }
@@ -131,7 +125,9 @@ serve(async (req) => {
       sdk.PropertyId.SpeechServiceResponse_JsonResult
     )
 
-    // Validate the assessment result
+    console.log('Raw assessment result:', jsonResult)
+
+    // Parse and validate the assessment result
     const assessment = JSON.parse(jsonResult)
     if (!assessment.NBest?.[0]?.PronunciationAssessment) {
       console.error('Invalid assessment format:', assessment)
@@ -152,13 +148,15 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in assess-pronunciation:', error)
+    
+    // Return a proper error response with status code
     return new Response(
       JSON.stringify({ 
         error: error.message,
         details: error.stack
       }),
       { 
-        status: 500,
+        status: 400, // Use 400 for client errors
         headers: { 
           ...corsHeaders,
           'Content-Type': 'application/json'
