@@ -59,7 +59,6 @@ export const RecordingControls: React.FC<RecordingControlsProps> = ({
         sampleRate: audioBuffer.sampleRate
       });
       
-      // Create Azure-compatible WAV (16kHz) for assessment
       const azureWavBlob = await createAzureCompatibleWav(audioBuffer);
       console.log('Azure WAV conversion complete. Size:', azureWavBlob.size, 'bytes');
       
@@ -86,7 +85,6 @@ export const RecordingControls: React.FC<RecordingControlsProps> = ({
         throw new Error('Invalid response from pronunciation assessment');
       }
 
-      // Create high-quality WAV for playback
       const highQualityWav = await convertToWav(audioBuffer);
       const newAudioUrl = URL.createObjectURL(highQualityWav);
       onRecordingComplete(newAudioUrl, azureWavBlob);
