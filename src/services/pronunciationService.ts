@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 
-export const assessPronunciation = async (audioBlob: Blob, text: string): Promise<{
+export const assessPronunciation = async (audioBlob: Blob, text: string, languageCode: string): Promise<{
   score: number;
   feedback: {
     phonemeAnalysis: string;
@@ -22,11 +22,12 @@ export const assessPronunciation = async (audioBlob: Blob, text: string): Promis
 }> => {
   try {
     console.log('Starting pronunciation assessment for text:', text);
+    console.log('Using language code:', languageCode);
     
     const formData = new FormData();
     formData.append('audio', audioBlob, 'recording.wav');
     formData.append('text', text);
-    formData.append('languageCode', 'es-ES');
+    formData.append('languageCode', languageCode);
 
     const { data, error } = await supabase.functions.invoke('assess-pronunciation', {
       body: formData,

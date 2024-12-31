@@ -43,11 +43,9 @@ serve(async (req) => {
 
     // Configure speech service with proper language settings
     const speechConfig = sdk.SpeechConfig.fromSubscription(speechKey, speechRegion)
-    
-    // Set the language code for recognition
     speechConfig.speechRecognitionLanguage = languageCode
-    
-    // Configure pronunciation assessment with proper settings for Thai
+
+    // Configure pronunciation assessment
     const pronunciationConfig = new sdk.PronunciationAssessmentConfig(
       referenceText,
       sdk.PronunciationAssessmentGradingSystem.HundredMark,
@@ -149,14 +147,13 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in assess-pronunciation:', error)
     
-    // Return a proper error response with status code
     return new Response(
       JSON.stringify({ 
         error: error.message,
         details: error.stack
       }),
       { 
-        status: 400, // Use 400 for client errors
+        status: 400,
         headers: { 
           ...corsHeaders,
           'Content-Type': 'application/json'

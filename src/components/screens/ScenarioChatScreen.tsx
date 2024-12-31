@@ -124,7 +124,11 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
       try {
         console.log('Starting recording assessment for prompt:', currentPrompt.text);
         
-        const { score, feedback } = await assessPronunciation(audioBlob, currentPrompt.text);
+        const { score, feedback } = await assessPronunciation(
+          audioBlob, 
+          currentPrompt.text,
+          selectedLanguage // Pass the selected language code
+        );
         
         console.log('Assessment completed:', { score, feedback });
 
@@ -201,7 +205,7 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
         console.error('Error processing recording:', error);
         toast({
           title: "Error",
-          description: "Failed to assess pronunciation. Please try again.",
+          description: error.message || "Failed to assess pronunciation. Please try again.",
           variant: "destructive"
         });
       }
