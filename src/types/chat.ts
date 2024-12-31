@@ -1,3 +1,5 @@
+import { LanguageCode } from '@/constants/languages';
+
 export interface ChatMessage {
   id: string;
   role: 'bot' | 'user';
@@ -7,6 +9,7 @@ export interface ChatMessage {
   tts_audio_url: string;
   user_audio_url: string | null;
   score: number | null;
+  language_code: LanguageCode;
   feedback?: {
     overall_score: number;
     phoneme_analysis: string;

@@ -27,7 +27,8 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
   characterName,
   onBackToCharacters,
   script,
-  characterId
+  characterId,
+  selectedLanguage
 }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [currentPrompt, setCurrentPrompt] = useState<BotMessage | null>(null);
@@ -153,6 +154,7 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
         tts_audio_url: line.audioUrl || '',
         user_audio_url: null,
         score: null,
+        language_code: selectedLanguage,
       }));
       setScriptLines(initialScriptLines);
       
@@ -171,11 +173,12 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
             tts_audio_url: firstUserPrompt.tts_audio_url,
             user_audio_url: null,
             score: null,
+            language_code: selectedLanguage,
           });
         }
       }
     }
-  }, [script]);
+  }, [script, selectedLanguage]);
 
   const handleRecordingComplete = async (audioUrl: string, audioBlob: Blob) => {
     if (currentPrompt) {
@@ -195,6 +198,7 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
           tts_audio_url: currentPrompt.tts_audio_url,
           user_audio_url: audioUrl,
           score: score,
+          language_code: selectedLanguage,
           feedback: {
             overall_score: score,
             phoneme_analysis: feedback.phonemeAnalysis,
@@ -236,6 +240,7 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
                 tts_audio_url: scriptLines[nextUserIndex].tts_audio_url,
                 user_audio_url: null,
                 score: null,
+                language_code: selectedLanguage,
               });
               setCurrentLineIndex(nextUserIndex);
             }
@@ -249,6 +254,7 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
               tts_audio_url: nextLine.tts_audio_url,
               user_audio_url: null,
               score: null,
+              language_code: selectedLanguage,
             });
           }
         } else {
