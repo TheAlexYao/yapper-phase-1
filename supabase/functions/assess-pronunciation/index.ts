@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import * as sdk from "npm:microsoft-cognitiveservices-speech-sdk@1.32.0"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -34,6 +35,29 @@ serve(async (req) => {
       languageCode
     })
 
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('Missing Supabase configuration')
+    }
+    const supabase = createClient(supabaseUrl, supabaseKey)
+
+    // Fetch language configuration
+    const { data: languageConfig, error: configError } = await supabase
+      .from('languages')
+      .select('pronunciation_config')
+      .eq('code', languageCode)
+      .single()
+
+    if (configError || !languageConfig) {
+      console.error('Error fetching language config:', configError)
+      throw new Error('Language configuration not found')
+    }
+
+    console.log('Retrieved language config:', languageConfig)
+
+    const config = languageConfig.pronunciation_config
     const speechKey = Deno.env.get('AZURE_SPEECH_KEY')
     const speechRegion = Deno.env.get('AZURE_SPEECH_REGION')
 
@@ -45,11 +69,11 @@ serve(async (req) => {
     const speechConfig = sdk.SpeechConfig.fromSubscription(speechKey, speechRegion)
     speechConfig.speechRecognitionLanguage = languageCode
 
-    // Configure pronunciation assessment
+    // Configure pronunciation assessment with language-specific settings
     const pronunciationConfig = new sdk.PronunciationAssessmentConfig(
       referenceText,
       sdk.PronunciationAssessmentGradingSystem.HundredMark,
-      sdk.PronunciationAssessmentGranularity.Word,
+      config.wordSegmentation ? sdk.PronunciationAssessmentGranularity.Word : sdk.PronunciationAssessmentGranularity.Phoneme,
       true
     )
 
@@ -132,7 +156,30 @@ serve(async (req) => {
       throw new Error('Invalid assessment response format')
     }
 
-    console.log('Recognition completed successfully')
+    // Apply language-specific weights to the scores
+    const nBest = assessment.NBest[0]
+    const weightedAccuracy = nBest.PronunciationAssessment.AccuracyScore * config.accuracyWeight
+    const weightedFluency = nBest.PronunciationAssessment.FluencyScore * config.fluencyWeight
+    const weightedCompleteness = nBest.PronunciationAssessment.CompletenessScore * config.completenessWeight
+    
+    // Calculate weighted average score
+    const totalWeight = config.accuracyWeight + config.fluencyWeight + config.completenessWeight
+    const weightedScore = Math.round(
+      (weightedAccuracy + weightedFluency + weightedCompleteness) / totalWeight
+    )
+
+    // Update the assessment scores with weighted values
+    nBest.PronunciationAssessment.AccuracyScore = Math.round(weightedAccuracy)
+    nBest.PronunciationAssessment.FluencyScore = Math.round(weightedFluency)
+    nBest.PronunciationAssessment.CompletenessScore = Math.round(weightedCompleteness)
+    nBest.PronunciationAssessment.PronScore = weightedScore
+
+    console.log('Recognition completed successfully with weighted scores:', {
+      accuracyScore: nBest.PronunciationAssessment.AccuracyScore,
+      fluencyScore: nBest.PronunciationAssessment.FluencyScore,
+      completenessScore: nBest.PronunciationAssessment.CompletenessScore,
+      finalScore: weightedScore
+    })
 
     return new Response(
       JSON.stringify({ assessment }),
