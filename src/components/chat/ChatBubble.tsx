@@ -15,10 +15,13 @@ const ChatBubble = ({ message }: ChatBubbleProps) => {
   const [showFeedback, setShowFeedback] = useState(false);
   const isUser = message.role === 'user';
 
-  // Use the weighted PronScore directly from the assessment
+  // Calculate the overall score from the NBest array if available
   const calculateOverallScore = () => {
     if (message.feedback?.NBest?.[0]?.PronunciationAssessment) {
-      return message.feedback.NBest[0].PronunciationAssessment.PronScore;
+      const assessment = message.feedback.NBest[0].PronunciationAssessment;
+      return Math.round(
+        (assessment.AccuracyScore + assessment.FluencyScore + assessment.CompletenessScore) / 3
+      );
     }
     return message.score;
   };
