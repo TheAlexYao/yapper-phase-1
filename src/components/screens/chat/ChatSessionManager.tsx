@@ -9,7 +9,7 @@ interface ChatSessionManagerProps {
   characterId: number;
   selectedLanguage: LanguageCode;
   script: Script | null;
-  onSessionLoaded: (messages: ChatMessage[], currentLineIndex: number) => void;
+  onSessionLoaded: (messages: ChatMessage[], currentLineIndex: number, sessionId: string) => void;
 }
 
 export const ChatSessionManager: React.FC<ChatSessionManagerProps> = ({
@@ -50,7 +50,7 @@ export const ChatSessionManager: React.FC<ChatSessionManagerProps> = ({
           setSessionId(session.id);
           // Cast the messages to ChatMessage[] type
           const messages = session.messages as ChatMessage[] || [];
-          onSessionLoaded(messages, session.current_line_index || 0);
+          onSessionLoaded(messages, session.current_line_index || 0, session.id);
         } else {
           const { data: newSession, error: createError } = await supabase
             .from('chat_sessions')
@@ -67,7 +67,7 @@ export const ChatSessionManager: React.FC<ChatSessionManagerProps> = ({
           if (createError) throw createError;
           if (newSession) {
             setSessionId(newSession.id);
-            onSessionLoaded([], 0);
+            onSessionLoaded([], 0, newSession.id);
           }
         }
       } catch (error) {
