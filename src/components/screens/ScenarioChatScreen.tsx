@@ -10,6 +10,8 @@ import { handleRestartScenario, handleNextScenario } from '@/services/scenarioSe
 import ChatHeader from '@/components/chat/ChatHeader';
 import ChatMessages from '@/components/chat/ChatMessages';
 import { LanguageCode } from '@/constants/languages';
+import { ChatSessionManager } from './chat/ChatSessionManager';
+import { ScriptManager } from './chat/ScriptManager';
 
 interface ScenarioChatScreenProps {
   scenarioId: number;
@@ -37,99 +39,22 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
   const [currentLineIndex, setCurrentLineIndex] = useState(0);
   const [isConversationComplete, setIsConversationComplete] = useState(false);
   const { toast } = useToast();
-  const [sessionId, setSessionId] = useState<string | null>(null);
-
-  useEffect(() => {
-    const loadOrCreateSession = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          toast({
-            title: "Error",
-            description: "You must be logged in to use this feature",
-            variant: "destructive"
-          });
-          return;
-        }
-
-        const { data: existingSessions, error: fetchError } = await supabase
-          .from('chat_sessions')
-          .select('*')
-          .eq('scenario_id', scenarioId)
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(1);
-
-        if (fetchError) throw fetchError;
-
-        if (existingSessions && existingSessions.length > 0) {
-          const session = existingSessions[0];
-          setSessionId(session.id);
-          setMessages((session.messages as unknown as ChatMessage[]) || []);
-          setCurrentLineIndex(session.current_line_index || 0);
-          
-          if (scriptLines.length > (session.current_line_index || 0)) {
-            const nextUserPrompt = scriptLines.slice(session.current_line_index || 0).find(line => line.role === 'user');
-            if (nextUserPrompt) {
-              setCurrentPrompt({
-                id: Date.now().toString(),
-                role: 'bot',
-                text: nextUserPrompt.text,
-                transliteration: nextUserPrompt.transliteration,
-                translation: nextUserPrompt.translation,
-                tts_audio_url: nextUserPrompt.tts_audio_url,
-                user_audio_url: null,
-                score: null,
-                language_code: selectedLanguage
-              });
-            }
-          }
-        } else {
-          const { data: newSession, error: createError } = await supabase
-            .from('chat_sessions')
-            .insert([{
-              scenario_id: scenarioId,
-              character_id: characterId,
-              user_id: user.id,
-              messages: [],
-              current_line_index: 0
-            }])
-            .select()
-            .single();
-
-          if (createError) throw createError;
-          if (newSession) {
-            setSessionId(newSession.id);
-          }
-        }
-      } catch (error) {
-        console.error('Error managing session:', error);
-        toast({
-          title: "Error",
-          description: "Failed to load or create chat session",
-          variant: "destructive"
-        });
-      }
-    };
-
-    if (script) {
-      loadOrCreateSession();
-    }
-  }, [script, scenarioId, characterId, scriptLines, selectedLanguage, toast]);
 
   useEffect(() => {
     const updateSession = async () => {
-      if (!sessionId) return;
-
       try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
         const { error } = await supabase
           .from('chat_sessions')
           .update({
-            messages: messages as any[],
+            messages: messages,
             current_line_index: currentLineIndex,
             updated_at: new Date().toISOString()
           })
-          .eq('id', sessionId);
+          .eq('scenario_id', scenarioId)
+          .eq('user_id', user.id);
 
         if (error) throw error;
       } catch (error) {
@@ -143,44 +68,54 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
     };
 
     updateSession();
-  }, [messages, currentLineIndex, sessionId]);
+  }, [messages, currentLineIndex, scenarioId, toast]);
 
-  useEffect(() => {
-    if (script) {
-      const initialScriptLines: ChatMessage[] = script.script_data.lines.map((line, index) => ({
-        id: `${index}`,
-        role: line.speaker === 'character' ? 'bot' : 'user',
-        text: line.targetText,
-        transliteration: line.transliteration,
-        translation: line.translation,
-        tts_audio_url: line.audioUrl || '',
+  const handleSessionLoaded = (sessionMessages: ChatMessage[], sessionLineIndex: number) => {
+    setMessages(sessionMessages);
+    setCurrentLineIndex(sessionLineIndex);
+    
+    if (scriptLines.length > sessionLineIndex) {
+      const nextUserPrompt = scriptLines.slice(sessionLineIndex).find(line => line.role === 'user');
+      if (nextUserPrompt) {
+        setCurrentPrompt({
+          id: Date.now().toString(),
+          role: 'bot',
+          text: nextUserPrompt.text,
+          transliteration: nextUserPrompt.transliteration,
+          translation: nextUserPrompt.translation,
+          tts_audio_url: nextUserPrompt.tts_audio_url,
+          user_audio_url: null,
+          score: null,
+          language_code: selectedLanguage
+        });
+      }
+    }
+  };
+
+  const handleScriptLoaded = (
+    newScriptLines: ChatMessage[],
+    initialMessages: ChatMessage[],
+    initialLineIndex: number
+  ) => {
+    setScriptLines(newScriptLines);
+    setMessages(initialMessages);
+    setCurrentLineIndex(initialLineIndex);
+
+    const firstUserPrompt = newScriptLines.find(line => line.role === 'user');
+    if (firstUserPrompt) {
+      setCurrentPrompt({
+        id: 'initial-prompt',
+        role: 'bot',
+        text: firstUserPrompt.text,
+        transliteration: firstUserPrompt.transliteration,
+        translation: firstUserPrompt.translation,
+        tts_audio_url: firstUserPrompt.tts_audio_url,
         user_audio_url: null,
         score: null,
         language_code: selectedLanguage
-      }));
-      setScriptLines(initialScriptLines);
-      
-      if (initialScriptLines.length > 0 && initialScriptLines[0].role === 'bot') {
-        setMessages([initialScriptLines[0]]);
-        setCurrentLineIndex(1);
-        
-        const firstUserPrompt = initialScriptLines.find(line => line.role === 'user');
-        if (firstUserPrompt) {
-          setCurrentPrompt({
-            id: 'initial-prompt',
-            role: 'bot',
-            text: firstUserPrompt.text,
-            transliteration: firstUserPrompt.transliteration,
-            translation: firstUserPrompt.translation,
-            tts_audio_url: firstUserPrompt.tts_audio_url,
-            user_audio_url: null,
-            score: null,
-            language_code: selectedLanguage
-          });
-        }
-      }
+      });
     }
-  }, [script, selectedLanguage]);
+  };
 
   const handleRecordingComplete = async (audioUrl: string, audioBlob: Blob) => {
     if (currentPrompt) {
@@ -217,8 +152,6 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
             }]
           }
         };
-
-        console.log('Created new message:', JSON.stringify(newMessage, null, 2));
 
         setMessages(prevMessages => [...prevMessages, newMessage]);
         setCurrentPrompt(null);
@@ -373,6 +306,20 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
       </div>
 
       <div className="relative z-20 flex flex-col h-full">
+        <ChatSessionManager
+          scenarioId={scenarioId}
+          characterId={characterId}
+          selectedLanguage={selectedLanguage}
+          script={script}
+          onSessionLoaded={handleSessionLoaded}
+        />
+
+        <ScriptManager
+          script={script}
+          selectedLanguage={selectedLanguage}
+          onScriptLoaded={handleScriptLoaded}
+        />
+
         <ChatHeader
           characterName={characterName}
           scenarioTitle={scenarioTitle}
