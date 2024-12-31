@@ -1,6 +1,7 @@
 import TopicSelectionScreen from "@/components/screens/TopicSelectionScreen";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
+import { LanguageCode } from "@/constants/languages";
 
 // Topic ID mapping based on the provided schema
 const TOPIC_ID_MAP: { [key: string]: number } = {
@@ -22,7 +23,7 @@ const TopicSelection = () => {
     
     // Store both topic and language in React Query cache
     queryClient.setQueryData(['selectedTopic'], { title, id: topicId });
-    queryClient.setQueryData(['selectedLanguage'], lang);
+    queryClient.setQueryData(['selectedLanguage'], lang as LanguageCode);
     queryClient.setQueryData(['userGender'], 'male'); // Set default gender
     
     navigate('/scenarios');

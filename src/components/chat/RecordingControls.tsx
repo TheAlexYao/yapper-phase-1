@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
 import { convertToWav, createAzureCompatibleWav } from '@/utils/audioConversion';
 import { AudioPlayer } from '@/components/audio/AudioPlayer';
+import { LanguageCode } from '@/constants/languages';
 
 interface RecordingControlsProps {
   onRecordingComplete: (audioUrl: string, audioBlob: Blob) => void;
@@ -15,6 +16,7 @@ interface RecordingControlsProps {
     transliteration: string | null;
     translation: string;
     tts_audio_url: string;
+    language_code: LanguageCode;
   } | null;
 }
 
@@ -68,7 +70,7 @@ export const RecordingControls: React.FC<RecordingControlsProps> = ({
       const formData = new FormData();
       formData.append('audio', azureWavBlob, 'recording.wav');
       formData.append('text', currentPrompt.text);
-      formData.append('languageCode', 'es-ES');
+      formData.append('languageCode', currentPrompt.language_code);
 
       const { data, error } = await supabase.functions.invoke('assess-pronunciation', {
         body: formData,

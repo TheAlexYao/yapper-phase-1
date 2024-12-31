@@ -3,6 +3,7 @@ import { useQueryClient, useQuery } from "@tanstack/react-query";
 import ScenarioChatScreen from "@/components/screens/ScenarioChatScreen";
 import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
+import { LanguageCode } from "@/constants/languages";
 
 type ScriptRow = Database['public']['Tables']['scripts']['Row'];
 
@@ -21,26 +22,17 @@ const ScenarioChat = () => {
     name: string 
   } | undefined;
 
-  // Use BCP47 language codes from languages table
-  const languageMap: { [key: string]: string } = {
-    'es': 'es-ES',
-    'en': 'en-US',
-    'th': 'th-TH',
-    'ru': 'ru-RU'
-  };
-
-  const selectedLanguage = queryClient.getQueryData(['selectedLanguage']) as string || "en";
-  const mappedLanguage = languageMap[selectedLanguage] || selectedLanguage;
+  const selectedLanguage = (queryClient.getQueryData(['selectedLanguage']) as LanguageCode) || "en-US";
   const userGender = queryClient.getQueryData(['userGender']) as string || "male";
 
   // Query for the script
   const { data: script, isLoading: isLoadingScript } = useQuery({
-    queryKey: ['script', selectedScenario?.id, selectedCharacter?.id, mappedLanguage, userGender],
+    queryKey: ['script', selectedScenario?.id, selectedCharacter?.id, selectedLanguage, userGender],
     queryFn: async () => {
       if (!selectedScenario || !selectedCharacter) return null;
 
       console.log('Fetching script with params:', {
-        language_code: mappedLanguage,
+        language_code: selectedLanguage,
         scenario_id: selectedScenario.id,
         topic_id: selectedScenario.topicId,
         character_id: selectedCharacter.id,
@@ -50,7 +42,7 @@ const ScenarioChat = () => {
       const { data, error } = await supabase
         .from('scripts')
         .select('*')
-        .eq('language_code', mappedLanguage)
+        .eq('language_code', selectedLanguage)
         .eq('scenario_id', selectedScenario.id)
         .eq('topic_id', selectedScenario.topicId)
         .eq('character_id', selectedCharacter.id)

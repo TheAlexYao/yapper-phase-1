@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import CharacterSelectionScreen from "@/components/screens/CharacterSelectionScreen";
+import { LanguageCode } from "@/constants/languages";
 
 // Character ID mapping based on the provided schema
 const CHARACTER_ID_MAP: { [key: string]: number } = {
@@ -26,6 +27,7 @@ const CharacterSelection = () => {
     title: string;
     topicId: number;
   } | undefined;
+  const selectedLanguage = queryClient.getQueryData(['selectedLanguage']) as LanguageCode;
 
   const handleBackToScenarios = () => {
     queryClient.removeQueries({ queryKey: ['selectedScenario'] });
@@ -49,7 +51,7 @@ const CharacterSelection = () => {
   return (
     <CharacterSelectionScreen
       scenarioTitle={selectedScenario.title}
-      selectedLanguage="en"
+      selectedLanguage={selectedLanguage}
       onBackToScenarios={handleBackToScenarios}
       onCharacterSelect={handleCharacterSelect}
     />

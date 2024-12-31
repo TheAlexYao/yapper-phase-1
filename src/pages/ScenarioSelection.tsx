@@ -1,11 +1,13 @@
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import ScenarioSelectionScreen from "@/components/screens/ScenarioSelectionScreen";
+import { LanguageCode } from "@/constants/languages";
 
 const ScenarioSelection = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const selectedTopic = queryClient.getQueryData(['selectedTopic']) as { title: string; id: number } | undefined;
+  const selectedLanguage = queryClient.getQueryData(['selectedLanguage']) as LanguageCode;
 
   const handleBackToTopics = () => {
     queryClient.removeQueries({ queryKey: ['selectedTopic'] });
@@ -31,7 +33,7 @@ const ScenarioSelection = () => {
   return (
     <ScenarioSelectionScreen
       topicTitle={selectedTopic.title}
-      selectedLanguage="en"
+      selectedLanguage={selectedLanguage}
       onBackToTopics={handleBackToTopics}
       onScenarioSelect={handleScenarioSelect}
     />
