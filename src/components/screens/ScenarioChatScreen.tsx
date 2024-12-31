@@ -9,6 +9,7 @@ import { assessPronunciation } from '@/services/pronunciationService';
 import { handleRestartScenario, handleNextScenario } from '@/services/scenarioService';
 import ChatHeader from '@/components/chat/ChatHeader';
 import ChatMessages from '@/components/chat/ChatMessages';
+import { LanguageCode } from '@/constants/languages';
 
 interface ScenarioChatScreenProps {
   scenarioId: number;
@@ -16,7 +17,7 @@ interface ScenarioChatScreenProps {
   topicId: number;
   characterId: number;
   characterName: string;
-  selectedLanguage: string;
+  selectedLanguage: LanguageCode;
   onBackToCharacters: () => void;
   script: Script | null;
 }
@@ -79,6 +80,7 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
                 tts_audio_url: nextUserPrompt.tts_audio_url,
                 user_audio_url: null,
                 score: null,
+                language_code: selectedLanguage
               });
             }
           }
@@ -113,7 +115,7 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
     if (script) {
       loadOrCreateSession();
     }
-  }, [script, scenarioId, characterId]);
+  }, [script, scenarioId, characterId, scriptLines, selectedLanguage, toast]);
 
   useEffect(() => {
     const updateSession = async () => {
@@ -154,7 +156,7 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
         tts_audio_url: line.audioUrl || '',
         user_audio_url: null,
         score: null,
-        language_code: selectedLanguage,
+        language_code: selectedLanguage
       }));
       setScriptLines(initialScriptLines);
       
@@ -173,7 +175,7 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
             tts_audio_url: firstUserPrompt.tts_audio_url,
             user_audio_url: null,
             score: null,
-            language_code: selectedLanguage,
+            language_code: selectedLanguage
           });
         }
       }
