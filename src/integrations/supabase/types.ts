@@ -359,6 +359,7 @@ export type Database = {
           male_voice: string | null
           name: string
           output_format: string | null
+          pronunciation_config: Json | null
           sample_rate: number | null
           shortname_female: string | null
           shortname_male: string | null
@@ -375,6 +376,7 @@ export type Database = {
           male_voice?: string | null
           name: string
           output_format?: string | null
+          pronunciation_config?: Json | null
           sample_rate?: number | null
           shortname_female?: string | null
           shortname_male?: string | null
@@ -391,6 +393,7 @@ export type Database = {
           male_voice?: string | null
           name?: string
           output_format?: string | null
+          pronunciation_config?: Json | null
           sample_rate?: number | null
           shortname_female?: string | null
           shortname_male?: string | null
