@@ -1,5 +1,5 @@
-// Using wordcut-engine from npm for Deno compatibility
-import { WordcutEngine } from "npm:wordcut-engine@1.1.1";
+// Using wordcut from npm for Deno compatibility
+import wordcut from "npm:wordcut@0.9.1";
 
 export interface SegmentationResult {
   segmentedText: string;
@@ -11,8 +11,8 @@ export interface SegmentationResult {
   }[];
 }
 
-// Initialize the wordcut engine with default Thai dictionary
-const engine = new WordcutEngine();
+// Initialize the wordcut engine
+wordcut.init();
 
 export function segmentThaiText(text: string): SegmentationResult {
   console.log('Segmenting Thai text:', text);
@@ -20,8 +20,9 @@ export function segmentThaiText(text: string): SegmentationResult {
   // Remove existing spaces to ensure consistent segmentation
   const cleanText = text.replace(/\s+/g, '');
   
-  // Get segmented words using the engine
-  const words = engine.segment(cleanText);
+  // Get segmented words using wordcut
+  const segmentedText = wordcut.cut(cleanText);
+  const words = segmentedText.split('|').filter(word => word.length > 0);
   console.log('Segmented words:', words);
   
   // Create word mapping for tracking positions
