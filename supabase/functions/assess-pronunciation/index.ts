@@ -156,7 +156,30 @@ serve(async (req) => {
       throw new Error('Invalid assessment response format')
     }
 
-    console.log('Recognition completed successfully')
+    // Apply language-specific weights to the scores
+    const nBest = assessment.NBest[0]
+    const weightedAccuracy = nBest.PronunciationAssessment.AccuracyScore * config.accuracyWeight
+    const weightedFluency = nBest.PronunciationAssessment.FluencyScore * config.fluencyWeight
+    const weightedCompleteness = nBest.PronunciationAssessment.CompletenessScore * config.completenessWeight
+    
+    // Calculate weighted average score
+    const totalWeight = config.accuracyWeight + config.fluencyWeight + config.completenessWeight
+    const weightedScore = Math.round(
+      (weightedAccuracy + weightedFluency + weightedCompleteness) / totalWeight
+    )
+
+    // Update the assessment scores with weighted values
+    nBest.PronunciationAssessment.AccuracyScore = Math.round(weightedAccuracy)
+    nBest.PronunciationAssessment.FluencyScore = Math.round(weightedFluency)
+    nBest.PronunciationAssessment.CompletenessScore = Math.round(weightedCompleteness)
+    nBest.PronunciationAssessment.PronScore = weightedScore
+
+    console.log('Recognition completed successfully with weighted scores:', {
+      accuracyScore: nBest.PronunciationAssessment.AccuracyScore,
+      fluencyScore: nBest.PronunciationAssessment.FluencyScore,
+      completenessScore: nBest.PronunciationAssessment.CompletenessScore,
+      finalScore: weightedScore
+    })
 
     return new Response(
       JSON.stringify({ assessment }),
