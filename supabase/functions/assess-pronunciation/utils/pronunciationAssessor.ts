@@ -7,6 +7,11 @@ export async function assessPronunciation(
   languageCode: string,
   pronunciationConfig: any
 ): Promise<{ result: sdk.SpeechRecognitionResult; segmentation?: SegmentationResult }> {
+  console.log('Starting pronunciation assessment with:', {
+    referenceText,
+    languageCode
+  });
+
   // Only segment Thai text
   const shouldSegment = languageCode.toLowerCase().startsWith('th');
   let textSegmentation: SegmentationResult | undefined;
@@ -15,7 +20,7 @@ export async function assessPronunciation(
   if (shouldSegment) {
     textSegmentation = segmentThaiText(referenceText);
     textToAssess = textSegmentation.segmentedText;
-    console.log('Segmented text:', textToAssess);
+    console.log('Using segmented text:', textToAssess);
   }
 
   const speechConfig = sdk.SpeechConfig.fromSubscription(
