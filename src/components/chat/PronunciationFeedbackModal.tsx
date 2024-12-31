@@ -4,6 +4,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 
@@ -44,6 +45,8 @@ const ErrorTypeBadge = ({ errorType }: { errorType: string }) => {
         return 'bg-red-100 text-red-800';
       case 'omission':
         return 'bg-yellow-100 text-yellow-800';
+      case 'insertion':
+        return 'bg-orange-100 text-orange-800';
       case 'noassessment':
         return 'bg-gray-100 text-gray-800';
       default:
@@ -64,18 +67,24 @@ const PronunciationFeedbackModal: React.FC<PronunciationFeedbackModalProps> = ({
   feedback
 }) => {
   const nBestResult = feedback.NBest?.[0];
+  
+  // Use the weighted PronScore as the overall score
+  const overallScore = nBestResult?.PronunciationAssessment.PronScore ?? feedback.overall_score;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle>Pronunciation Assessment</DialogTitle>
+          <DialogDescription>
+            Overall Score: {Math.round(overallScore)}%
+          </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-6 py-4 flex-1 overflow-y-auto">
           {/* Overall Scores */}
           <div className="space-y-4">
-            <h3 className="font-semibold">Overall Scores</h3>
+            <h3 className="font-semibold">Detailed Scores</h3>
             {nBestResult && (
               <div className="grid gap-4">
                 <div>
@@ -122,6 +131,8 @@ const PronunciationFeedbackModal: React.FC<PronunciationFeedbackModalProps> = ({
                         ? 'bg-green-50'
                         : word.PronunciationAssessment.ErrorType.toLowerCase() === 'omission'
                         ? 'bg-yellow-50'
+                        : word.PronunciationAssessment.ErrorType.toLowerCase() === 'insertion'
+                        ? 'bg-orange-50'
                         : 'bg-red-50'
                     }`}
                   >
@@ -137,15 +148,17 @@ const PronunciationFeedbackModal: React.FC<PronunciationFeedbackModalProps> = ({
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <div className="flex flex-col items-end">
-                        <span className="text-sm font-medium">
-                          {word.PronunciationAssessment.AccuracyScore}%
-                        </span>
-                        <Progress 
-                          value={word.PronunciationAssessment.AccuracyScore} 
-                          className="w-24"
-                        />
-                      </div>
+                      {word.PronunciationAssessment.AccuracyScore !== undefined && (
+                        <div className="flex flex-col items-end">
+                          <span className="text-sm font-medium">
+                            {word.PronunciationAssessment.AccuracyScore}%
+                          </span>
+                          <Progress 
+                            value={word.PronunciationAssessment.AccuracyScore} 
+                            className="w-24"
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
