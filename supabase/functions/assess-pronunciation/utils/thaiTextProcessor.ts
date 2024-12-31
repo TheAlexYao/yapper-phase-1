@@ -1,5 +1,5 @@
-// Simple Thai word segmentation implementation for Deno
-// This uses a basic dictionary-based approach that works without external dependencies
+// Using wordcut-engine which is Deno compatible
+import { WordcutEngine } from "https://esm.sh/wordcut-engine@1.1.1";
 
 export interface SegmentationResult {
   segmentedText: string;
@@ -11,77 +11,32 @@ export interface SegmentationResult {
   }[];
 }
 
-// Basic Thai characters for word boundary detection
-const thaiConsonants = 'กขฃคฅฆงจฉชซฌญฎฏฐฑฒณดตถทธนบปผฝพฟภมยรลวศษสหฬอฮ';
-const thaiVowels = 'ะัาำิีึืุูเแโใไๅ็่้๊๋์';
-const thaiToneMarks = '่้๊๋';
-
-function isThaiConsonant(char: string): boolean {
-  return thaiConsonants.includes(char);
-}
-
-function isThaiVowel(char: string): boolean {
-  return thaiVowels.includes(char);
-}
-
-function isThaiToneMark(char: string): boolean {
-  return thaiToneMarks.includes(char);
-}
+// Initialize the wordcut engine with default Thai dictionary
+const engine = new WordcutEngine();
 
 export function segmentThaiText(text: string): SegmentationResult {
   console.log('Segmenting Thai text:', text);
   
   // Remove existing spaces to ensure consistent segmentation
   const cleanText = text.replace(/\s+/g, '');
-  const words: string[] = [];
-  let currentWord = '';
-  let currentIndex = 0;
-  const wordMapping: SegmentationResult['wordMapping'] = [];
   
-  for (let i = 0; i < cleanText.length; i++) {
-    const char = cleanText[i];
-    currentWord += char;
-    
-    // Check for word boundaries
-    if (i < cleanText.length - 1) {
-      const nextChar = cleanText[i + 1];
-      
-      // Basic rules for word boundaries:
-      // 1. After a vowel followed by a consonant
-      // 2. After certain final consonants
-      // 3. Before certain initial consonants
-      if (
-        (isThaiVowel(char) && isThaiConsonant(nextChar)) ||
-        (isThaiConsonant(char) && !isThaiVowel(nextChar) && !isThaiToneMark(nextChar)) ||
-        i === cleanText.length - 1
-      ) {
-        if (currentWord) {
-          words.push(currentWord);
-          wordMapping.push({
-            original: currentWord,
-            segmented: currentWord,
-            startIndex: currentIndex,
-            endIndex: currentIndex + currentWord.length
-          });
-          currentIndex += currentWord.length;
-          currentWord = '';
-        }
-      }
-    }
-  }
-  
-  // Add the last word if there is one
-  if (currentWord) {
-    words.push(currentWord);
-    wordMapping.push({
-      original: currentWord,
-      segmented: currentWord,
-      startIndex: currentIndex,
-      endIndex: currentIndex + currentWord.length
-    });
-  }
-
+  // Get segmented words using the engine
+  const words = engine.segment(cleanText);
   console.log('Segmented words:', words);
+  
+  // Create word mapping for tracking positions
+  let currentIndex = 0;
+  const wordMapping = words.map(word => {
+    const mapping = {
+      original: word,
+      segmented: word,
+      startIndex: currentIndex,
+      endIndex: currentIndex + word.length
+    };
+    currentIndex += word.length;
+    return mapping;
+  });
+
   console.log('Word mapping:', wordMapping);
   
   return {
