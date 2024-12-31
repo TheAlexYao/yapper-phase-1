@@ -120,6 +120,7 @@ export const RecordingControls: React.FC<RecordingControlsProps> = ({
         {currentPrompt.transliteration && (
           <p className="text-xs md:text-sm text-gray-600">{currentPrompt.transliteration}</p>
         )}
+        <p className="text-xs md:text-sm text-gray-500">{currentPrompt.translation}</p>
       </div>
 
       <AudioPlayer audioUrl={currentPrompt.tts_audio_url} label="TTS" />
