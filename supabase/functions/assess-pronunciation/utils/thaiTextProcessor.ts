@@ -1,80 +1,28 @@
-// Using wordcut from npm for Deno compatibility
-import wordcut from "npm:wordcut@0.9.1";
+// Simple utility to check if text needs spacing
+export function ensureProperSpacing(text: string, languageCode: string): string {
+  // If it's not an Asian language that typically doesn't use spaces, return as is
+  if (!['th-TH', 'zh-CN', 'zh-TW', 'ja-JP', 'ko-KR'].includes(languageCode)) {
+    return text;
+  }
 
-export interface SegmentationResult {
-  segmentedText: string;
-  wordMapping: {
-    original: string;
-    segmented: string;
-    startIndex: number;
-    endIndex: number;
-  }[];
-}
+  // If text already contains spaces, assume it's properly formatted
+  if (text.includes(' ')) {
+    return text;
+  }
 
-// Initialize the wordcut engine
-wordcut.init();
+  // For Thai language specifically
+  if (languageCode === 'th-TH') {
+    // Add space after each word boundary marker (.|!|?), 
+    // after numbers, and between Thai consonants and vowels
+    return text
+      .replace(/([.!?])/g, '$1 ')
+      .replace(/([0-9])/g, '$1 ')
+      .replace(/([\u0E01-\u0E5B])/g, '$1 ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
 
-export function segmentThaiText(text: string): SegmentationResult {
-  console.log('Segmenting Thai text:', text);
-  
-  // Remove existing spaces to ensure consistent segmentation
-  const cleanText = text.replace(/\s+/g, '');
-  
-  // Get segmented words using wordcut
-  const segmentedText = wordcut.cut(cleanText);
-  const words = segmentedText.split('|').filter(word => word.length > 0);
-  console.log('Segmented words:', words);
-  
-  // Create word mapping for tracking positions
-  let currentIndex = 0;
-  const wordMapping = words.map(word => {
-    const mapping = {
-      original: word,
-      segmented: word,
-      startIndex: currentIndex,
-      endIndex: currentIndex + word.length
-    };
-    currentIndex += word.length;
-    return mapping;
-  });
-
-  console.log('Word mapping:', wordMapping);
-  
-  return {
-    segmentedText: words.join(' '),
-    wordMapping
-  };
-}
-
-export function mapSegmentedResultsToOriginal(
-  segmentedResults: any,
-  wordMapping: SegmentationResult['wordMapping']
-) {
-  if (!segmentedResults.NBest?.[0]) return segmentedResults;
-
-  console.log('Mapping segmented results to original:', {
-    segmentedResults,
-    wordMapping
-  });
-
-  const nBest = segmentedResults.NBest[0];
-  const mappedWords = nBest.Words.map((word: any, index: number) => {
-    const mapping = wordMapping[index];
-    return {
-      ...word,
-      Word: mapping?.original || word.Word,
-      OriginalOffset: mapping?.startIndex || word.Offset,
-      OriginalDuration: (mapping?.endIndex || 0) - (mapping?.startIndex || 0)
-    };
-  });
-
-  console.log('Mapped words:', mappedWords);
-
-  return {
-    ...segmentedResults,
-    NBest: [{
-      ...nBest,
-      Words: mappedWords
-    }]
-  };
+  // For Chinese, Japanese, and Korean
+  // Add space between each character, as they are typically single units
+  return text.split('').join(' ').trim();
 }

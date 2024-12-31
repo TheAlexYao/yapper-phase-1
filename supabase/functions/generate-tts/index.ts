@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { ensureProperSpacing } from './utils/thaiTextProcessor.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -82,6 +83,10 @@ serve(async (req) => {
         for (const line of scriptData.lines) {
           if (!line.audioUrl) {
             try {
+              // Ensure proper spacing in the text before TTS generation
+              const spacedText = ensureProperSpacing(line.targetText, script.language_code);
+              line.targetText = spacedText;
+
               // Select voice based on speaker
               const voiceName = line.speaker === 'character' 
                 ? (script.character_id % 2 === 0 ? languageData.female_voice : languageData.male_voice)
