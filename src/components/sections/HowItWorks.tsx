@@ -2,28 +2,28 @@ import { MessageSquare, Code2, Sparkles, Globe, Rocket } from "lucide-react";
 
 const steps = [
   {
-    title: "Chat with AI",
-    description: "Start by describing what you want to build in natural language",
+    title: "Choose Your Topic",
+    description: "Select from a variety of conversation topics and real-world scenarios",
     icon: <MessageSquare className="w-12 h-12" />
   },
   {
-    title: "Generate Code",
-    description: "Watch as AI generates clean, maintainable code for your project",
+    title: "Meet Your Partner",
+    description: "Get matched with an AI conversation partner tailored to your learning goals",
     icon: <Code2 className="w-12 h-12" />
   },
   {
-    title: "Instant Preview",
-    description: "See your changes in real-time with live preview",
+    title: "Practice Speaking",
+    description: "Engage in natural conversations with instant pronunciation feedback",
     icon: <Sparkles className="w-12 h-12" />
   },
   {
-    title: "Customize",
-    description: "Fine-tune and customize your application to perfection",
+    title: "Learn Culture",
+    description: "Gain cultural insights and context while improving your language skills",
     icon: <Globe className="w-12 h-12" />
   },
   {
-    title: "Deploy",
-    description: "Launch your application with one click deployment",
+    title: "Track Progress",
+    description: "Monitor your improvement and unlock new conversation scenarios",
     icon: <Rocket className="w-12 h-12" />
   }
 ];
@@ -42,8 +42,6 @@ const HowItWorks = () => {
               {/* Desktop connector dots */}
               <div className="absolute top-12 left-1/2 w-4 h-4 rounded-full bg-[#38b6ff] hidden md:block 
                              transform -translate-x-1/2 -translate-y-1/2" />
-              
-              {/* Mobile connector line - removed */}
               
               <div className="w-24 h-24 rounded-xl bg-background flex items-center justify-center 
                              border-2 border-[#38b6ff] mb-6 relative z-10 group-hover:scale-110 
