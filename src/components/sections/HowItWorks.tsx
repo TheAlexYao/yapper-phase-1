@@ -1,30 +1,30 @@
-import { MessageSquare, Code2, Sparkles, Globe, Rocket } from "lucide-react";
+import { BookOpen, Users, Mic, MapPin, Trophy } from "lucide-react";
 
 const steps = [
   {
     title: "Choose Your Topic",
     description: "Select from a variety of conversation topics and real-world scenarios",
-    icon: <MessageSquare className="w-12 h-12" />
+    icon: <BookOpen className="w-12 h-12" />
   },
   {
     title: "Meet Your Partner",
     description: "Get matched with an AI conversation partner tailored to your learning goals",
-    icon: <Code2 className="w-12 h-12" />
+    icon: <Users className="w-12 h-12" />
   },
   {
     title: "Practice Speaking",
     description: "Engage in natural conversations with instant pronunciation feedback",
-    icon: <Sparkles className="w-12 h-12" />
+    icon: <Mic className="w-12 h-12" />
   },
   {
     title: "Learn Culture",
-    description: "Gain cultural insights and context while improving your language skills",
-    icon: <Globe className="w-12 h-12" />
+    description: "Master local slang and expressions through personalized real-world contexts",
+    icon: <MapPin className="w-12 h-12" />
   },
   {
     title: "Track Progress",
     description: "Monitor your improvement and unlock new conversation scenarios",
-    icon: <Rocket className="w-12 h-12" />
+    icon: <Trophy className="w-12 h-12" />
   }
 ];
 
