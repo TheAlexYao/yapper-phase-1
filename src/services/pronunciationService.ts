@@ -9,6 +9,7 @@ export const assessPronunciation = async (audioBlob: Blob, text: string, languag
     accuracyScore: number;
     fluencyScore: number;
     completenessScore: number;
+    pronScore: number;
     words: Array<{
       Word: string;
       Offset?: number;
@@ -67,6 +68,7 @@ export const assessPronunciation = async (audioBlob: Blob, text: string, languag
       accuracyScore: nBestResult.PronunciationAssessment.AccuracyScore,
       fluencyScore: nBestResult.PronunciationAssessment.FluencyScore,
       completenessScore: nBestResult.PronunciationAssessment.CompletenessScore,
+      pronScore: nBestResult.PronunciationAssessment.PronScore,
       wordScores,
       suggestions,
       words: nBestResult.Words
@@ -81,6 +83,7 @@ export const assessPronunciation = async (audioBlob: Blob, text: string, languag
         accuracyScore: nBestResult.PronunciationAssessment.AccuracyScore,
         fluencyScore: nBestResult.PronunciationAssessment.FluencyScore,
         completenessScore: nBestResult.PronunciationAssessment.CompletenessScore,
+        pronScore: nBestResult.PronunciationAssessment.PronScore,
         words: nBestResult.Words
       }
     };
