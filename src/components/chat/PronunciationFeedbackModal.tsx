@@ -80,6 +80,15 @@ const PronunciationFeedbackModal: React.FC<PronunciationFeedbackModalProps> = ({
               <div className="grid gap-4">
                 <div>
                   <div className="flex justify-between mb-1">
+                    <span className="text-sm">Pronunciation</span>
+                    <span className="text-sm font-medium">
+                      {nBestResult.PronunciationAssessment.PronScore}%
+                    </span>
+                  </div>
+                  <Progress value={nBestResult.PronunciationAssessment.PronScore} />
+                </div>
+                <div>
+                  <div className="flex justify-between mb-1">
                     <span className="text-sm">Accuracy</span>
                     <span className="text-sm font-medium">
                       {nBestResult.PronunciationAssessment.AccuracyScore}%
