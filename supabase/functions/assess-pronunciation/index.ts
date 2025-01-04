@@ -1,8 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import * as sdk from "npm:microsoft-cognitiveservices-speech-sdk@1.32.0"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { createPronunciationConfig } from './utils/pronunciationConfig.ts'
-import { createAudioConfig } from './utils/audioProcessing.ts'
 import { calculateWeightedScores } from './utils/scoreCalculation.ts'
 
 const corsHeaders = {
@@ -11,7 +9,6 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
@@ -33,7 +30,6 @@ serve(async (req) => {
       languageCode
     })
 
-    // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
     if (!supabaseUrl || !supabaseKey) {
@@ -41,7 +37,6 @@ serve(async (req) => {
     }
     const supabase = createClient(supabaseUrl, supabaseKey)
 
-    // Get language-specific configuration
     const { data: languageData, error: languageError } = await supabase
       .from('languages')
       .select('pronunciation_config')
@@ -54,7 +49,6 @@ serve(async (req) => {
 
     console.log('Retrieved language config:', languageData)
 
-    // Set up Azure Speech configuration
     const speechKey = Deno.env.get('AZURE_SPEECH_KEY')
     const speechRegion = Deno.env.get('AZURE_SPEECH_REGION')
     if (!speechKey || !speechRegion) {
@@ -64,13 +58,21 @@ serve(async (req) => {
     const speechConfig = sdk.SpeechConfig.fromSubscription(speechKey, speechRegion)
     speechConfig.speechRecognitionLanguage = languageCode
 
-    // Create pronunciation assessment config
-    const pronunciationConfig = createPronunciationConfig(referenceText, languageCode)
+    const audioData = await audioFile.arrayBuffer()
+    const pushStream = sdk.AudioInputStream.createPushStream()
     
-    // Create audio config from the uploaded file
-    const audioConfig = await createAudioConfig(audioFile)
+    const audioArray = new Uint8Array(audioData)
+    pushStream.write(audioArray)
+    pushStream.close()
 
-    // Create recognizer and apply pronunciation assessment
+    const audioConfig = sdk.AudioConfig.fromStreamInput(pushStream)
+    const pronunciationConfig = new sdk.PronunciationAssessmentConfig(
+      referenceText,
+      sdk.PronunciationAssessmentGradingSystem.HundredMark,
+      sdk.PronunciationAssessmentGranularity.Word,
+      true
+    )
+
     const recognizer = new sdk.SpeechRecognizer(speechConfig, audioConfig)
     pronunciationConfig.applyTo(recognizer)
 
@@ -79,41 +81,34 @@ serve(async (req) => {
 
       recognizer.recognized = async (s, e) => {
         if (e.result.reason === sdk.ResultReason.RecognizedSpeech) {
-          const jsonResult = e.result.properties.getProperty(
+          const jsonResult = JSON.parse(e.result.properties.getProperty(
             sdk.PropertyId.SpeechServiceResponse_JsonResult
-          )
+          ))
           
-          console.log('Raw assessment result:', jsonResult)
+          console.log('Raw assessment result:', JSON.stringify(jsonResult))
 
-          const assessment = JSON.parse(jsonResult)
-          if (!assessment.NBest?.[0]?.PronunciationAssessment) {
-            console.error('Invalid assessment format:', assessment)
-            throw new Error('Invalid assessment response format')
-          }
-
-          // Calculate weighted scores based on language config
-          const weights = languageData.pronunciation_config
           const scores = calculateWeightedScores(
-            assessment.NBest[0].PronunciationAssessment,
-            weights
+            jsonResult,
+            languageData.pronunciation_config
           )
 
           console.log('Recognition completed successfully with weighted scores:', scores)
 
           finalResult = {
-            NBest: [
-              {
-                ...assessment.NBest[0],
-                PronunciationAssessment: {
-                  ...assessment.NBest[0].PronunciationAssessment,
-                  finalScore: scores.finalScore,
-                  weightedAccuracyScore: scores.accuracyScore,
-                  weightedFluencyScore: scores.fluencyScore,
-                  weightedCompletenessScore: scores.completenessScore,
-                  pronScore: scores.pronScore
-                }
-              }
-            ]
+            score: scores.finalScore,
+            feedback: {
+              phonemeAnalysis: "Detailed phoneme analysis will be provided soon",
+              wordScores: jsonResult.NBest[0].Words.reduce((acc: any, word: any) => {
+                acc[word.Word] = word.PronunciationAssessment.AccuracyScore;
+                return acc;
+              }, {}),
+              suggestions: generateSuggestions(jsonResult.NBest[0].Words),
+              accuracyScore: scores.accuracyScore,
+              fluencyScore: scores.fluencyScore,
+              completenessScore: scores.completenessScore,
+              pronScore: scores.pronScore,
+              words: jsonResult.NBest[0].Words
+            }
           }
         }
       }
@@ -134,7 +129,7 @@ serve(async (req) => {
           }
 
           resolve(new Response(
-            JSON.stringify({ assessment: finalResult }),
+            JSON.stringify(finalResult),
             { 
               headers: { ...corsHeaders, 'Content-Type': 'application/json' }
             }
@@ -165,3 +160,35 @@ serve(async (req) => {
     )
   }
 })
+
+function generateSuggestions(words: Array<{
+  Word: string;
+  PronunciationAssessment: {
+    AccuracyScore: number;
+    ErrorType: string;
+  };
+}>): string {
+  const problematicWords = words.filter(
+    word => word.PronunciationAssessment.ErrorType !== 'None'
+  );
+
+  if (problematicWords.length === 0) {
+    return "Great pronunciation! Keep practicing to maintain your skills.";
+  }
+
+  const suggestions = problematicWords.map(word => {
+    const { Word, PronunciationAssessment } = word;
+    const { ErrorType, AccuracyScore } = PronunciationAssessment;
+
+    switch (ErrorType.toLowerCase()) {
+      case 'omission':
+        return `Make sure to pronounce "${Word}" - it was missed in your recording.`;
+      case 'mispronunciation':
+        return `Focus on improving the pronunciation of "${Word}" (${AccuracyScore}% accuracy).`;
+      default:
+        return `Practice the word "${Word}" more.`;
+    }
+  });
+
+  return suggestions.join(' ');
+}
