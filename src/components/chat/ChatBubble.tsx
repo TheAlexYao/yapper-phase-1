@@ -31,16 +31,15 @@ const ChatBubble = ({ message }: ChatBubbleProps) => {
     const assessment = message.feedback.NBest[0].PronunciationAssessment;
     console.log('Assessment data:', assessment);
     
-    // Try different score properties in order of preference
+    // Use PronScore directly if available, otherwise calculate average
     const score = assessment.PronScore ?? 
                  message.score ?? 
-                 // If no direct scores are available, calculate average of component scores
-                 ((assessment.AccuracyScore) + 
-                  (assessment.FluencyScore) + 
-                  (assessment.CompletenessScore)) / 3;
+                 (assessment.AccuracyScore + 
+                  assessment.FluencyScore + 
+                  assessment.CompletenessScore) / 3;
     
     console.log('Calculated score:', score);
-    return typeof score === 'number' && !isNaN(score) ? score : null;
+    return typeof score === 'number' && !isNaN(score) ? Math.round(score) : null;
   };
 
   const overallScore = calculateOverallScore();
