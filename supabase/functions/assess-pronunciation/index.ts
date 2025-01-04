@@ -1,6 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import * as sdk from "npm:microsoft-cognitiveservices-speech-sdk@1.32.0"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createPronunciationConfig, LanguageConfig } from './utils/pronunciationConfig.ts'
+import { createAudioConfig } from './utils/audioProcessing.ts'
+import { calculateWeightedScores } from './utils/scoreCalculation.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -16,8 +19,6 @@ serve(async (req) => {
     if (req.method !== 'POST') {
       throw new Error('Method not allowed')
     }
-
-    console.log('Starting pronunciation assessment...')
 
     const formData = await req.formData()
     const audioFile = formData.get('audio') as File
@@ -57,7 +58,7 @@ serve(async (req) => {
 
     console.log('Retrieved language config:', languageConfig)
 
-    const config = languageConfig.pronunciation_config
+    const config = languageConfig as LanguageConfig
     const speechKey = Deno.env.get('AZURE_SPEECH_KEY')
     const speechRegion = Deno.env.get('AZURE_SPEECH_REGION')
 
@@ -65,44 +66,20 @@ serve(async (req) => {
       throw new Error('Azure configuration missing')
     }
 
-    // Configure speech service with proper language settings
+    // Configure speech service
     const speechConfig = sdk.SpeechConfig.fromSubscription(speechKey, speechRegion)
     speechConfig.speechRecognitionLanguage = languageCode
 
-    // Configure pronunciation assessment with language-specific settings
-    const pronunciationConfig = new sdk.PronunciationAssessmentConfig(
-      referenceText,
-      sdk.PronunciationAssessmentGradingSystem.HundredMark,
-      sdk.PronunciationAssessmentGranularity.Word, // Force Word granularity for better accuracy
-      true
-    );
+    // Create pronunciation assessment config
+    const pronunciationConfig = createPronunciationConfig(referenceText, languageCode)
 
-    // Add specific settings for Russian
-    if (languageCode === 'ru-RU') {
-      pronunciationConfig.enableProsodyAssessment = true; // Enable prosody assessment for better Russian evaluation
-    }
-
-    // Create audio config from the WAV file
-    const audioData = await audioFile.arrayBuffer()
-    const pushStream = sdk.AudioInputStream.createPushStream()
+    // Create audio config
+    const audioConfig = await createAudioConfig(audioFile)
     
-    // Write audio data in smaller chunks to prevent memory issues
-    const chunkSize = 32 * 1024 // 32KB chunks
-    const audioArray = new Uint8Array(audioData)
-    
-    for (let i = 0; i < audioArray.length; i += chunkSize) {
-      const chunk = audioArray.slice(i, i + chunkSize)
-      pushStream.write(chunk)
-    }
-    pushStream.close()
-
-    const audioConfig = sdk.AudioConfig.fromStreamInput(pushStream)
-    
-    // Create recognizer with proper configuration
+    // Create recognizer and perform assessment
     const recognizer = new sdk.SpeechRecognizer(speechConfig, audioConfig)
     pronunciationConfig.applyTo(recognizer)
 
-    // Perform recognition with detailed logging
     const result = await new Promise((resolve, reject) => {
       recognizer.recognizing = (s, e) => {
         console.log(`Recognition in progress: ${e.result.text}`)
@@ -129,12 +106,7 @@ serve(async (req) => {
       recognizer.recognizeOnceAsync(
         result => {
           recognizer.close()
-          if (result.reason === sdk.ResultReason.NoMatch) {
-            const noMatchDetail = sdk.NoMatchDetails.fromResult(result)
-            reject(new Error(`No speech could be recognized: ${noMatchDetail.reason}`))
-          } else {
-            resolve(result)
-          }
+          resolve(result)
         },
         error => {
           console.error('Recognition error:', error)
@@ -154,37 +126,20 @@ serve(async (req) => {
 
     console.log('Raw assessment result:', jsonResult)
 
-    // Parse and validate the assessment result
     const assessment = JSON.parse(jsonResult)
     if (!assessment.NBest?.[0]?.PronunciationAssessment) {
       console.error('Invalid assessment format:', assessment)
       throw new Error('Invalid assessment response format')
     }
 
-    // Apply language-specific weights to the scores
-    const nBest = assessment.NBest[0]
-    const weightedAccuracy = nBest.PronunciationAssessment.AccuracyScore * config.accuracyWeight
-    const weightedFluency = nBest.PronunciationAssessment.FluencyScore * config.fluencyWeight
-    const weightedCompleteness = nBest.PronunciationAssessment.CompletenessScore * config.completenessWeight
-    
-    // Calculate weighted average score
-    const totalWeight = config.accuracyWeight + config.fluencyWeight + config.completenessWeight
-    const weightedScore = Math.round(
-      (weightedAccuracy + weightedFluency + weightedCompleteness) / totalWeight
-    )
-
-    // Update the assessment scores with weighted values
-    nBest.PronunciationAssessment.AccuracyScore = Math.round(weightedAccuracy)
-    nBest.PronunciationAssessment.FluencyScore = Math.round(weightedFluency)
-    nBest.PronunciationAssessment.CompletenessScore = Math.round(weightedCompleteness)
-    nBest.PronunciationAssessment.PronScore = weightedScore
-
-    console.log('Recognition completed successfully with weighted scores:', {
-      accuracyScore: nBest.PronunciationAssessment.AccuracyScore,
-      fluencyScore: nBest.PronunciationAssessment.FluencyScore,
-      completenessScore: nBest.PronunciationAssessment.CompletenessScore,
-      finalScore: weightedScore
+    // Calculate weighted scores
+    const scores = calculateWeightedScores(assessment, {
+      accuracyWeight: config.pronunciation_config.accuracyWeight,
+      fluencyWeight: config.pronunciation_config.fluencyWeight,
+      completenessWeight: config.pronunciation_config.completenessWeight
     })
+
+    console.log('Recognition completed successfully with weighted scores:', scores)
 
     return new Response(
       JSON.stringify({ assessment }),
