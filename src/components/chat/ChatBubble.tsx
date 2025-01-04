@@ -91,7 +91,7 @@ const ChatBubble = ({ message }: ChatBubbleProps) => {
             )}
           </div>
 
-          {overallScore !== null && (
+          {overallScore !== null && message.feedback && (
             <Button
               variant="ghost"
               size="sm"
