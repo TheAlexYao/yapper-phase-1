@@ -141,8 +141,28 @@ serve(async (req) => {
 
     console.log('Recognition completed successfully with weighted scores:', scores)
 
+    // Structure the response to include both raw assessment and weighted scores
+    const response = {
+      assessment: {
+        ...assessment,
+        NBest: assessment.NBest.map((result: any) => ({
+          ...result,
+          PronunciationAssessment: {
+            ...result.PronunciationAssessment,
+            // Add weighted and calculated scores
+            finalScore: scores.finalScore,
+            weightedAccuracyScore: scores.accuracyScore,
+            weightedFluencyScore: scores.fluencyScore,
+            weightedCompletenessScore: scores.completenessScore,
+            pronScore: scores.pronScore
+          }
+        }))
+      },
+      scores: scores
+    }
+
     return new Response(
-      JSON.stringify({ assessment }),
+      JSON.stringify(response),
       { 
         headers: { 
           ...corsHeaders,
