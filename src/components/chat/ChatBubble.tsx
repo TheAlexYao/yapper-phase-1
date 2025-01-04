@@ -91,26 +91,20 @@ const ChatBubble = ({ message }: ChatBubbleProps) => {
             )}
           </div>
 
-          {overallScore !== null && message.feedback && (
-            <div 
-              className={`mt-2 p-2 rounded-md cursor-pointer transition-colors ${
+          {overallScore !== null && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className={`mt-2 w-full justify-between ${
                 isUser 
-                  ? 'bg-white/10 hover:bg-white/20' 
-                  : 'bg-gray-50 hover:bg-gray-100'
+                  ? 'text-white hover:bg-white/20' 
+                  : 'text-gray-600 hover:bg-gray-100'
               }`}
               onClick={() => setShowFeedback(true)}
             >
-              <p className={`text-sm font-medium ${
-                isUser ? 'text-white' : 'text-gray-700'
-              }`}>
-                Score: {Math.round(overallScore)}%
-              </p>
-              <p className={`text-xs ${
-                isUser ? 'text-white/80' : 'text-gray-500'
-              }`}>
-                Click for detailed feedback
-              </p>
-            </div>
+              <span>Score: {Math.round(overallScore)}%</span>
+              <span className="text-xs opacity-80">Click for details</span>
+            </Button>
           )}
 
           {message.feedback && (
