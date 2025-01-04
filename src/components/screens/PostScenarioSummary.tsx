@@ -48,8 +48,6 @@ const PostScenarioSummary: React.FC<PostScenarioSummaryProps> = ({
   scenarioTitle,
   overallScore,
   transcript,
-  detailedScores,
-  wordLevelFeedback,
   progressData,
   onRestart,
   onExit,
@@ -59,7 +57,7 @@ const PostScenarioSummary: React.FC<PostScenarioSummaryProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
 
   const handleSwipe = (direction: number) => {
-    setCurrentCard(prev => Math.max(0, Math.min(2, prev + direction)));
+    setCurrentCard(prev => Math.max(0, Math.min(1, prev + direction)));
   };
 
   // Handle keyboard navigation
@@ -84,49 +82,6 @@ const PostScenarioSummary: React.FC<PostScenarioSummaryProps> = ({
           {transcript.map((line, index) => (
             <ConversationReviewCard key={index} line={line} />
           ))}
-        </div>
-      )
-    },
-    {
-      title: "Performance Analysis",
-      content: (
-        <div className="space-y-6 h-full overflow-y-auto px-4">
-          <div className="space-y-4">
-            {Object.entries(detailedScores).map(([key, value], index) => (
-              <motion.div
-                key={key}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.1 }}
-              >
-                <div className="flex justify-between mb-1">
-                  <span className="capitalize text-sm font-medium">
-                    {key.replace('Score', '')}
-                  </span>
-                  <span className="text-sm font-semibold">{value}%</span>
-                </div>
-                <div className="relative h-2 bg-gray-200 rounded-full overflow-hidden">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${value}%` }}
-                    transition={{ duration: 0.5, delay: index * 0.1 }}
-                    className="absolute h-full bg-gradient-to-r from-[#38b6ff] to-[#7843e6]"
-                  />
-                </div>
-              </motion.div>
-            ))}
-          </div>
-          
-          <div className="bg-gray-50 rounded-lg p-4">
-            <h4 className="text-sm font-semibold mb-3">Word-Level Analysis</h4>
-            <div className="space-y-3 max-h-[200px] overflow-y-auto">
-              {wordLevelFeedback
-                .filter(word => word.errorType.toLowerCase() !== 'none')
-                .map((word, index) => (
-                  <WordAnalysisCard key={index} word={word} />
-                ))}
-            </div>
-          </div>
         </div>
       )
     },
@@ -266,7 +221,7 @@ const PostScenarioSummary: React.FC<PostScenarioSummaryProps> = ({
             </div>
             <Button 
               onClick={() => handleSwipe(1)} 
-              disabled={currentCard === 2}
+              disabled={currentCard === 1}
               variant="outline"
               size="icon"
               className="w-10 h-10 rounded-full border-2 border-[#38b6ff] text-[#38b6ff] hover:bg-[#38b6ff] hover:text-white transition-all duration-300"
