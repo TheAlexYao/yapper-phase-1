@@ -2,6 +2,7 @@ interface WeightedScores {
   accuracyScore: number;
   fluencyScore: number;
   completenessScore: number;
+  pronScore: number;
   finalScore: number;
 }
 
@@ -20,9 +21,10 @@ export function calculateWeightedScores(
   );
 
   return {
-    accuracyScore: Math.round(weightedAccuracy / weights.accuracyWeight),
-    fluencyScore: Math.round(weightedFluency / weights.fluencyWeight),
-    completenessScore: Math.round(weightedCompleteness / weights.completenessWeight),
+    accuracyScore: Math.round(nBest.PronunciationAssessment.AccuracyScore),
+    fluencyScore: Math.round(nBest.PronunciationAssessment.FluencyScore),
+    completenessScore: Math.round(nBest.PronunciationAssessment.CompletenessScore),
+    pronScore: Math.round(nBest.PronunciationAssessment.PronScore),
     finalScore: weightedScore
   };
 }
