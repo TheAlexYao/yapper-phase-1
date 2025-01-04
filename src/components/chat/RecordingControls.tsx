@@ -27,7 +27,7 @@ export const RecordingControls: React.FC<RecordingControlsProps> = ({
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
-  
+
   const {
     isRecording,
     isPreparing,
@@ -36,12 +36,12 @@ export const RecordingControls: React.FC<RecordingControlsProps> = ({
     stopRecording,
     getRecordingBlob
   } = useAudioRecorder({
-    preRollDelay: 1500, // Increased from 500ms to 1500ms
-    postRollDelay: 500, // Increased from 300ms to 500ms
+    preRollDelay: 500, // Reduced from 1500ms to 500ms
+    postRollDelay: 500,
     chunkInterval: 500,
     audioConfig: {
-      sampleRate: 16000, // Azure's preferred sample rate
-      channelCount: 1, // Mono audio for better speech recognition
+      sampleRate: 16000,
+      channelCount: 1,
       echoCancellation: true,
       noiseSuppression: true,
       autoGainControl: true

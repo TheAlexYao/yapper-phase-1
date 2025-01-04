@@ -73,9 +73,14 @@ serve(async (req) => {
     const pronunciationConfig = new sdk.PronunciationAssessmentConfig(
       referenceText,
       sdk.PronunciationAssessmentGradingSystem.HundredMark,
-      config.wordSegmentation ? sdk.PronunciationAssessmentGranularity.Word : sdk.PronunciationAssessmentGranularity.Phoneme,
+      sdk.PronunciationAssessmentGranularity.Word, // Force Word granularity for better accuracy
       true
-    )
+    );
+
+    // Add specific settings for Russian
+    if (languageCode === 'ru-RU') {
+      pronunciationConfig.enableProsodyAssessment = true; // Enable prosody assessment for better Russian evaluation
+    }
 
     // Create audio config from the WAV file
     const audioData = await audioFile.arrayBuffer()
