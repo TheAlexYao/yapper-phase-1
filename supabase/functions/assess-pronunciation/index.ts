@@ -1,9 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import * as sdk from "npm:microsoft-cognitiveservices-speech-sdk@1.32.0"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { createPronunciationConfig, LanguageConfig } from './utils/pronunciationConfig.ts'
+import { createPronunciationConfig } from './utils/pronunciationConfig.ts'
 import { createAudioConfig } from './utils/audioProcessing.ts'
 import { calculateWeightedScores } from './utils/scoreCalculation.ts'
+import { normalizeSpanishText, cleanupRecognitionResult } from './utils/textProcessing.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -22,7 +23,7 @@ serve(async (req) => {
 
     const formData = await req.formData()
     const audioFile = formData.get('audio') as File
-    const referenceText = formData.get('text') as string
+    let referenceText = formData.get('text') as string
     const languageCode = formData.get('languageCode') as string
 
     if (!audioFile || !referenceText || !languageCode) {
@@ -35,6 +36,11 @@ serve(async (req) => {
       referenceText,
       languageCode
     })
+
+    // Pre-process text for Spanish
+    if (languageCode === 'es-ES') {
+      referenceText = normalizeSpanishText(referenceText);
+    }
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
@@ -126,7 +132,13 @@ serve(async (req) => {
 
     console.log('Raw assessment result:', jsonResult)
 
-    const assessment = JSON.parse(jsonResult)
+    let assessment = JSON.parse(jsonResult)
+    
+    // Post-process results for Spanish
+    if (languageCode === 'es-ES') {
+      assessment = cleanupRecognitionResult(assessment);
+    }
+
     if (!assessment.NBest?.[0]?.PronunciationAssessment) {
       console.error('Invalid assessment format:', assessment)
       throw new Error('Invalid assessment response format')
@@ -149,7 +161,6 @@ serve(async (req) => {
           ...result,
           PronunciationAssessment: {
             ...result.PronunciationAssessment,
-            // Add weighted and calculated scores
             finalScore: scores.finalScore,
             weightedAccuracyScore: scores.accuracyScore,
             weightedFluencyScore: scores.fluencyScore,
