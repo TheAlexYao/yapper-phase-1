@@ -137,7 +137,7 @@ export const RecordingControls: React.FC<RecordingControlsProps> = ({
 
       {audioUrl && (
         <div className="mb-2 w-full flex justify-center">
-          <AudioPlayer audioUrl={audioUrl} label="Your Recording" showSpeedControl={false} />
+          <AudioPlayer audioUrl={audioUrl} label="Your Recording" />
         </div>
       )}
 

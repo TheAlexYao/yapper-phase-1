@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { ChatMessage } from '@/types/chat';
 import { useState } from 'react';
-import { Volume2, Globe } from 'lucide-react';
+import { Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AudioPlayer } from '@/components/audio/AudioPlayer';
 import PronunciationFeedbackModal from './PronunciationFeedbackModal';
@@ -74,7 +74,6 @@ const ChatBubble = ({ message }: ChatBubbleProps) => {
               <AudioPlayer 
                 audioUrl={message.tts_audio_url} 
                 label="TTS" 
-                showSpeedControl={!isUser}
               />
             )}
             
@@ -82,7 +81,6 @@ const ChatBubble = ({ message }: ChatBubbleProps) => {
               <AudioPlayer 
                 audioUrl={message.user_audio_url} 
                 label="Your Recording" 
-                showSpeedControl={false}
               />
             )}
           </div>
