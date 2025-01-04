@@ -15,12 +15,16 @@ const ChatBubble = ({ message }: ChatBubbleProps) => {
   const [showFeedback, setShowFeedback] = useState(false);
   const isUser = message.role === 'user';
 
-  // Use the PronScore directly from the assessment if available
+  // Calculate overall score with proper fallbacks
   const calculateOverallScore = () => {
-    if (message.feedback?.NBest?.[0]?.PronunciationAssessment) {
+    if (message.feedback?.NBest?.[0]?.PronunciationAssessment?.PronScore !== undefined) {
       return message.feedback.NBest[0].PronunciationAssessment.PronScore;
     }
-    return message.score;
+    // Fallback to message score if it exists
+    if (typeof message.score === 'number') {
+      return message.score;
+    }
+    return null;
   };
 
   const overallScore = calculateOverallScore();
