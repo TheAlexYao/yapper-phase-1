@@ -152,7 +152,8 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
                 AccuracyScore: feedback.accuracyScore,
                 FluencyScore: feedback.fluencyScore,
                 CompletenessScore: feedback.completenessScore,
-                PronScore: score
+                PronScore: score,
+                finalScore: score
               },
               Words: feedback.words
             }]

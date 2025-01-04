@@ -46,7 +46,6 @@ export const assessPronunciation = async (audioBlob: Blob, text: string, languag
     }
 
     const nBestResult = data.assessment.NBest[0];
-    // Use the finalScore from the assessment if available, otherwise use pronunciationScore
     const finalScore = data.assessment.finalScore || data.assessment.pronunciationScore;
 
     console.log('Processing NBest result:', JSON.stringify(nBestResult, null, 2));
