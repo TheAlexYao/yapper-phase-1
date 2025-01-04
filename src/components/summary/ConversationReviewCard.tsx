@@ -22,13 +22,17 @@ const ConversationReviewCard: React.FC<ConversationReviewCardProps> = ({ line })
   const [showTranslation, setShowTranslation] = React.useState(false);
   const [showFeedback, setShowFeedback] = React.useState(false);
 
+  console.log('ConversationReviewCard - Line data:', line);
+  console.log('ConversationReviewCard - Feedback data:', line.feedback);
+
   const calculateScore = () => {
     if (!line.feedback?.NBest?.[0]?.PronunciationAssessment) {
+      console.log('ConversationReviewCard - No NBest data available, using fallback score:', line.score);
       return line.score || 0;
     }
 
     const assessment = line.feedback.NBest[0].PronunciationAssessment;
-    console.log('Assessment data for score calculation:', assessment);
+    console.log('ConversationReviewCard - Assessment data:', assessment);
 
     // First try to use PronScore, then fall back to average of component scores
     const score = assessment.PronScore || 
@@ -36,11 +40,11 @@ const ConversationReviewCard: React.FC<ConversationReviewCardProps> = ({ line })
                    assessment.FluencyScore + 
                    assessment.CompletenessScore) / 3);
 
+    console.log('ConversationReviewCard - Calculated score:', score);
     return Math.round(score);
   };
 
   const displayScore = calculateScore();
-  console.log('Calculated display score:', displayScore);
 
   return (
     <motion.div
@@ -96,7 +100,10 @@ const ConversationReviewCard: React.FC<ConversationReviewCardProps> = ({ line })
           {/* Score and Feedback */}
           {line.role === 'user' && line.feedback && (
             <button
-              onClick={() => setShowFeedback(true)}
+              onClick={() => {
+                console.log('ConversationReviewCard - Opening feedback modal with data:', line.feedback);
+                setShowFeedback(true);
+              }}
               className="text-sm bg-gradient-to-r from-[#38b6ff] to-[#7843e6] text-white px-3 py-1 rounded-full hover:opacity-90 transition-opacity"
             >
               Score: {displayScore}%
