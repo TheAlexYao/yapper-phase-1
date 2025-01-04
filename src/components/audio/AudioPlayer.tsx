@@ -42,7 +42,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
     <Button
       variant="outline"
       size="sm"
-      className="flex items-center gap-2 border rounded px-2 py-1"
+      className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white border-white/20 rounded px-2 py-1 transition-colors duration-200"
       onClick={togglePlayback}
     >
       {isPlaying ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
