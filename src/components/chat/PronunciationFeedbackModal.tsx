@@ -63,7 +63,19 @@ const PronunciationFeedbackModal: React.FC<PronunciationFeedbackModalProps> = ({
   onClose,
   feedback
 }) => {
-  const nBestResult = feedback.NBest?.[0];
+  // Get the first NBest result or use default values
+  const nBestResult = feedback.NBest?.[0] || {
+    PronunciationAssessment: {
+      AccuracyScore: feedback.overall_score,
+      FluencyScore: feedback.overall_score,
+      CompletenessScore: feedback.overall_score,
+      PronScore: feedback.overall_score
+    },
+    Words: []
+  };
+
+  console.log('Feedback data:', feedback);
+  console.log('NBest result:', nBestResult);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -76,50 +88,48 @@ const PronunciationFeedbackModal: React.FC<PronunciationFeedbackModalProps> = ({
           {/* Overall Scores */}
           <div className="space-y-4">
             <h3 className="font-semibold">Overall Scores</h3>
-            {nBestResult && (
-              <div className="grid gap-4">
-                <div>
-                  <div className="flex justify-between mb-1">
-                    <span className="text-sm">Pronunciation</span>
-                    <span className="text-sm font-medium">
-                      {nBestResult.PronunciationAssessment.PronScore}%
-                    </span>
-                  </div>
-                  <Progress value={nBestResult.PronunciationAssessment.PronScore} />
+            <div className="grid gap-4">
+              <div>
+                <div className="flex justify-between mb-1">
+                  <span className="text-sm">Pronunciation</span>
+                  <span className="text-sm font-medium">
+                    {Math.round(nBestResult.PronunciationAssessment.PronScore)}%
+                  </span>
                 </div>
-                <div>
-                  <div className="flex justify-between mb-1">
-                    <span className="text-sm">Accuracy</span>
-                    <span className="text-sm font-medium">
-                      {nBestResult.PronunciationAssessment.AccuracyScore}%
-                    </span>
-                  </div>
-                  <Progress value={nBestResult.PronunciationAssessment.AccuracyScore} />
-                </div>
-                <div>
-                  <div className="flex justify-between mb-1">
-                    <span className="text-sm">Fluency</span>
-                    <span className="text-sm font-medium">
-                      {nBestResult.PronunciationAssessment.FluencyScore}%
-                    </span>
-                  </div>
-                  <Progress value={nBestResult.PronunciationAssessment.FluencyScore} />
-                </div>
-                <div>
-                  <div className="flex justify-between mb-1">
-                    <span className="text-sm">Completeness</span>
-                    <span className="text-sm font-medium">
-                      {nBestResult.PronunciationAssessment.CompletenessScore}%
-                    </span>
-                  </div>
-                  <Progress value={nBestResult.PronunciationAssessment.CompletenessScore} />
-                </div>
+                <Progress value={nBestResult.PronunciationAssessment.PronScore} />
               </div>
-            )}
+              <div>
+                <div className="flex justify-between mb-1">
+                  <span className="text-sm">Accuracy</span>
+                  <span className="text-sm font-medium">
+                    {Math.round(nBestResult.PronunciationAssessment.AccuracyScore)}%
+                  </span>
+                </div>
+                <Progress value={nBestResult.PronunciationAssessment.AccuracyScore} />
+              </div>
+              <div>
+                <div className="flex justify-between mb-1">
+                  <span className="text-sm">Fluency</span>
+                  <span className="text-sm font-medium">
+                    {Math.round(nBestResult.PronunciationAssessment.FluencyScore)}%
+                  </span>
+                </div>
+                <Progress value={nBestResult.PronunciationAssessment.FluencyScore} />
+              </div>
+              <div>
+                <div className="flex justify-between mb-1">
+                  <span className="text-sm">Completeness</span>
+                  <span className="text-sm font-medium">
+                    {Math.round(nBestResult.PronunciationAssessment.CompletenessScore)}%
+                  </span>
+                </div>
+                <Progress value={nBestResult.PronunciationAssessment.CompletenessScore} />
+              </div>
+            </div>
           </div>
 
           {/* Word-by-Word Analysis */}
-          {nBestResult && nBestResult.Words && nBestResult.Words.length > 0 && (
+          {nBestResult.Words && nBestResult.Words.length > 0 && (
             <div>
               <h3 className="font-semibold mb-4">Word-by-Word Analysis</h3>
               <div className="grid gap-3">
@@ -148,7 +158,7 @@ const PronunciationFeedbackModal: React.FC<PronunciationFeedbackModalProps> = ({
                     <div className="flex items-center gap-3">
                       <div className="flex flex-col items-end">
                         <span className="text-sm font-medium">
-                          {word.PronunciationAssessment.AccuracyScore}%
+                          {Math.round(word.PronunciationAssessment.AccuracyScore)}%
                         </span>
                         <Progress 
                           value={word.PronunciationAssessment.AccuracyScore} 
