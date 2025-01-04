@@ -283,7 +283,7 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
           text: msg.text,
           audioUrl: msg.user_audio_url || undefined,
           ttsUrl: msg.tts_audio_url,
-          score: msg.role === 'user' ? Math.round(msg.score || 0) : undefined,
+          score: msg.role === 'user' ? Math.round(msg.score ?? 0) : undefined,
           transliteration: msg.transliteration,
           translation: msg.translation,
           feedback: msg.role === 'user' ? msg.feedback : undefined
