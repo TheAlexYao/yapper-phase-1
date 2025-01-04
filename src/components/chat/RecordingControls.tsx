@@ -36,9 +36,16 @@ export const RecordingControls: React.FC<RecordingControlsProps> = ({
     stopRecording,
     getRecordingBlob
   } = useAudioRecorder({
-    preRollDelay: 500,
-    postRollDelay: 300,
-    chunkInterval: 500
+    preRollDelay: 1500, // Increased from 500ms to 1500ms
+    postRollDelay: 500, // Increased from 300ms to 500ms
+    chunkInterval: 500,
+    audioConfig: {
+      sampleRate: 16000, // Azure's preferred sample rate
+      channelCount: 1, // Mono audio for better speech recognition
+      echoCancellation: true,
+      noiseSuppression: true,
+      autoGainControl: true
+    }
   });
 
   const handleSubmit = async () => {
@@ -48,7 +55,9 @@ export const RecordingControls: React.FC<RecordingControlsProps> = ({
     setIsSubmitting(true);
     try {
       console.log('Starting audio processing...');
-      const audioContext = new AudioContext();
+      const audioContext = new AudioContext({
+        sampleRate: 16000 // Match Azure's preferred sample rate
+      });
       const audioData = await audioBlob.arrayBuffer();
       console.log('Audio data size:', audioData.byteLength, 'bytes');
       
@@ -59,6 +68,7 @@ export const RecordingControls: React.FC<RecordingControlsProps> = ({
         sampleRate: audioBuffer.sampleRate
       });
       
+      // Create Azure-compatible WAV with proper format
       const azureWavBlob = await createAzureCompatibleWav(audioBuffer);
       console.log('Azure WAV conversion complete. Size:', azureWavBlob.size, 'bytes');
       

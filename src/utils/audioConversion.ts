@@ -1,6 +1,6 @@
 export const convertToWav = async (audioBuffer: AudioBuffer): Promise<Blob> => {
   const numOfChannels = audioBuffer.numberOfChannels;
-  const sampleRate = audioBuffer.sampleRate; // Use original sample rate
+  const sampleRate = audioBuffer.sampleRate;
   const silenceDuration = 0.1; // Reduced from 0.3 to 0.1 seconds (100ms)
   const silenceSamples = Math.floor(sampleRate * silenceDuration);
   
@@ -51,7 +51,7 @@ export const convertToWav = async (audioBuffer: AudioBuffer): Promise<Blob> => {
     channelData[channelData.length - i - 1] = 0;
   }
 
-  // Convert to 16-bit PCM
+  // Convert to 16-bit PCM with proper scaling
   for (let i = 0; i < channelData.length; i++) {
     const sample = Math.max(-1, Math.min(1, channelData[i]));
     view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
@@ -68,24 +68,35 @@ export const convertToWav = async (audioBuffer: AudioBuffer): Promise<Blob> => {
   return new Blob([buffer], { type: 'audio/wav' });
 };
 
-// Create a high-quality version for Azure (24kHz)
+// Create a high-quality version for Azure (16kHz mono)
 export const createAzureCompatibleWav = async (audioBuffer: AudioBuffer): Promise<Blob> => {
-  // Create an offline audio context at 24kHz for better quality
+  // Create an offline audio context at 16kHz for Azure
   const offlineCtx = new OfflineAudioContext(
-    audioBuffer.numberOfChannels,
-    audioBuffer.duration * 24000,
-    24000 // Using 24kHz for Azure
+    1, // Force mono
+    Math.ceil(audioBuffer.duration * 16000),
+    16000 // Using 16kHz for Azure
   );
 
   // Create a buffer source
   const source = offlineCtx.createBufferSource();
   source.buffer = audioBuffer;
-  source.connect(offlineCtx.destination);
+
+  // Add a gain node to prevent clipping
+  const gainNode = offlineCtx.createGain();
+  gainNode.gain.value = 0.9; // Slight reduction to prevent clipping
+  
+  source.connect(gainNode);
+  gainNode.connect(offlineCtx.destination);
   source.start();
 
   // Render the audio
   const renderedBuffer = await offlineCtx.startRendering();
+  console.log('Rendered Azure-compatible audio:', {
+    duration: renderedBuffer.duration,
+    sampleRate: renderedBuffer.sampleRate,
+    numberOfChannels: renderedBuffer.numberOfChannels
+  });
   
-  // Convert the 24kHz buffer to WAV
+  // Convert the 16kHz mono buffer to WAV
   return convertToWav(renderedBuffer);
 };
