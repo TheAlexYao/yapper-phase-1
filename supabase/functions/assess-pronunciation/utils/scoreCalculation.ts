@@ -11,7 +11,7 @@ export function calculateWeightedScores(
   weights: { accuracyWeight: number; fluencyWeight: number; completenessWeight: number }
 ): WeightedScores {
   // Ensure assessment has the expected structure
-  if (!assessment || !assessment.PronunciationAssessment) {
+  if (!assessment?.NBest?.[0]?.PronunciationAssessment) {
     console.error('Invalid assessment structure:', assessment);
     return {
       accuracyScore: 0,
@@ -22,7 +22,7 @@ export function calculateWeightedScores(
     };
   }
 
-  const pronAssessment = assessment.PronunciationAssessment;
+  const pronAssessment = assessment.NBest[0].PronunciationAssessment;
   
   const weightedAccuracy = pronAssessment.AccuracyScore * weights.accuracyWeight;
   const weightedFluency = pronAssessment.FluencyScore * weights.fluencyWeight;
