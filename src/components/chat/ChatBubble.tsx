@@ -17,12 +17,13 @@ const ChatBubble = ({ message }: ChatBubbleProps) => {
 
   // Calculate overall score with proper fallbacks
   const calculateOverallScore = () => {
-    if (message.feedback?.NBest?.[0]?.PronunciationAssessment?.PronScore !== undefined) {
-      return message.feedback.NBest[0].PronunciationAssessment.PronScore;
-    }
-    // Fallback to message score if it exists
+    // First try to get the score directly from the message
     if (typeof message.score === 'number') {
       return message.score;
+    }
+    // Fallback to PronScore from feedback if available
+    if (message.feedback?.NBest?.[0]?.PronunciationAssessment?.PronScore !== undefined) {
+      return message.feedback.NBest[0].PronunciationAssessment.PronScore;
     }
     return null;
   };

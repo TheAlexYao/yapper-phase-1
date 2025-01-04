@@ -46,10 +46,12 @@ export const assessPronunciation = async (audioBlob: Blob, text: string, languag
     }
 
     const nBestResult = data.assessment.NBest[0];
-    const pronunciationScore = data.assessment.pronunciationScore;
+    // Use the finalScore from the assessment if available, otherwise use pronunciationScore
+    const finalScore = data.assessment.finalScore || data.assessment.pronunciationScore;
 
     console.log('Processing NBest result:', JSON.stringify(nBestResult, null, 2));
     console.log('Words data:', JSON.stringify(nBestResult.Words, null, 2));
+    console.log('Final score:', finalScore);
 
     // Create word scores object
     const wordScores: { [word: string]: number } = {};
@@ -62,7 +64,7 @@ export const assessPronunciation = async (audioBlob: Blob, text: string, languag
     const suggestions = generateSuggestions(nBestResult.Words);
 
     console.log('Final processed feedback:', {
-      score: pronunciationScore,
+      score: finalScore,
       accuracyScore: nBestResult.PronunciationAssessment.AccuracyScore,
       fluencyScore: nBestResult.PronunciationAssessment.FluencyScore,
       completenessScore: nBestResult.PronunciationAssessment.CompletenessScore,
@@ -72,7 +74,7 @@ export const assessPronunciation = async (audioBlob: Blob, text: string, languag
     });
 
     return {
-      score: pronunciationScore,
+      score: finalScore,
       feedback: {
         phonemeAnalysis: "Detailed phoneme analysis will be provided soon",
         wordScores,
