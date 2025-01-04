@@ -12,6 +12,8 @@ interface ChatBubbleProps {
 
 const ChatBubble = ({ message }: ChatBubbleProps) => {
   console.log('ChatBubble received message:', message);
+  console.log('Message feedback:', message.feedback);
+  console.log('Message role:', message.role);
   
   const [showTranslation, setShowTranslation] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
@@ -42,6 +44,7 @@ const ChatBubble = ({ message }: ChatBubbleProps) => {
 
   const overallScore = calculateOverallScore();
   console.log('Final overall score:', overallScore);
+  console.log('Should show feedback button:', overallScore !== null && message.feedback);
 
   return (
     <motion.div
