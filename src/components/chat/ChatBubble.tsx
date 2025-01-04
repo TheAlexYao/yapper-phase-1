@@ -33,12 +33,11 @@ const ChatBubble = ({ message }: ChatBubbleProps) => {
     
     // Try different score properties in order of preference
     const score = assessment.PronScore ?? 
-                 assessment.pronScore ?? 
                  message.score ?? 
                  // If no direct scores are available, calculate average of component scores
-                 ((assessment.AccuracyScore ?? assessment.accuracyScore) + 
-                  (assessment.FluencyScore ?? assessment.fluencyScore) + 
-                  (assessment.CompletenessScore ?? assessment.completenessScore)) / 3;
+                 ((assessment.AccuracyScore) + 
+                  (assessment.FluencyScore) + 
+                  (assessment.CompletenessScore)) / 3;
     
     console.log('Calculated score:', score);
     return typeof score === 'number' && !isNaN(score) ? score : null;
