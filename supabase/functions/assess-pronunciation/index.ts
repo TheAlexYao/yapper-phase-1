@@ -4,7 +4,6 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { createPronunciationConfig } from './utils/pronunciationConfig.ts'
 import { createAudioConfig } from './utils/audioProcessing.ts'
 import { calculateWeightedScores } from './utils/scoreCalculation.ts'
-import { normalizeSpanishText, cleanupRecognitionResult } from './utils/textProcessing.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,18 +11,15 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
 
   try {
-    if (req.method !== 'POST') {
-      throw new Error('Method not allowed')
-    }
-
     const formData = await req.formData()
     const audioFile = formData.get('audio') as File
-    let referenceText = formData.get('text') as string
+    const referenceText = formData.get('text') as string
     const languageCode = formData.get('languageCode') as string
 
     if (!audioFile || !referenceText || !languageCode) {
@@ -37,11 +33,6 @@ serve(async (req) => {
       languageCode
     })
 
-    // Pre-process text for Spanish
-    if (languageCode === 'es-ES') {
-      referenceText = normalizeSpanishText(referenceText);
-    }
-
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
@@ -50,152 +41,126 @@ serve(async (req) => {
     }
     const supabase = createClient(supabaseUrl, supabaseKey)
 
-    // Fetch language configuration
-    const { data: languageConfig, error: configError } = await supabase
+    // Get language-specific configuration
+    const { data: languageData, error: languageError } = await supabase
       .from('languages')
       .select('pronunciation_config')
       .eq('code', languageCode)
       .single()
 
-    if (configError || !languageConfig) {
-      console.error('Error fetching language config:', configError)
-      throw new Error('Language configuration not found')
+    if (languageError || !languageData) {
+      throw new Error(`Failed to get language config: ${languageError?.message}`)
     }
 
-    console.log('Retrieved language config:', languageConfig)
+    console.log('Retrieved language config:', languageData)
 
-    const config = languageConfig as LanguageConfig
+    // Set up Azure Speech configuration
     const speechKey = Deno.env.get('AZURE_SPEECH_KEY')
     const speechRegion = Deno.env.get('AZURE_SPEECH_REGION')
-
     if (!speechKey || !speechRegion) {
-      throw new Error('Azure configuration missing')
+      throw new Error('Missing Azure Speech configuration')
     }
 
-    // Configure speech service
     const speechConfig = sdk.SpeechConfig.fromSubscription(speechKey, speechRegion)
     speechConfig.speechRecognitionLanguage = languageCode
 
     // Create pronunciation assessment config
     const pronunciationConfig = createPronunciationConfig(referenceText, languageCode)
-
-    // Create audio config
-    const audioConfig = await createAudioConfig(audioFile)
     
-    // Create recognizer and perform assessment
+    // Create audio config from the uploaded file
+    const audioConfig = await createAudioConfig(audioFile)
+
+    // Create recognizer and apply pronunciation assessment
     const recognizer = new sdk.SpeechRecognizer(speechConfig, audioConfig)
     pronunciationConfig.applyTo(recognizer)
 
-    const result = await new Promise((resolve, reject) => {
-      recognizer.recognizing = (s, e) => {
-        console.log(`Recognition in progress: ${e.result.text}`)
-      }
+    return new Promise((resolve) => {
+      let finalResult: any = null;
 
-      recognizer.recognized = (s, e) => {
+      recognizer.recognized = async (s, e) => {
         if (e.result.reason === sdk.ResultReason.RecognizedSpeech) {
-          console.log('Recognition successful:', {
-            text: e.result.text,
-            properties: e.result.properties.getPropertyList()
-          })
-          resolve(e.result)
-        }
-      }
+          const jsonResult = e.result.properties.getProperty(
+            sdk.PropertyId.SpeechServiceResponse_JsonResult
+          )
+          
+          console.log('Raw assessment result:', jsonResult)
 
-      recognizer.canceled = (s, e) => {
-        console.error('Recognition canceled:', {
-          reason: e.reason,
-          errorDetails: e.errorDetails
-        })
-        reject(new Error(`Recognition canceled: ${e.errorDetails}`))
+          const assessment = JSON.parse(jsonResult)
+          if (!assessment.NBest?.[0]?.PronunciationAssessment) {
+            console.error('Invalid assessment format:', assessment)
+            throw new Error('Invalid assessment response format')
+          }
+
+          // Calculate weighted scores based on language config
+          const weights = languageData.pronunciation_config
+          const scores = calculateWeightedScores(
+            assessment.NBest[0].PronunciationAssessment,
+            weights
+          )
+
+          console.log('Recognition completed successfully with weighted scores:', scores)
+
+          finalResult = {
+            NBest: [
+              {
+                ...assessment.NBest[0],
+                PronunciationAssessment: {
+                  ...assessment.NBest[0].PronunciationAssessment,
+                  finalScore: scores.finalScore,
+                  weightedAccuracyScore: scores.accuracyScore,
+                  weightedFluencyScore: scores.fluencyScore,
+                  weightedCompletenessScore: scores.completenessScore,
+                  pronScore: scores.pronScore
+                }
+              }
+            ]
+          }
+        }
       }
 
       recognizer.recognizeOnceAsync(
         result => {
           recognizer.close()
-          resolve(result)
+          
+          if (!finalResult) {
+            resolve(new Response(
+              JSON.stringify({ error: 'No valid pronunciation assessment result' }),
+              { 
+                status: 400,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+              }
+            ))
+            return
+          }
+
+          resolve(new Response(
+            JSON.stringify({ assessment: finalResult }),
+            { 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            }
+          ))
         },
         error => {
-          console.error('Recognition error:', error)
+          console.error('Error during recognition:', error)
           recognizer.close()
-          reject(error)
+          resolve(new Response(
+            JSON.stringify({ error: 'Recognition failed' }),
+            { 
+              status: 500,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            }
+          ))
         }
       )
     })
 
-    if (!result) {
-      throw new Error('Recognition failed')
-    }
-
-    const jsonResult = result.properties.getProperty(
-      sdk.PropertyId.SpeechServiceResponse_JsonResult
-    )
-
-    console.log('Raw assessment result:', jsonResult)
-
-    let assessment = JSON.parse(jsonResult)
-    
-    // Post-process results for Spanish
-    if (languageCode === 'es-ES') {
-      assessment = cleanupRecognitionResult(assessment);
-    }
-
-    if (!assessment.NBest?.[0]?.PronunciationAssessment) {
-      console.error('Invalid assessment format:', assessment)
-      throw new Error('Invalid assessment response format')
-    }
-
-    // Calculate weighted scores
-    const scores = calculateWeightedScores(assessment, {
-      accuracyWeight: config.pronunciation_config.accuracyWeight,
-      fluencyWeight: config.pronunciation_config.fluencyWeight,
-      completenessWeight: config.pronunciation_config.completenessWeight
-    })
-
-    console.log('Recognition completed successfully with weighted scores:', scores)
-
-    // Structure the response to include both raw assessment and weighted scores
-    const response = {
-      assessment: {
-        ...assessment,
-        NBest: assessment.NBest.map((result: any) => ({
-          ...result,
-          PronunciationAssessment: {
-            ...result.PronunciationAssessment,
-            finalScore: scores.finalScore,
-            weightedAccuracyScore: scores.accuracyScore,
-            weightedFluencyScore: scores.fluencyScore,
-            weightedCompletenessScore: scores.completenessScore,
-            pronScore: scores.pronScore
-          }
-        }))
-      },
-      scores: scores
-    }
-
-    return new Response(
-      JSON.stringify(response),
-      { 
-        headers: { 
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        } 
-      }
-    )
-
   } catch (error) {
-    console.error('Error in assess-pronunciation:', error)
-    
+    console.error('Error:', error)
     return new Response(
-      JSON.stringify({ 
-        error: error.message,
-        details: error.stack
-      }),
+      JSON.stringify({ error: error.message }),
       { 
-        status: 400,
-        headers: { 
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        }
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     )
   }
