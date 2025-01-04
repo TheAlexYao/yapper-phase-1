@@ -89,6 +89,7 @@ serve(async (req) => {
           console.log('Recognition completed successfully with weighted scores:', scores)
 
           finalResult = {
+            assessment: jsonResult,
             score: scores.finalScore,
             feedback: {
               phonemeAnalysis: "Detailed phoneme analysis will be provided soon",
