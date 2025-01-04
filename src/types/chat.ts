@@ -23,6 +23,10 @@ export interface ChatMessage {
         CompletenessScore: number;
         PronScore: number;
         finalScore: number;
+        weightedAccuracyScore?: number;
+        weightedFluencyScore?: number;
+        weightedCompletenessScore?: number;
+        pronScore?: number;
       };
       Words: Array<{
         Word: string;
