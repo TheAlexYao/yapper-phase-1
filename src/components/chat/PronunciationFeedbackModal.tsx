@@ -63,19 +63,36 @@ const PronunciationFeedbackModal: React.FC<PronunciationFeedbackModalProps> = ({
   onClose,
   feedback
 }) => {
-  // Get the first NBest result or use default values
-  const nBestResult = feedback.NBest?.[0] || {
-    PronunciationAssessment: {
-      AccuracyScore: feedback.overall_score,
-      FluencyScore: feedback.overall_score,
-      CompletenessScore: feedback.overall_score,
-      PronScore: feedback.overall_score
-    },
-    Words: []
+  const calculateScores = () => {
+    if (!feedback.NBest?.[0]?.PronunciationAssessment) {
+      console.log('No NBest data available, using fallback scores');
+      return {
+        pronScore: feedback.overall_score,
+        accuracyScore: feedback.overall_score,
+        fluencyScore: feedback.overall_score,
+        completenessScore: feedback.overall_score
+      };
+    }
+
+    const assessment = feedback.NBest[0].PronunciationAssessment;
+    console.log('Processing assessment data:', assessment);
+
+    // Calculate pronunciation score
+    const pronScore = assessment.PronScore || 
+                     ((assessment.AccuracyScore + 
+                       assessment.FluencyScore + 
+                       assessment.CompletenessScore) / 3);
+
+    return {
+      pronScore: Math.round(pronScore),
+      accuracyScore: Math.round(assessment.AccuracyScore),
+      fluencyScore: Math.round(assessment.FluencyScore),
+      completenessScore: Math.round(assessment.CompletenessScore)
+    };
   };
 
-  console.log('Feedback data:', feedback);
-  console.log('NBest result:', nBestResult);
+  const scores = calculateScores();
+  console.log('Calculated scores:', scores);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -93,47 +110,47 @@ const PronunciationFeedbackModal: React.FC<PronunciationFeedbackModalProps> = ({
                 <div className="flex justify-between mb-1">
                   <span className="text-sm">Pronunciation</span>
                   <span className="text-sm font-medium">
-                    {Math.round(nBestResult.PronunciationAssessment.PronScore)}%
+                    {scores.pronScore}%
                   </span>
                 </div>
-                <Progress value={nBestResult.PronunciationAssessment.PronScore} />
+                <Progress value={scores.pronScore} />
               </div>
               <div>
                 <div className="flex justify-between mb-1">
                   <span className="text-sm">Accuracy</span>
                   <span className="text-sm font-medium">
-                    {Math.round(nBestResult.PronunciationAssessment.AccuracyScore)}%
+                    {scores.accuracyScore}%
                   </span>
                 </div>
-                <Progress value={nBestResult.PronunciationAssessment.AccuracyScore} />
+                <Progress value={scores.accuracyScore} />
               </div>
               <div>
                 <div className="flex justify-between mb-1">
                   <span className="text-sm">Fluency</span>
                   <span className="text-sm font-medium">
-                    {Math.round(nBestResult.PronunciationAssessment.FluencyScore)}%
+                    {scores.fluencyScore}%
                   </span>
                 </div>
-                <Progress value={nBestResult.PronunciationAssessment.FluencyScore} />
+                <Progress value={scores.fluencyScore} />
               </div>
               <div>
                 <div className="flex justify-between mb-1">
                   <span className="text-sm">Completeness</span>
                   <span className="text-sm font-medium">
-                    {Math.round(nBestResult.PronunciationAssessment.CompletenessScore)}%
+                    {scores.completenessScore}%
                   </span>
                 </div>
-                <Progress value={nBestResult.PronunciationAssessment.CompletenessScore} />
+                <Progress value={scores.completenessScore} />
               </div>
             </div>
           </div>
 
           {/* Word-by-Word Analysis */}
-          {nBestResult.Words && nBestResult.Words.length > 0 && (
+          {feedback.NBest?.[0]?.Words && feedback.NBest[0].Words.length > 0 && (
             <div>
               <h3 className="font-semibold mb-4">Word-by-Word Analysis</h3>
               <div className="grid gap-3">
-                {nBestResult.Words.map((word, index) => (
+                {feedback.NBest[0].Words.map((word, index) => (
                   <div 
                     key={index} 
                     className={`flex items-center justify-between p-3 rounded-lg ${
