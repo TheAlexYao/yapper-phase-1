@@ -10,10 +10,23 @@ export function calculateWeightedScores(
   assessment: any,
   weights: { accuracyWeight: number; fluencyWeight: number; completenessWeight: number }
 ): WeightedScores {
-  const nBest = assessment.NBest[0];
-  const weightedAccuracy = nBest.PronunciationAssessment.AccuracyScore * weights.accuracyWeight;
-  const weightedFluency = nBest.PronunciationAssessment.FluencyScore * weights.fluencyWeight;
-  const weightedCompleteness = nBest.PronunciationAssessment.CompletenessScore * weights.completenessWeight;
+  // Ensure assessment has the expected structure
+  if (!assessment || !assessment.PronunciationAssessment) {
+    console.error('Invalid assessment structure:', assessment);
+    return {
+      accuracyScore: 0,
+      fluencyScore: 0,
+      completenessScore: 0,
+      pronScore: 0,
+      finalScore: 0
+    };
+  }
+
+  const pronAssessment = assessment.PronunciationAssessment;
+  
+  const weightedAccuracy = pronAssessment.AccuracyScore * weights.accuracyWeight;
+  const weightedFluency = pronAssessment.FluencyScore * weights.fluencyWeight;
+  const weightedCompleteness = pronAssessment.CompletenessScore * weights.completenessWeight;
   
   const totalWeight = weights.accuracyWeight + weights.fluencyWeight + weights.completenessWeight;
   const weightedScore = Math.round(
@@ -21,10 +34,10 @@ export function calculateWeightedScores(
   );
 
   return {
-    accuracyScore: Math.round(nBest.PronunciationAssessment.AccuracyScore),
-    fluencyScore: Math.round(nBest.PronunciationAssessment.FluencyScore),
-    completenessScore: Math.round(nBest.PronunciationAssessment.CompletenessScore),
-    pronScore: Math.round(nBest.PronunciationAssessment.PronScore),
+    accuracyScore: Math.round(pronAssessment.AccuracyScore),
+    fluencyScore: Math.round(pronAssessment.FluencyScore),
+    completenessScore: Math.round(pronAssessment.CompletenessScore),
+    pronScore: Math.round(pronAssessment.PronScore),
     finalScore: weightedScore
   };
 }
