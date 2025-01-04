@@ -22,6 +22,7 @@ export interface ChatMessage {
         FluencyScore: number;
         CompletenessScore: number;
         PronScore: number;
+        finalScore: number;
       };
       Words: Array<{
         Word: string;
@@ -34,7 +35,7 @@ export interface ChatMessage {
       }>;
     }>;
   };
-  [key: string]: Json | undefined; // Add index signature to make it compatible with Json type
+  [key: string]: Json | undefined;
 }
 
 export interface BotMessage extends ChatMessage {

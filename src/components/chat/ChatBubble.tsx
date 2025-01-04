@@ -21,9 +21,9 @@ const ChatBubble = ({ message }: ChatBubbleProps) => {
     if (typeof message.score === 'number') {
       return message.score;
     }
-    // Fallback to PronScore from feedback if available
-    if (message.feedback?.NBest?.[0]?.PronunciationAssessment?.PronScore !== undefined) {
-      return message.feedback.NBest[0].PronunciationAssessment.PronScore;
+    // Fallback to finalScore from feedback if available
+    if (message.feedback?.NBest?.[0]?.PronunciationAssessment?.finalScore !== undefined) {
+      return message.feedback.NBest[0].PronunciationAssessment.finalScore;
     }
     return null;
   };
