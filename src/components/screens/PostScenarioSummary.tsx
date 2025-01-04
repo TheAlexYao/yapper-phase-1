@@ -80,7 +80,14 @@ const PostScenarioSummary: React.FC<PostScenarioSummaryProps> = ({
       content: (
         <div className="space-y-4 h-[calc(100vh-20rem)] overflow-y-auto px-4 pb-16">
           {transcript.map((line, index) => (
-            <ConversationReviewCard key={index} line={line} />
+            <ConversationReviewCard 
+              key={index} 
+              line={{
+                ...line,
+                score: line.score || 0,
+                feedback: line.feedback
+              }} 
+            />
           ))}
         </div>
       )

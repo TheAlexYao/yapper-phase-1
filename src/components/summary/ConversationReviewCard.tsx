@@ -2,6 +2,8 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { AudioPlayer } from '@/components/audio/AudioPlayer';
 import PronunciationFeedbackModal from '@/components/chat/PronunciationFeedbackModal';
+import { Button } from '@/components/ui/button';
+import { Globe } from 'lucide-react';
 
 interface ConversationReviewCardProps {
   line: {
@@ -17,6 +19,7 @@ interface ConversationReviewCardProps {
 }
 
 const ConversationReviewCard: React.FC<ConversationReviewCardProps> = ({ line }) => {
+  const [showTranslation, setShowTranslation] = React.useState(false);
   const [showFeedback, setShowFeedback] = React.useState(false);
 
   return (
@@ -38,9 +41,25 @@ const ConversationReviewCard: React.FC<ConversationReviewCardProps> = ({ line })
           <p className="text-sm text-gray-600">{line.transliteration}</p>
         )}
         
-        {/* Translation */}
+        {/* Translation Toggle */}
         {line.translation && (
-          <p className="text-sm text-gray-600 italic">{line.translation}</p>
+          <div className="mt-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-xs text-gray-600 hover:bg-gray-100"
+              onClick={() => setShowTranslation(!showTranslation)}
+            >
+              <Globe className="h-4 w-4 mr-1" />
+              {showTranslation ? 'Hide' : 'Show'} Translation
+            </Button>
+            
+            {showTranslation && (
+              <p className="text-sm mt-2 text-gray-600">
+                {line.translation}
+              </p>
+            )}
+          </div>
         )}
         
         <div className="flex flex-wrap gap-2 items-center">
@@ -54,8 +73,8 @@ const ConversationReviewCard: React.FC<ConversationReviewCardProps> = ({ line })
             <AudioPlayer audioUrl={line.ttsUrl} label="Reference Audio" />
           )}
           
-          {/* Score */}
-          {line.role === 'user' && line.score !== undefined && line.score !== null && (
+          {/* Score and Feedback */}
+          {line.role === 'user' && line.score !== undefined && (
             <button
               onClick={() => setShowFeedback(true)}
               className="text-sm bg-gradient-to-r from-[#38b6ff] to-[#7843e6] text-white px-3 py-1 rounded-full hover:opacity-90 transition-opacity"
