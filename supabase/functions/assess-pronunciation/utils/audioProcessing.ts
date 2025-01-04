@@ -1,7 +1,6 @@
 import * as sdk from "npm:microsoft-cognitiveservices-speech-sdk@1.32.0"
 
-export async function createAudioConfig(audioFile: File): Promise<sdk.AudioConfig> {
-  const audioData = await audioFile.arrayBuffer();
+export async function createAudioConfig(audioData: ArrayBuffer): Promise<sdk.AudioConfig> {
   const pushStream = sdk.AudioInputStream.createPushStream();
   
   // Write audio data in smaller chunks to prevent memory issues

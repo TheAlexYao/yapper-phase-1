@@ -1,30 +1,28 @@
 import * as sdk from "npm:microsoft-cognitiveservices-speech-sdk@1.32.0"
 
-export interface LanguageConfig {
-  pronunciation_config: {
-    tonal: boolean;
-    maxDuration: number;
-    minDuration: number;
-    fluencyWeight: number;
-    accuracyWeight: number;
-    wordSegmentation: boolean;
-    completenessWeight: number;
-  };
+interface PronunciationConfigOptions {
+  tonal: boolean;
+  maxDuration: number;
+  minDuration: number;
+  fluencyWeight: number;
+  accuracyWeight: number;
+  wordSegmentation: boolean;
+  completenessWeight: number;
 }
 
 export function createPronunciationConfig(
-  referenceText: string, 
-  languageCode: string
+  referenceText: string,
+  options: PronunciationConfigOptions
 ): sdk.PronunciationAssessmentConfig {
   const config = new sdk.PronunciationAssessmentConfig(
     referenceText,
     sdk.PronunciationAssessmentGradingSystem.HundredMark,
     sdk.PronunciationAssessmentGranularity.Word,
-    true
+    options.wordSegmentation
   );
 
-  // Add language-specific settings
-  if (languageCode === 'ru-RU') {
+  // Apply language-specific settings
+  if (options.tonal) {
     config.enableProsodyAssessment = true;
   }
 

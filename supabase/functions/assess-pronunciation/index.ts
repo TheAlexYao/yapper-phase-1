@@ -2,6 +2,8 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import * as sdk from "npm:microsoft-cognitiveservices-speech-sdk@1.32.0"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { calculateWeightedScores } from './utils/scoreCalculation.ts'
+import { createPronunciationConfig } from './utils/pronunciationConfig.ts'
+import { createAudioConfig } from './utils/audioProcessing.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -59,18 +61,10 @@ serve(async (req) => {
     speechConfig.speechRecognitionLanguage = languageCode
 
     const audioData = await audioFile.arrayBuffer()
-    const pushStream = sdk.AudioInputStream.createPushStream()
-    
-    const audioArray = new Uint8Array(audioData)
-    pushStream.write(audioArray)
-    pushStream.close()
-
-    const audioConfig = sdk.AudioConfig.fromStreamInput(pushStream)
-    const pronunciationConfig = new sdk.PronunciationAssessmentConfig(
+    const audioConfig = await createAudioConfig(audioData)
+    const pronunciationConfig = createPronunciationConfig(
       referenceText,
-      sdk.PronunciationAssessmentGradingSystem.HundredMark,
-      sdk.PronunciationAssessmentGranularity.Word,
-      true
+      languageData.pronunciation_config
     )
 
     const recognizer = new sdk.SpeechRecognizer(speechConfig, audioConfig)
