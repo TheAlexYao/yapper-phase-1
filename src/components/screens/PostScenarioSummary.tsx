@@ -7,6 +7,8 @@ import { Progress } from "@/components/ui/progress";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, Play, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import ConversationReviewCard from '@/components/summary/ConversationReviewCard';
+import WordAnalysisCard from '@/components/summary/WordAnalysisCard';
 
 interface PostScenarioSummaryProps {
   scenarioTitle: string;
@@ -17,6 +19,9 @@ interface PostScenarioSummaryProps {
     audioUrl?: string;
     ttsUrl: string;
     score?: number;
+    feedback?: any;
+    transliteration?: string;
+    translation?: string;
   }>;
   detailedScores: {
     accuracyScore: number;
@@ -28,6 +33,7 @@ interface PostScenarioSummaryProps {
     word: string;
     accuracyScore: number;
     errorType: string;
+    transliteration?: string;
   }>;
   progressData: Array<{
     date: string;
@@ -37,42 +43,6 @@ interface PostScenarioSummaryProps {
   onExit: () => void;
   onNextScenario: () => void;
 }
-
-const AudioPlayer: React.FC<{ audioUrl: string; label: string }> = ({ audioUrl, label }) => {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const audioRef = useRef<HTMLAudioElement>(null);
-
-  useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.onended = () => setIsPlaying(false);
-    }
-  }, []);
-
-  const togglePlayback = () => {
-    if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.pause();
-      } else {
-        audioRef.current.play();
-      }
-      setIsPlaying(!isPlaying);
-    }
-  };
-
-  return (
-    <div className="flex items-center space-x-2">
-      <Button 
-        size="sm" 
-        onClick={togglePlayback} 
-        className="bg-gradient-to-r from-[#38b6ff] to-[#7843e6] hover:opacity-90 text-white transition-all duration-300"
-      >
-        <Play className={`h-4 w-4 mr-2 ${isPlaying ? 'animate-pulse' : ''}`} />
-        {label}
-      </Button>
-      <audio ref={audioRef} src={audioUrl} />
-    </div>
-  );
-};
 
 const PostScenarioSummary: React.FC<PostScenarioSummaryProps> = ({
   scenarioTitle,
@@ -106,66 +76,13 @@ const PostScenarioSummary: React.FC<PostScenarioSummaryProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    let startX: number;
-    const threshold = 50;
-
-    const handleTouchStart = (e: TouchEvent) => {
-      startX = e.touches[0].clientX;
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      if (!startX) return;
-      const currentX = e.touches[0].clientX;
-      const diff = startX - currentX;
-      if (Math.abs(diff) > threshold) {
-        handleSwipe(diff > 0 ? 1 : -1);
-        startX = 0;
-      }
-    };
-
-    container.addEventListener('touchstart', handleTouchStart);
-    container.addEventListener('touchmove', handleTouchMove);
-
-    return () => {
-      container.removeEventListener('touchstart', handleTouchStart);
-      container.removeEventListener('touchmove', handleTouchMove);
-    };
-  }, []);
-
   const cards = [
     {
       title: "Conversation Review",
       content: (
         <div className="space-y-4 h-[calc(100vh-20rem)] overflow-y-auto px-4 pb-16">
           {transcript.map((line, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className={`p-4 rounded-lg ${
-                line.role === 'user' 
-                  ? 'bg-gradient-to-r from-[#38b6ff]/10 to-[#7843e6]/10' 
-                  : 'bg-gray-50'
-              }`}
-            >
-              <p className={`mb-2 ${line.role === 'user' ? 'font-medium' : ''}`}>{line.text}</p>
-              {line.role === 'user' && (
-                <div className="flex flex-wrap gap-2 items-center">
-                  {line.audioUrl && <AudioPlayer audioUrl={line.audioUrl} label="Your Recording" />}
-                  {line.ttsUrl && <AudioPlayer audioUrl={line.ttsUrl} label="Reference Audio" />}
-                  {line.score !== undefined && line.score !== null && (
-                    <span className="text-sm bg-gradient-to-r from-[#38b6ff] to-[#7843e6] text-white px-3 py-1 rounded-full">
-                      Score: {Math.round(line.score)}%
-                    </span>
-                  )}
-                </div>
-              )}
-            </motion.div>
+            <ConversationReviewCard key={index} line={line} />
           ))}
         </div>
       )
@@ -203,32 +120,11 @@ const PostScenarioSummary: React.FC<PostScenarioSummaryProps> = ({
           <div className="bg-gray-50 rounded-lg p-4">
             <h4 className="text-sm font-semibold mb-3">Word-Level Analysis</h4>
             <div className="space-y-3 max-h-[200px] overflow-y-auto">
-              {wordLevelFeedback.map((word, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  className="flex justify-between items-center"
-                >
-                  <span className="text-sm font-medium">{word.word}</span>
-                  <div className="flex items-center gap-3">
-                    <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${word.accuracyScore}%` }}
-                        transition={{ duration: 0.5 }}
-                        className="h-full bg-gradient-to-r from-[#38b6ff] to-[#7843e6]"
-                      />
-                    </div>
-                    {word.errorType !== 'none' && (
-                      <span className="text-xs px-2 py-1 rounded-full bg-red-100 text-red-600">
-                        {word.errorType}
-                      </span>
-                    )}
-                  </div>
-                </motion.div>
-              ))}
+              {wordLevelFeedback
+                .filter(word => word.errorType.toLowerCase() !== 'none')
+                .map((word, index) => (
+                  <WordAnalysisCard key={index} word={word} />
+                ))}
             </div>
           </div>
         </div>
