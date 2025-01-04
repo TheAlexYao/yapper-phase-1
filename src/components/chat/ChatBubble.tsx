@@ -93,14 +93,16 @@ const ChatBubble = ({ message }: ChatBubbleProps) => {
             {message.tts_audio_url && (
               <AudioPlayer 
                 audioUrl={message.tts_audio_url} 
-                label="TTS" 
+                label="TTS"
+                variant={isUser ? 'user' : 'bot'}
               />
             )}
             
             {message.user_audio_url && (
               <AudioPlayer 
                 audioUrl={message.user_audio_url} 
-                label="Your Recording" 
+                label="Your Recording"
+                variant={isUser ? 'user' : 'bot'}
               />
             )}
           </div>

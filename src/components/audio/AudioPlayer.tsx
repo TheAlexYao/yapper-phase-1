@@ -5,11 +5,13 @@ import { Button } from '@/components/ui/button';
 interface AudioPlayerProps {
   audioUrl: string;
   label?: string;
+  variant?: 'user' | 'bot';
 }
 
 export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   audioUrl,
   label = '',
+  variant = 'bot'
 }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -42,7 +44,11 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
     <Button
       variant="outline"
       size="sm"
-      className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white border-white/20 rounded px-2 py-1 transition-colors duration-200"
+      className={`flex items-center gap-2 rounded px-2 py-1 transition-colors duration-200 ${
+        variant === 'user' 
+          ? 'bg-white/10 hover:bg-white/20 text-white border-white/20' 
+          : 'bg-gray-100 hover:bg-gray-200 text-gray-800 border-gray-200'
+      }`}
       onClick={togglePlayback}
     >
       {isPlaying ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
