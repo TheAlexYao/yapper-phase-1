@@ -22,7 +22,25 @@ const ConversationReviewCard: React.FC<ConversationReviewCardProps> = ({ line })
   const [showTranslation, setShowTranslation] = React.useState(false);
   const [showFeedback, setShowFeedback] = React.useState(false);
 
-  const displayScore = line.score !== undefined ? Math.round(line.score) : 0;
+  const calculateScore = () => {
+    if (!line.feedback?.NBest?.[0]?.PronunciationAssessment) {
+      return line.score || 0;
+    }
+
+    const assessment = line.feedback.NBest[0].PronunciationAssessment;
+    console.log('Assessment data for score calculation:', assessment);
+
+    // First try to use PronScore, then fall back to average of component scores
+    const score = assessment.PronScore || 
+                 ((assessment.AccuracyScore + 
+                   assessment.FluencyScore + 
+                   assessment.CompletenessScore) / 3);
+
+    return Math.round(score);
+  };
+
+  const displayScore = calculateScore();
+  console.log('Calculated display score:', displayScore);
 
   return (
     <motion.div
@@ -76,7 +94,7 @@ const ConversationReviewCard: React.FC<ConversationReviewCardProps> = ({ line })
           )}
           
           {/* Score and Feedback */}
-          {line.role === 'user' && line.score !== undefined && (
+          {line.role === 'user' && line.feedback && (
             <button
               onClick={() => setShowFeedback(true)}
               className="text-sm bg-gradient-to-r from-[#38b6ff] to-[#7843e6] text-white px-3 py-1 rounded-full hover:opacity-90 transition-opacity"
