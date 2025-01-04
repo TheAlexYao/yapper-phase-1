@@ -1,17 +1,33 @@
 import { useRef, useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
 
+interface AudioConfig {
+  sampleRate?: number;
+  channelCount?: number;
+  echoCancellation?: boolean;
+  noiseSuppression?: boolean;
+  autoGainControl?: boolean;
+}
+
 interface AudioRecorderConfig {
   preRollDelay?: number;
   postRollDelay?: number;
   chunkInterval?: number;
+  audioConfig?: AudioConfig;
 }
 
 export const useAudioRecorder = (config: AudioRecorderConfig = {}) => {
   const {
     preRollDelay = 500,   // Pre-roll delay before starting recording
     postRollDelay = 300,  // Post-roll delay after stopping recording
-    chunkInterval = 500   // Interval for requesting data chunks
+    chunkInterval = 500,   // Interval for requesting data chunks
+    audioConfig = {
+      sampleRate: 16000,
+      channelCount: 1,
+      echoCancellation: true,
+      noiseSuppression: true,
+      autoGainControl: true
+    }
   } = config;
 
   const [isRecording, setIsRecording] = useState(false);
@@ -61,12 +77,7 @@ export const useAudioRecorder = (config: AudioRecorderConfig = {}) => {
       cleanup();
       
       const stream = await navigator.mediaDevices.getUserMedia({ 
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-          channelCount: 1
-        }
+        audio: audioConfig
       });
       
       streamRef.current = stream;
