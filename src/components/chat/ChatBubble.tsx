@@ -11,28 +11,37 @@ interface ChatBubbleProps {
 }
 
 const ChatBubble = ({ message }: ChatBubbleProps) => {
+  console.log('ChatBubble received message:', message);
+  
   const [showTranslation, setShowTranslation] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const isUser = message.role === 'user';
 
   // Calculate overall score with proper fallbacks
   const calculateOverallScore = () => {
+    console.log('Calculating overall score with feedback:', message.feedback);
+    
     // First try to get the finalScore from feedback if available
     if (message.feedback?.NBest?.[0]?.PronunciationAssessment?.finalScore !== undefined) {
+      console.log('Using finalScore:', message.feedback.NBest[0].PronunciationAssessment.finalScore);
       return message.feedback.NBest[0].PronunciationAssessment.finalScore;
     }
     // Then try to get the score directly from the message
     if (typeof message.score === 'number') {
+      console.log('Using direct score:', message.score);
       return message.score;
     }
     // Finally try to get the pronScore from feedback if available
     if (message.feedback?.NBest?.[0]?.PronunciationAssessment?.PronScore !== undefined) {
+      console.log('Using pronScore:', message.feedback.NBest[0].PronunciationAssessment.PronScore);
       return message.feedback.NBest[0].PronunciationAssessment.PronScore;
     }
+    console.log('No valid score found, returning null');
     return null;
   };
 
   const overallScore = calculateOverallScore();
+  console.log('Final overall score:', overallScore);
 
   return (
     <motion.div
