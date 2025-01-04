@@ -219,6 +219,42 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
     return totalScore / userMessages.length;
   };
 
+  const calculateDetailedScores = () => {
+    const userMessages = messages.filter(msg => 
+      msg.role === 'user' && msg.feedback?.NBest?.[0]?.PronunciationAssessment
+    ) as UserMessage[];
+    
+    if (userMessages.length === 0) return {
+      accuracyScore: 0,
+      fluencyScore: 0,
+      completenessScore: 0,
+      pronScore: 0
+    };
+
+    const scores = userMessages.reduce((acc, msg) => {
+      const assessment = msg.feedback.NBest[0].PronunciationAssessment;
+      return {
+        accuracyScore: acc.accuracyScore + (assessment.AccuracyScore || 0),
+        fluencyScore: acc.fluencyScore + (assessment.FluencyScore || 0),
+        completenessScore: acc.completenessScore + (assessment.CompletenessScore || 0),
+        pronScore: acc.pronScore + (assessment.PronScore || 0)
+      };
+    }, {
+      accuracyScore: 0,
+      fluencyScore: 0,
+      completenessScore: 0,
+      pronScore: 0
+    });
+
+    const messageCount = userMessages.length;
+    return {
+      accuracyScore: Math.round(scores.accuracyScore / messageCount),
+      fluencyScore: Math.round(scores.fluencyScore / messageCount),
+      completenessScore: Math.round(scores.completenessScore / messageCount),
+      pronScore: Math.round(scores.pronScore / messageCount)
+    };
+  };
+
   if (isConversationComplete) {
     const mockProgressData = [
       { date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], score: 75 },
@@ -226,42 +262,6 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
       { date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], score: 85 },
       { date: new Date().toISOString().split('T')[0], score: calculateAverageScore() }
     ];
-
-    const calculateDetailedScores = () => {
-      const userMessages = messages.filter(msg => 
-        msg.role === 'user' && msg.feedback?.NBest?.[0]?.PronunciationAssessment
-      ) as UserMessage[];
-      
-      if (userMessages.length === 0) return {
-        accuracyScore: 0,
-        fluencyScore: 0,
-        completenessScore: 0,
-        pronScore: 0
-      };
-
-      const scores = userMessages.reduce((acc, msg) => {
-        const assessment = msg.feedback.NBest[0].PronunciationAssessment;
-        return {
-          accuracyScore: acc.accuracyScore + (assessment.AccuracyScore || 0),
-          fluencyScore: acc.fluencyScore + (assessment.FluencyScore || 0),
-          completenessScore: acc.completenessScore + (assessment.CompletenessScore || 0),
-          pronScore: acc.pronScore + (assessment.PronScore || 0)
-        };
-      }, {
-        accuracyScore: 0,
-        fluencyScore: 0,
-        completenessScore: 0,
-        pronScore: 0
-      });
-
-      const messageCount = userMessages.length;
-      return {
-        accuracyScore: Math.round(scores.accuracyScore / messageCount),
-        fluencyScore: Math.round(scores.fluencyScore / messageCount),
-        completenessScore: Math.round(scores.completenessScore / messageCount),
-        pronScore: Math.round(scores.pronScore / messageCount)
-      };
-    };
 
     const detailedScores = calculateDetailedScores();
     const overallScore = Math.round(
@@ -283,7 +283,9 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
           text: msg.text,
           audioUrl: msg.user_audio_url || undefined,
           ttsUrl: msg.tts_audio_url,
-          score: msg.role === 'user' ? Math.round(msg.score ?? 0) : undefined,
+          score: msg.role === 'user' && msg.feedback?.NBest?.[0]?.PronunciationAssessment 
+            ? msg.feedback.NBest[0].PronunciationAssessment.PronScore 
+            : undefined,
           transliteration: msg.transliteration,
           translation: msg.translation,
           feedback: msg.role === 'user' ? msg.feedback : undefined
