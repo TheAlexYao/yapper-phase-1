@@ -22,6 +22,8 @@ const ConversationReviewCard: React.FC<ConversationReviewCardProps> = ({ line })
   const [showTranslation, setShowTranslation] = React.useState(false);
   const [showFeedback, setShowFeedback] = React.useState(false);
 
+  const displayScore = line.score !== undefined ? Math.round(line.score) : 0;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -79,7 +81,7 @@ const ConversationReviewCard: React.FC<ConversationReviewCardProps> = ({ line })
               onClick={() => setShowFeedback(true)}
               className="text-sm bg-gradient-to-r from-[#38b6ff] to-[#7843e6] text-white px-3 py-1 rounded-full hover:opacity-90 transition-opacity"
             >
-              Score: {Math.round(line.score)}%
+              Score: {displayScore}%
             </button>
           )}
         </div>
