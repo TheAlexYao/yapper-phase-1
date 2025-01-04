@@ -23,23 +23,22 @@ const ChatBubble = ({ message }: ChatBubbleProps) => {
   const calculateOverallScore = () => {
     console.log('Calculating overall score with feedback:', message.feedback);
     
-    // First try to get the finalScore from feedback if available
-    if (message.feedback?.NBest?.[0]?.PronunciationAssessment?.finalScore !== undefined) {
-      console.log('Using finalScore:', message.feedback.NBest[0].PronunciationAssessment.finalScore);
-      return message.feedback.NBest[0].PronunciationAssessment.finalScore;
+    if (!message.feedback || !message.feedback.NBest?.[0]?.PronunciationAssessment) {
+      console.log('No valid feedback structure found');
+      return null;
     }
-    // Then try to get the score directly from the message
-    if (typeof message.score === 'number') {
-      console.log('Using direct score:', message.score);
-      return message.score;
-    }
-    // Finally try to get the pronScore from feedback if available
-    if (message.feedback?.NBest?.[0]?.PronunciationAssessment?.PronScore !== undefined) {
-      console.log('Using pronScore:', message.feedback.NBest[0].PronunciationAssessment.PronScore);
-      return message.feedback.NBest[0].PronunciationAssessment.PronScore;
-    }
-    console.log('No valid score found, returning null');
-    return null;
+
+    const assessment = message.feedback.NBest[0].PronunciationAssessment;
+    
+    // Try different score properties in order of preference
+    const score = assessment.finalScore ?? 
+                 message.score ?? 
+                 assessment.PronScore ?? 
+                 // If no direct scores are available, calculate average of component scores
+                 ((assessment.AccuracyScore + assessment.FluencyScore + assessment.CompletenessScore) / 3);
+    
+    console.log('Calculated score:', score);
+    return typeof score === 'number' && !isNaN(score) ? score : null;
   };
 
   const overallScore = calculateOverallScore();
@@ -103,7 +102,7 @@ const ChatBubble = ({ message }: ChatBubbleProps) => {
             )}
           </div>
 
-          {overallScore !== null && message.feedback && (
+          {isUser && message.feedback && overallScore !== null && (
             <Button
               variant="ghost"
               size="sm"
