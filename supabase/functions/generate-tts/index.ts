@@ -52,10 +52,9 @@ serve(async (req) => {
 
     console.log(`Processing ${scripts.length} scripts...`)
 
-    const performanceMetrics: Record<string, { totalTime: number; count: number }> = {}
-
     for (const script of scripts) {
       try {
+        // Fetch language voices with more specific query
         const { data: languageData, error: languageError } = await supabase
           .from('languages')
           .select('male_voice, female_voice')
@@ -64,7 +63,7 @@ serve(async (req) => {
 
         if (languageError) {
           console.error(`Error fetching language data for code ${script.language_code}:`, languageError)
-          continue
+          continue // Skip this script and continue with others
         }
 
         if (!languageData) {
@@ -80,16 +79,10 @@ serve(async (req) => {
         const scriptData: ScriptData = script.script_data
         let modified = false
 
-        // Initialize metrics for this language if not exists
-        if (!performanceMetrics[script.language_code]) {
-          performanceMetrics[script.language_code] = { totalTime: 0, count: 0 }
-        }
-
         for (const line of scriptData.lines) {
           if (!line.audioUrl) {
             try {
-              const startTime = performance.now()
-
+              // Select voice based on speaker
               const voiceName = line.speaker === 'character' 
                 ? (script.character_id % 2 === 0 ? languageData.female_voice : languageData.male_voice)
                 : (script.user_gender === 'female' ? languageData.female_voice : languageData.male_voice)
@@ -142,17 +135,10 @@ serve(async (req) => {
               line.audioUrl = publicUrl.publicUrl
               modified = true
 
-              const endTime = performance.now()
-              const processingTime = endTime - startTime
-
-              // Update metrics
-              performanceMetrics[script.language_code].totalTime += processingTime
-              performanceMetrics[script.language_code].count++
-
-              console.log(`Generated TTS for line ${line.lineNumber} in script ${script.id} (${script.language_code}): ${processingTime.toFixed(2)}ms`)
+              console.log(`Generated TTS for line ${line.lineNumber} in script ${script.id}`)
             } catch (error) {
               console.error(`Error processing line ${line.lineNumber} in script ${script.id}:`, error)
-              continue
+              continue // Skip this line and continue with others
             }
           }
         }
@@ -175,22 +161,12 @@ serve(async (req) => {
         }
       } catch (error) {
         console.error(`Error processing script ${script.id}:`, error)
-        continue
+        continue // Skip this script and continue with others
       }
     }
 
-    // Calculate and log average processing times per language
-    console.log('\nTTS Generation Performance Metrics:')
-    Object.entries(performanceMetrics).forEach(([langCode, metrics]) => {
-      const avgTime = metrics.count > 0 ? metrics.totalTime / metrics.count : 0
-      console.log(`${langCode}: Average processing time: ${avgTime.toFixed(2)}ms (${metrics.count} samples)`)
-    })
-
     return new Response(
-      JSON.stringify({ 
-        message: 'TTS generation completed successfully',
-        performanceMetrics
-      }),
+      JSON.stringify({ message: 'TTS generation completed successfully' }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
