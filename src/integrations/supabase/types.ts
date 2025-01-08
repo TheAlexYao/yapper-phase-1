@@ -15,7 +15,6 @@ export type Database = {
           avatar_url: string | null
           bio: string | null
           bio_translations: Json | null
-          city_id: string | null
           created_at: string | null
           gender: string | null
           id: string
@@ -24,7 +23,6 @@ export type Database = {
           localized_image_url: string | null
           name: string
           name_translations: Json | null
-          scenario_id: string | null
           topic: string
           updated_at: string | null
           voice_id: string | null
@@ -34,7 +32,6 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           bio_translations?: Json | null
-          city_id?: string | null
           created_at?: string | null
           gender?: string | null
           id?: string
@@ -43,7 +40,6 @@ export type Database = {
           localized_image_url?: string | null
           name: string
           name_translations?: Json | null
-          scenario_id?: string | null
           topic: string
           updated_at?: string | null
           voice_id?: string | null
@@ -53,7 +49,6 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           bio_translations?: Json | null
-          city_id?: string | null
           created_at?: string | null
           gender?: string | null
           id?: string
@@ -62,137 +57,11 @@ export type Database = {
           localized_image_url?: string | null
           name?: string
           name_translations?: Json | null
-          scenario_id?: string | null
           topic?: string
           updated_at?: string | null
           voice_id?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "characters_city_id_fkey"
-            columns: ["city_id"]
-            isOneToOne: false
-            referencedRelation: "cities"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      chat_sessions: {
-        Row: {
-          character_id: number
-          created_at: string | null
-          current_line_index: number | null
-          id: string
-          messages: Json | null
-          scenario_id: string
-          updated_at: string | null
-          user_id: string | null
-        }
-        Insert: {
-          character_id: number
-          created_at?: string | null
-          current_line_index?: number | null
-          id?: string
-          messages?: Json | null
-          scenario_id: string
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          character_id?: number
-          created_at?: string | null
-          current_line_index?: number | null
-          id?: string
-          messages?: Json | null
-          scenario_id?: string
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "chat_sessions_scenario_id_fkey"
-            columns: ["scenario_id"]
-            isOneToOne: false
-            referencedRelation: "default_scenarios"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      cities: {
-        Row: {
-          country: string
-          created_at: string | null
-          cultural_notes: string | null
-          id: string
-          language_id: string | null
-          local_slang: Json | null
-          name: string
-          updated_at: string | null
-        }
-        Insert: {
-          country: string
-          created_at?: string | null
-          cultural_notes?: string | null
-          id?: string
-          language_id?: string | null
-          local_slang?: Json | null
-          name: string
-          updated_at?: string | null
-        }
-        Update: {
-          country?: string
-          created_at?: string | null
-          cultural_notes?: string | null
-          id?: string
-          language_id?: string | null
-          local_slang?: Json | null
-          name?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "cities_language_id_fkey"
-            columns: ["language_id"]
-            isOneToOne: false
-            referencedRelation: "languages"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      daily_tips: {
-        Row: {
-          created_at: string | null
-          cultural_context: string | null
-          id: string
-          language_code: string
-          tip_text: string
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          cultural_context?: string | null
-          id?: string
-          language_code: string
-          tip_text: string
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          cultural_context?: string | null
-          id?: string
-          language_code?: string
-          tip_text?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "daily_tips_language_code_fkey"
-            columns: ["language_code"]
-            isOneToOne: false
-            referencedRelation: "languages"
-            referencedColumns: ["code"]
-          },
-        ]
+        Relationships: []
       }
       default_scenarios: {
         Row: {
@@ -317,24 +186,6 @@ export type Database = {
           updated_at?: string
           username?: string | null
           voice_preference?: string | null
-        }
-        Relationships: []
-      }
-      reference_mappings: {
-        Row: {
-          numeric_id: number
-          ref_type: string
-          uuid_id: string | null
-        }
-        Insert: {
-          numeric_id: number
-          ref_type: string
-          uuid_id?: string | null
-        }
-        Update: {
-          numeric_id?: number
-          ref_type?: string
-          uuid_id?: string | null
         }
         Relationships: []
       }

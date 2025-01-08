@@ -2,10 +2,8 @@ import { useNavigate } from "react-router-dom";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import ScenarioChatScreen from "@/components/screens/ScenarioChatScreen";
 import { supabase } from "@/integrations/supabase/client";
-import { Database } from "@/integrations/supabase/types";
 import { LanguageCode } from "@/constants/languages";
 
-type ScriptRow = Database['public']['Tables']['scripts']['Row'];
 type UserGender = 'male' | 'female';
 
 const ScenarioChat = () => {
