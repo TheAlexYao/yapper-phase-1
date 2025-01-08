@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { ChatMessage, Script } from '@/types/chat';
 import { LanguageCode } from '@/constants/languages';
+import { createBotMessage } from '@/utils/messageUtils';
 
 interface ScriptManagerProps {
   script: Script | null;
