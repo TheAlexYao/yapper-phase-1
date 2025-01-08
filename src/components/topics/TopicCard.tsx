@@ -9,11 +9,6 @@ interface TopicCardProps {
 }
 
 const TopicCard: React.FC<TopicCardProps> = ({ topic, onSelect }) => {
-  // Use a specific image for dating topics
-  const imageUrl = topic.title === 'Dating' 
-    ? 'https://images.unsplash.com/photo-1516685018646-549198525c1b'  // Two people on a date
-    : topic.image_url;
-
   return (
     <Card 
       className="w-full h-full overflow-hidden cursor-pointer transform transition-all duration-300 hover:scale-[1.02] hover:shadow-lg rounded-2xl"
@@ -21,7 +16,7 @@ const TopicCard: React.FC<TopicCardProps> = ({ topic, onSelect }) => {
     >
       <CardContent className="p-0 h-full relative">
         <img
-          src={imageUrl}
+          src={topic.image_url || '/placeholder.svg'}
           alt={topic.title}
           className="w-full h-full object-cover"
           loading="lazy"
