@@ -20,5 +20,23 @@ export const scandinavianRules: Partial<TransliterationRules> = {
       { original: 'varm', transliteration: 'varm' },
       { original: 'ha det bra', transliteration: 'ha de bra' }
     ]
+  },
+  'nl-NL': {
+    description: 'Break words into syllables with hyphens',
+    examples: [
+      { original: 'dank je', transliteration: 'dahnk yuh' },
+      { original: 'koffie', transliteration: 'koh-fee' },
+      { original: 'twintig', transliteration: 'tvin-tug' },
+      { original: 'heet', transliteration: 'hayt' },
+      { original: 'tot ziens', transliteration: 'tot zeens' }
+    ]
+  },
+  'pl-PL': {
+    description: 'Break words into syllables with hyphens',
+    examples: [
+      { original: 'dziękuję', transliteration: 'jen-koo-yeh' },
+      { original: 'kawa', transliteration: 'kah-vah' },
+      { original: 'dwadzieścia', transliteration: 'dvah-yesh-cha' }
+    ]
   }
 };

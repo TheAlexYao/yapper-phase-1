@@ -1,6 +1,36 @@
 import { TransliterationRules } from './types';
 
 export const otherEuropeanRules: Partial<TransliterationRules> = {
+  'fr-FR': {
+    description: 'Break words into syllables with hyphens',
+    examples: [
+      { original: 'merci', transliteration: 'mair-see' },
+      { original: 'café', transliteration: 'kah-feh' },
+      { original: 'vingt', transliteration: 'van' },
+      { original: 'chaud', transliteration: 'show' },
+      { original: 'au revoir', transliteration: 'oh-ruh-vwar' }
+    ]
+  },
+  'fr-CA': {
+    description: 'Break words into syllables with hyphens',
+    examples: [
+      { original: 'merci', transliteration: 'mair-see' },
+      { original: 'café', transliteration: 'kah-feh' },
+      { original: 'vingt', transliteration: 'van' },
+      { original: 'chaud', transliteration: 'show' },
+      { original: 'au revoir', transliteration: 'oh-ruh-vwar' }
+    ]
+  },
+  'it-IT': {
+    description: 'Break words into syllables with hyphens',
+    examples: [
+      { original: 'grazie', transliteration: 'grah-tsee-eh' },
+      { original: 'caffè', transliteration: 'kah-feh' },
+      { original: 'venti', transliteration: 'ven-tee' },
+      { original: 'caldo', transliteration: 'kahl-doh' },
+      { original: 'arrivederci', transliteration: 'ah-ree-veh-dair-chee' }
+    ]
+  },
   'es-ES': {
     description: 'Break words into syllables with hyphens',
     examples: [
@@ -21,24 +51,20 @@ export const otherEuropeanRules: Partial<TransliterationRules> = {
       { original: 'hasta luego', transliteration: 'ah-stah loo-eh-go' }
     ]
   },
-  'it-IT': {
+  'pt-BR': {
     description: 'Break words into syllables with hyphens',
     examples: [
-      { original: 'grazie', transliteration: 'grah-tsee-eh' },
-      { original: 'caffè', transliteration: 'kah-feh' },
-      { original: 'venti', transliteration: 'ven-tee' },
-      { original: 'caldo', transliteration: 'kahl-doh' },
-      { original: 'arrivederci', transliteration: 'ah-ree-veh-dair-chee' }
+      { original: 'obrigado', transliteration: 'oh-bree-gah-doo' },
+      { original: 'café', transliteration: 'kah-feh' },
+      { original: 'vinte', transliteration: 'veen-chee' }
     ]
   },
-  'nl-NL': {
+  'pt-PT': {
     description: 'Break words into syllables with hyphens',
     examples: [
-      { original: 'dank je', transliteration: 'dahnk yuh' },
-      { original: 'koffie', transliteration: 'koh-fee' },
-      { original: 'twintig', transliteration: 'tvin-tug' },
-      { original: 'heet', transliteration: 'hayt' },
-      { original: 'tot ziens', transliteration: 'tot zeens' }
+      { original: 'obrigado', transliteration: 'oh-bree-gah-doo' },
+      { original: 'café', transliteration: 'kah-feh' },
+      { original: 'vinte', transliteration: 'veen-chee' }
     ]
   }
 };

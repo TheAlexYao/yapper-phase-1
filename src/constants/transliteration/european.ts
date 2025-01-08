@@ -21,25 +21,5 @@ export const europeanRules: Partial<TransliterationRules> = {
       { original: 'heiß', transliteration: 'hays' },
       { original: 'auf wiedersehen', transliteration: 'owf vee-der-zey-en' }
     ]
-  },
-  'fr-FR': {
-    description: 'Break words into syllables with hyphens',
-    examples: [
-      { original: 'merci', transliteration: 'mair-see' },
-      { original: 'café', transliteration: 'kah-feh' },
-      { original: 'vingt', transliteration: 'van' },
-      { original: 'chaud', transliteration: 'show' },
-      { original: 'au revoir', transliteration: 'oh-ruh-vwar' }
-    ]
-  },
-  'fr-CA': {
-    description: 'Break words into syllables with hyphens',
-    examples: [
-      { original: 'merci', transliteration: 'mair-see' },
-      { original: 'café', transliteration: 'kah-feh' },
-      { original: 'vingt', transliteration: 'van' },
-      { original: 'chaud', transliteration: 'show' },
-      { original: 'au revoir', transliteration: 'oh-ruh-vwar' }
-    ]
   }
 };
