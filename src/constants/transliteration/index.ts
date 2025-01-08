@@ -1,13 +1,11 @@
-import { TransliterationRules, LanguageTransliterationRules } from './types';
+import { TransliterationRules } from './types';
 import { eastAsianRules } from './eastAsian';
 import { southAsianRules } from './southAsian';
 import { southeastAsianRules } from './southeastAsian';
 import { europeanRules } from './european';
 import { otherEuropeanRules } from './otherEuropean';
 import { scandinavianRules } from './scandinavian';
-import { LanguageCode } from '../languages';
 
-// Combine all rules into a complete set
 export const TRANSLITERATION_RULES: TransliterationRules = {
   'en-US': {
     description: 'Native English, no transliteration needed',
