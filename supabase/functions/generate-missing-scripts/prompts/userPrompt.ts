@@ -21,19 +21,14 @@ The script should follow this structure:
 
 Please ensure:
 1. Natural dialogue appropriate for the scenario
-2. STRICT adherence to language-specific spacing rules:
-   - Thai (th-TH): Add spaces between each word unit
-   - Japanese (ja-JP): Add spaces between words
-   - Chinese variants: No spaces between characters
-   - Hindi/Tamil: Add spaces between distinct words
-   - No spaces before punctuation in any language
+2. STRICT adherence to language-specific spacing rules
 3. Appropriate formality level for the culture
 4. Clear turn-taking between character and user
 5. Context-appropriate vocabulary
 6. Accurate transliteration using these examples as reference:
 
 East Asian Languages:
-Chinese (zh-CN, zh-TW, zh-HK):
+Chinese (zh-CN, zh-TW):
 - 你好 → nee-how
 - 谢谢 → shyeh-shyeh
 - 咖啡 → kah-fey
