@@ -7,9 +7,9 @@ const CharacterSelection = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const selectedScenario = queryClient.getQueryData(['selectedScenario']) as { 
-    id: number; 
+    id: string; 
     title: string;
-    topicId: number;
+    topicId: string;
   } | undefined;
   const selectedLanguage = queryClient.getQueryData(['selectedLanguage']) as LanguageCode;
 
@@ -19,11 +19,17 @@ const CharacterSelection = () => {
   };
 
   const handleCharacterSelect = (characterId: string, characterName: string) => {
-    queryClient.setQueryData(['selectedCharacter'], { 
-      id: characterId, 
-      name: characterName 
+    // Navigate to chat with all required information
+    navigate('/chat', {
+      state: {
+        scenarioId: selectedScenario?.id,
+        characterId,
+        selectedLanguage,
+        scenarioTitle: selectedScenario?.title,
+        characterName,
+        topicId: selectedScenario?.topicId
+      }
     });
-    navigate('/chat');
   };
 
   if (!selectedScenario) {

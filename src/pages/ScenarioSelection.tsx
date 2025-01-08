@@ -6,7 +6,10 @@ import { LanguageCode } from "@/constants/languages";
 const ScenarioSelection = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const selectedTopic = queryClient.getQueryData(['selectedTopic']) as { title: string; id: string } | undefined;
+  const selectedTopic = queryClient.getQueryData(['selectedTopic']) as { 
+    title: string; 
+    id: string 
+  } | undefined;
   const selectedLanguage = queryClient.getQueryData(['selectedLanguage']) as LanguageCode;
 
   const handleBackToTopics = () => {
