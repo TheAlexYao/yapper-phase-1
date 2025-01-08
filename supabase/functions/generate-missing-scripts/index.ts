@@ -74,31 +74,23 @@ serve(async (req) => {
         if (!existingScript) {
           console.log(`Generating script for es-MX, scenario ${scenario.title}, character ${character.name}`);
 
-          const prompt = `Generate a restaurant conversation script in Mexican Spanish (es-MX) between a ${character.gender} waiter/waitress named ${character.name} and a customer.
-            The conversation should follow this scenario: ${scenario.title}
+          // Format the prompt according to our system prompt structure
+          const userPrompt = `Generate an SQL INSERT statement for a restaurant conversation script with the following parameters:
+            Language: Mexican Spanish (es-MX)
+            Scenario: ${scenario.title}
+            Character: ${character.name} (${character.gender})
+            Topic: ${topic.title}
             
-            Please return the response in this exact JSON format:
-            {
-              "lines": [
-                {
-                  "speaker": "character",
-                  "targetText": "Spanish text",
-                  "transliteration": "Pronunciation guide",
-                  "translation": "English translation"
-                },
-                {
-                  "speaker": "user",
-                  "targetText": "Spanish text",
-                  "transliteration": "Pronunciation guide",
-                  "translation": "English translation"
-                }
-              ],
-              "languageCode": "es-MX"
-            }
+            The script should follow the exact structure defined in the system prompt, with 6 lines of dialogue between the character (${character.name}) and the user.
             
-            Make sure the conversation is natural, includes common restaurant phrases, and is appropriate for language learners.`;
+            Please ensure:
+            1. Natural restaurant dialogue
+            2. Proper Spanish grammar and punctuation
+            3. Appropriate formality level
+            4. Clear turn-taking between character and user
+            5. Context-appropriate vocabulary`;
 
-          const scriptData = await generateScript(prompt);
+          const scriptData = await generateScript(userPrompt);
           
           // Insert the script using Supabase client
           const { error: insertError } = await supabase

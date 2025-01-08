@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 import { ScriptLine, ScriptData } from './types.ts';
+import { SYSTEM_PROMPT } from './constants.ts';
 
 export async function generateScript(prompt: string): Promise<ScriptData> {
   const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
@@ -8,7 +9,10 @@ export async function generateScript(prompt: string): Promise<ScriptData> {
   }
 
   try {
-    console.log('Generating script with prompt:', prompt);
+    console.log('Generating script with system prompt and user prompt:', {
+      systemPrompt: SYSTEM_PROMPT,
+      userPrompt: prompt
+    });
     
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -21,7 +25,7 @@ export async function generateScript(prompt: string): Promise<ScriptData> {
         messages: [
           {
             role: 'system',
-            content: 'You are a helpful assistant that generates conversation scripts for language learning, focusing on restaurant scenarios.'
+            content: SYSTEM_PROMPT
           },
           {
             role: 'user',
