@@ -76,6 +76,16 @@ const Auth = () => {
                 width: '100%',
               },
             },
+            extend: true,
+            className: {
+              container: 'hidden',
+              anchor: 'hidden',
+              divider: 'hidden',
+              label: 'hidden',
+              input: 'hidden',
+              message: 'hidden',
+              button: '!bg-white hover:!bg-gray-50',
+            }
           }}
           providers={["google"]}
           redirectTo={window.location.origin}
