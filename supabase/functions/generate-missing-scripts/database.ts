@@ -1,14 +1,17 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
-import { Language, Topic, Character, Scenario } from './types.ts';
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL');
-const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'); // Changed to use service role key
 
 if (!supabaseUrl || !supabaseKey) {
   throw new Error('Missing Supabase environment variables');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+export const supabase = createClient(supabaseUrl, supabaseKey, {
+  auth: {
+    persistSession: false
+  }
+});
 
 export async function fetchAllLanguages(): Promise<Language[]> {
   const { data, error } = await supabase.from('languages').select('*');
