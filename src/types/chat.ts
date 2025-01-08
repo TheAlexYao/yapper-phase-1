@@ -11,7 +11,6 @@ export interface ChatMessage {
   user_audio_url: string | null;
   score: number | null;
   language_code: LanguageCode;
-  ttsText?: string; // Added for TTS optimization
   feedback?: {
     overall_score: number;
     phoneme_analysis: string;
@@ -54,12 +53,12 @@ export interface UserMessage extends ChatMessage {
 
 export interface ScriptLine {
   speaker: 'character' | 'user';
-  audioUrl: string;
-  lineNumber: number;
   targetText: string;
-  ttsText: string; // Added for TTS optimization
-  translation: string;
+  ttsText: string;
   transliteration: string;
+  translation: string;
+  audioUrl?: string;
+  lineNumber?: number;
 }
 
 export interface ScriptData {
@@ -81,21 +80,43 @@ export interface Script {
 
 // Type guard to validate ScriptData structure
 export function isValidScriptData(data: unknown): data is ScriptData {
-  if (!data || typeof data !== 'object') return false;
+  if (!data || typeof data !== 'object') {
+    console.log('Data is not an object:', data);
+    return false;
+  }
   
   const scriptData = data as Partial<ScriptData>;
   
-  if (!Array.isArray(scriptData.lines)) return false;
-  if (typeof scriptData.languageCode !== 'string') return false;
+  if (!Array.isArray(scriptData.lines)) {
+    console.log('Lines is not an array:', scriptData.lines);
+    return false;
+  }
+
+  if (typeof scriptData.languageCode !== 'string') {
+    console.log('LanguageCode is not a string:', scriptData.languageCode);
+    return false;
+  }
   
-  return scriptData.lines.every(line => 
-    typeof line === 'object' &&
-    (line.speaker === 'character' || line.speaker === 'user') &&
-    typeof line.audioUrl === 'string' &&
-    typeof line.lineNumber === 'number' &&
-    typeof line.targetText === 'string' &&
-    typeof line.ttsText === 'string' && // Added validation for ttsText
-    typeof line.translation === 'string' &&
-    typeof line.transliteration === 'string'
-  );
+  return scriptData.lines.every(line => {
+    const isValid = typeof line === 'object' &&
+      (line.speaker === 'character' || line.speaker === 'user') &&
+      typeof line.targetText === 'string' &&
+      typeof line.ttsText === 'string' &&
+      typeof line.translation === 'string' &&
+      typeof line.transliteration === 'string';
+
+    if (!isValid) {
+      console.log('Invalid line:', line);
+      console.log('Line validation:', {
+        isObject: typeof line === 'object',
+        hasValidSpeaker: line.speaker === 'character' || line.speaker === 'user',
+        hasTargetText: typeof line.targetText === 'string',
+        hasTtsText: typeof line.ttsText === 'string',
+        hasTranslation: typeof line.translation === 'string',
+        hasTransliteration: typeof line.transliteration === 'string'
+      });
+    }
+
+    return isValid;
+  });
 }
