@@ -53,10 +53,11 @@ export interface UserMessage extends ChatMessage {
 
 export interface ScriptLine {
   speaker: 'character' | 'user';
+  audioUrl: string;
+  lineNumber: number;
   targetText: string;
-  transliteration: string;
   translation: string;
-  audioUrl?: string;
+  transliteration: string;
 }
 
 export interface Script {

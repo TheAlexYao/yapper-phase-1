@@ -51,9 +51,8 @@ const ScenarioChat = () => {
           throw new Error('No script found for this scenario');
         }
 
-        // Validate script_data structure
         const rawScriptData = scriptData.script_data;
-        
+
         // Type guard for ScriptLine
         const isValidScriptLine = (line: any): line is ScriptLine => {
           return (
@@ -61,12 +60,16 @@ const ScenarioChat = () => {
             line !== null &&
             'speaker' in line &&
             (line.speaker === 'character' || line.speaker === 'user') &&
+            'audioUrl' in line &&
+            typeof line.audioUrl === 'string' &&
+            'lineNumber' in line &&
+            typeof line.lineNumber === 'number' &&
             'targetText' in line &&
             typeof line.targetText === 'string' &&
-            'transliteration' in line &&
-            (line.transliteration === null || typeof line.transliteration === 'string') &&
             'translation' in line &&
-            typeof line.translation === 'string'
+            typeof line.translation === 'string' &&
+            'transliteration' in line &&
+            typeof line.transliteration === 'string'
           );
         };
 
@@ -90,7 +93,7 @@ const ScenarioChat = () => {
           const validatedScript: Script = {
             ...scriptData,
             script_data: {
-              lines: rawScriptData.lines as ScriptLine[],
+              lines: rawScriptData.lines,
               languageCode: rawScriptData.languageCode
             }
           };
