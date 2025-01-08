@@ -90,6 +90,7 @@ Line 6 (User): Closing
       "lineNumber": 1,
       "speaker": "character",
       "targetText": "...",
+      "ttsText": "...",
       "transliteration": "...",
       "translation": "..."
     },
@@ -103,7 +104,8 @@ Line 6 (User): Closing
 2. Each script must have exactly 6 lines
 3. Ensure lineNumber matches the speaker order
 4. Check spacing/punctuation rules for the specific language
-5. Maintain consistency in character voice and personality`;
+5. Maintain consistency in character voice and personality
+6. IMPORTANT: For each line, provide both targetText (with proper spacing for pronunciation assessment) and ttsText (without extra spaces for TTS generation)`;
 
 export const USER_PROMPT = `Generate a conversation script with the following parameters:
 Language: {languageCode}
