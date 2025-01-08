@@ -15,7 +15,7 @@ const ScenarioChat = () => {
   const [messages, setMessages] = useState([]);
   const [currentPrompt, setCurrentPrompt] = useState(null);
   const [script, setScript] = useState<Script | null>(null);
-  const [selectedLanguage, setSelectedLanguage] = useState<LanguageCode>('en');
+  const [selectedLanguage, setSelectedLanguage] = useState<LanguageCode>('en-US');
 
   const handleBackToCharacters = () => {
     navigate('/characters');
@@ -26,7 +26,12 @@ const ScenarioChat = () => {
     initialMessages: any[],
     initialLineIndex: number
   ) => {
-    setScript({ script_data: { lines: scriptLines } });
+    setScript({
+      script_data: {
+        lines: scriptLines,
+        languageCode: selectedLanguage
+      }
+    });
     setMessages(initialMessages);
   };
 
