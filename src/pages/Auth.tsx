@@ -5,51 +5,85 @@ import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AuthError, AuthApiError, AuthChangeEvent } from "@supabase/supabase-js";
+import { Progress } from "@/components/ui/progress";
 
 const Auth = () => {
   const navigate = useNavigate();
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
+    let progressInterval: NodeJS.Timeout;
+
     const checkSession = async () => {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      if (session) navigate("/topics");
-      if (error) setErrorMessage(getErrorMessage(error));
-      setIsLoading(false);
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (session) {
+          navigate("/topics");
+        }
+        if (error) {
+          setErrorMessage(getErrorMessage(error));
+        }
+      } catch (error) {
+        setErrorMessage("Failed to check authentication status");
+      } finally {
+        setIsLoading(false);
+      }
     };
+
+    const startProgressBar = () => {
+      setProgress(0);
+      progressInterval = setInterval(() => {
+        setProgress((prev) => {
+          if (prev >= 90) {
+            clearInterval(progressInterval);
+            return 90;
+          }
+          return prev + 10;
+        });
+      }, 200);
+    };
+
     checkSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event: AuthChangeEvent, session) => {
         if (event === "SIGNED_IN" && session) {
-          // Create profile if it doesn't exist
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select()
-            .eq('id', session.user.id)
-            .single();
-
-          if (!profile) {
-            const { error: profileError } = await supabase
+          startProgressBar();
+          try {
+            // Create profile if it doesn't exist
+            const { data: profile } = await supabase
               .from('profiles')
-              .insert([
-                {
-                  id: session.user.id,
-                  full_name: session.user.user_metadata.full_name,
-                  avatar_url: session.user.user_metadata.avatar_url,
-                  onboarding_completed: false
-                }
-              ]);
+              .select()
+              .eq('id', session.user.id)
+              .single();
 
-            if (profileError) {
-              console.error('Error creating profile:', profileError);
-              setErrorMessage('Failed to create user profile');
-              return;
+            if (!profile) {
+              const { error: profileError } = await supabase
+                .from('profiles')
+                .insert([
+                  {
+                    id: session.user.id,
+                    full_name: session.user.user_metadata.full_name,
+                    avatar_url: session.user.user_metadata.avatar_url,
+                    onboarding_completed: false
+                  }
+                ]);
+
+              if (profileError) {
+                console.error('Error creating profile:', profileError);
+                setErrorMessage('Failed to create user profile');
+                return;
+              }
             }
-          }
 
-          navigate("/topics");
+            setProgress(100);
+            setTimeout(() => navigate("/topics"), 500);
+          } catch (error) {
+            setErrorMessage('An unexpected error occurred during sign in');
+            setProgress(0);
+          }
         }
         if (event === "USER_UPDATED") {
           const { error } = await supabase.auth.getSession();
@@ -57,11 +91,15 @@ const Auth = () => {
         }
         if (event === "SIGNED_OUT") {
           setErrorMessage("");
+          setProgress(0);
         }
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      if (progressInterval) clearInterval(progressInterval);
+    };
   }, [navigate]);
 
   const getErrorMessage = (error: AuthError) => {
@@ -73,6 +111,10 @@ const Auth = () => {
           return "No user found with these credentials.";
         case "invalid_grant":
           return "Invalid login credentials.";
+        case "email_not_confirmed":
+          return "Please verify your email address before signing in.";
+        case "network_error":
+          return "Network error. Please check your internet connection.";
         default:
           return error.message;
       }
@@ -102,11 +144,19 @@ const Auth = () => {
             Sign in to continue your language learning journey
           </p>
         </div>
+
+        {progress > 0 && (
+          <div className="mb-4">
+            <Progress value={progress} className="h-2" />
+          </div>
+        )}
+
         {errorMessage && (
           <Alert variant="destructive" className="mb-4">
             <AlertDescription>{errorMessage}</AlertDescription>
           </Alert>
         )}
+
         <SupabaseAuth
           supabaseClient={supabase}
           appearance={{
