@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import ScenarioChatScreen from '@/components/screens/ScenarioChatScreen';
-import { Script, ScriptData } from '@/types/chat';
+import { Script, ScriptData, ScriptLine } from '@/types/chat';
 import { LanguageCode } from '@/constants/languages';
 
 const ScenarioChat = () => {
@@ -57,23 +57,37 @@ const ScenarioChat = () => {
           throw new Error('No script found for this scenario');
         }
 
-        // Validate script data structure
-        const rawScriptData = scriptData.script_data;
+        // Type assertion for the raw script data
+        const rawScriptData = scriptData.script_data as {
+          lines?: Array<{
+            speaker: 'character' | 'user';
+            audioUrl: string;
+            lineNumber: number;
+            targetText: string;
+            translation: string;
+            transliteration: string;
+          }>;
+          languageCode?: string;
+        };
+
         console.log('Raw script data:', rawScriptData);
         
         if (!rawScriptData || typeof rawScriptData !== 'object') {
           throw new Error('Invalid script data: not an object');
         }
 
+        // Validate and transform the script data
         const validatedScriptData: ScriptData = {
-          lines: Array.isArray(rawScriptData.lines) ? rawScriptData.lines.map(line => ({
-            speaker: line.speaker,
-            audioUrl: line.audioUrl,
-            lineNumber: line.lineNumber,
-            targetText: line.targetText,
-            translation: line.translation,
-            transliteration: line.transliteration
-          })) : [],
+          lines: Array.isArray(rawScriptData.lines) 
+            ? rawScriptData.lines.map(line => ({
+                speaker: line.speaker,
+                audioUrl: line.audioUrl,
+                lineNumber: line.lineNumber,
+                targetText: line.targetText,
+                translation: line.translation,
+                transliteration: line.transliteration
+              }))
+            : [],
           languageCode: rawScriptData.languageCode || selectedLanguage
         };
 
