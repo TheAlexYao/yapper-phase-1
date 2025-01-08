@@ -41,20 +41,19 @@ const CharacterSelectionScreen: React.FC<CharacterSelectionScreenProps> = ({
         .from('default_scenarios')
         .select('id')
         .ilike('title', `%${scenarioTitle}%`)
-        .limit(1);
+        .limit(1)
+        .maybeSingle();
 
       if (scenarioError) throw scenarioError;
-      if (!scenarios || scenarios.length === 0) {
+      if (!scenarios) {
         throw new Error('Scenario not found');
       }
 
-      const scenarioId = scenarios[0].id.toString();
-
-      // Then, get the characters for this scenario
+      // Then, get the characters for this scenario using the UUID
       const { data, error: fetchError } = await supabase
         .from('characters')
         .select('*')
-        .eq('scenario_id', scenarioId)
+        .eq('scenario_id', scenarios.id)
         .order('gender', { ascending: false }); // This will put 'female' first since 'f' comes before 'm'
 
       if (fetchError) throw fetchError;
