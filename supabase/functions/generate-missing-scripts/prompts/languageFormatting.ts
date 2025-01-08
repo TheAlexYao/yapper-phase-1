@@ -1,7 +1,7 @@
 export const LANGUAGE_FORMATTING = `
 ### 1. Language & Text Formatting Requirements
 
-Each language has specific spacing requirements for proper TTS and pronunciation assessment:
+Each language has specific spacing requirements for proper TTS and pronunciation assessment. You MUST follow these rules EXACTLY when generating text:
 
 1. Thai (th-TH): Add spaces between each word unit
    Example: "สวัสดี ค่ะ! รับ อะไร ดี คะ?"
@@ -28,4 +28,6 @@ Each language has specific spacing requirements for proper TTS and pronunciation
 Important:
 - Always use native numerals appropriate for each language
 - Maintain proper spacing as shown in examples
-- No space before punctuation marks like ! or ? in any language`;
+- No space before punctuation marks like ! or ? in any language
+- You MUST follow these spacing rules for ALL text you generate
+- The spacing must be EXACTLY as shown in the examples`;

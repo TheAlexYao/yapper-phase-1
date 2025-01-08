@@ -18,7 +18,10 @@ export async function generateScript(userPrompt: string) {
       model: 'gpt-4o',
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: userPrompt }
+        { 
+          role: 'user', 
+          content: `${userPrompt}\n\nIMPORTANT: You MUST follow the language-specific spacing rules EXACTLY as defined in the formatting requirements. The text spacing must match the examples provided for each language type.` 
+        }
       ],
       temperature: 0.7,
     }),
@@ -34,7 +37,6 @@ export async function generateScript(userPrompt: string) {
   console.log('OpenAI response:', data);
 
   try {
-    // Parse the response content as JSON
     const scriptData = JSON.parse(data.choices[0].message.content);
     console.log('Parsed script data:', scriptData);
     return scriptData;
