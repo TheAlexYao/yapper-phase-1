@@ -15,10 +15,6 @@ export const TRANSLITERATION_RULES: TransliterationRules = {
   },
   'zh-HK': eastAsianRules['zh-HK']!,
   'nl-NL': scandinavianRules['nl-NL']!,
-  'en-US': {
-    description: 'Native English, no transliteration needed',
-    examples: []
-  },
   'fr-FR': otherEuropeanRules['fr-FR']!,
   'fr-CA': otherEuropeanRules['fr-CA']!,
   'de-DE': europeanRules['de-DE']!,
