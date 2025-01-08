@@ -2,8 +2,11 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import Index from "./pages/Index";
+import Auth from "./pages/Auth";
 import TopicSelection from "./pages/TopicSelection";
 import ScenarioSelection from "./pages/ScenarioSelection";
 import CharacterSelection from "./pages/CharacterSelection";
@@ -12,6 +15,31 @@ import AdminDashboard from "./pages/AdminDashboard";
 
 const queryClient = new QueryClient();
 
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsAuthenticated(!!session);
+    };
+
+    checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(!!session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  if (isAuthenticated === null) {
+    return <div>Loading...</div>;
+  }
+
+  return isAuthenticated ? <>{children}</> : <Navigate to="/auth" />;
+};
+
 const App = () => {
   return (
     <BrowserRouter>
@@ -19,11 +47,47 @@ const App = () => {
         <TooltipProvider>
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/topics" element={<TopicSelection />} />
-            <Route path="/scenarios" element={<ScenarioSelection />} />
-            <Route path="/characters" element={<CharacterSelection />} />
-            <Route path="/chat" element={<ScenarioChat />} />
-            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route
+              path="/topics"
+              element={
+                <ProtectedRoute>
+                  <TopicSelection />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/scenarios"
+              element={
+                <ProtectedRoute>
+                  <ScenarioSelection />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/characters"
+              element={
+                <ProtectedRoute>
+                  <CharacterSelection />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/chat"
+              element={
+                <ProtectedRoute>
+                  <ScenarioChat />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
           </Routes>
           <Toaster />
           <Sonner />
