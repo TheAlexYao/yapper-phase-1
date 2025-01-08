@@ -3,15 +3,8 @@ import 'https://deno.land/x/xhr@0.1.0/mod.ts';
 import { corsHeaders } from './constants.ts';
 import { SYSTEM_PROMPT } from './constants.ts';
 import { ScriptGenerationResult } from './types.ts';
-import {
-  fetchAllLanguages,
-  fetchAllTopics,
-  fetchAllScenarios,
-  fetchAllCharacters,
-  checkExistingScript,
-  executeSQL
-} from './database.ts';
 import { generateScript } from './openai.ts';
+import { supabase } from './database.ts';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -19,51 +12,90 @@ serve(async (req) => {
   }
 
   try {
-    const languages = await fetchAllLanguages();
-    const topics = await fetchAllTopics();
-    const scenarios = await fetchAllScenarios();
-    const characters = await fetchAllCharacters();
+    // Get food topic
+    const { data: topic, error: topicError } = await supabase
+      .from('topics')
+      .select('*')
+      .eq('title', 'Food')
+      .single();
 
-    console.log(`Found ${languages.length} languages, ${topics.length} topics, ${scenarios.length} scenarios, ${characters.length} characters`);
+    if (topicError || !topic) {
+      throw new Error('Food topic not found');
+    }
+
+    console.log('Found topic:', topic);
+
+    // Get restaurant scenario
+    const { data: scenario, error: scenarioError } = await supabase
+      .from('default_scenarios')
+      .select('*')
+      .eq('topic', 'Food')
+      .eq('title', 'Ordering at a Restaurant')
+      .single();
+
+    if (scenarioError || !scenario) {
+      throw new Error('Restaurant scenario not found');
+    }
+
+    console.log('Found scenario:', scenario);
+
+    // Get food-related characters
+    const { data: characters, error: charactersError } = await supabase
+      .from('characters')
+      .select('*')
+      .eq('topic', 'Food');
+
+    if (charactersError || !characters || characters.length === 0) {
+      throw new Error('No food-related characters found');
+    }
+
+    console.log('Found characters:', characters);
 
     let generatedCount = 0;
     let errorCount = 0;
     const errors: string[] = [];
 
-    for (const lang of languages) {
-      for (const topic of topics) {
-        const topicScenarios = scenarios.filter(s => s.topic === topic.title);
-        const topicCharacters = characters.filter(c => c.topic === topic.title);
+    for (const character of characters) {
+      try {
+        // Check if script already exists
+        const { data: existingScript } = await supabase
+          .from('scripts')
+          .select('id')
+          .eq('language_code', 'es-MX')
+          .eq('scenario_id', scenario.id)
+          .eq('character_id', character.id)
+          .maybeSingle();
 
-        for (const scenario of topicScenarios) {
-          for (const character of topicCharacters) {
-            try {
-              const exists = await checkExistingScript(lang.code, scenario.id, character.id);
+        if (!existingScript) {
+          console.log(`Generating script for es-MX, scenario ${scenario.title}, character ${character.name}`);
 
-              if (!exists) {
-                console.log(`Generating script for ${lang.code}, scenario ${scenario.title}, character ${character.name}`);
+          const prompt = `${SYSTEM_PROMPT}\n\nGenerate a script for:
+            Language: es-MX (Mexican Spanish)
+            Scenario: ${scenario.title}
+            Character: ${character.name} (${character.gender})
+            Topic: ${topic.title}`;
 
-                const prompt = `${SYSTEM_PROMPT}\n\nGenerate a script for:
-                Language: ${lang.code}
-                Scenario: ${scenario.title}
-                Character: ${character.name} (${character.gender})
-                Topic: ${topic.title}`;
+          const sqlStatement = await generateScript(prompt);
+          console.log('Generated SQL:', sqlStatement);
 
-                const sqlStatement = await generateScript(prompt);
-
-                await executeSQL(sqlStatement);
-                generatedCount++;
-                
-                // Add a small delay to avoid rate limits
-                await new Promise(resolve => setTimeout(resolve, 1000));
-              }
-            } catch (error) {
-              console.error(`Error generating script:`, error);
-              errorCount++;
-              errors.push(`${lang.code}-${scenario.id}-${character.id}: ${error.message}`);
-            }
+          // Execute the SQL statement
+          const { error: sqlError } = await supabase.rpc('execute_sql', { sql: sqlStatement });
+          
+          if (sqlError) {
+            throw sqlError;
           }
+
+          generatedCount++;
+          
+          // Add a small delay to avoid rate limits
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        } else {
+          console.log(`Script already exists for ${character.name}`);
         }
+      } catch (error) {
+        console.error(`Error generating script:`, error);
+        errorCount++;
+        errors.push(`es-MX-${scenario.id}-${character.id}: ${error.message}`);
       }
     }
 
