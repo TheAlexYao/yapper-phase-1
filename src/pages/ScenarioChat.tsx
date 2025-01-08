@@ -13,13 +13,13 @@ const ScenarioChat = () => {
   const queryClient = useQueryClient();
   
   const selectedScenario = queryClient.getQueryData(['selectedScenario']) as { 
-    id: number; 
+    id: string; // Changed from number to string for UUID
     title: string;
-    topicId: number;
+    topicId: string; // Changed from number to string for UUID
   } | undefined;
   
   const selectedCharacter = queryClient.getQueryData(['selectedCharacter']) as { 
-    id: number; 
+    id: string; // Changed from number to string for UUID
     name: string 
   } | undefined;
 

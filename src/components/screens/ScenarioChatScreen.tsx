@@ -14,10 +14,10 @@ import { ChatSessionManager } from './chat/ChatSessionManager';
 import { ScriptManager } from './chat/ScriptManager';
 
 interface ScenarioChatScreenProps {
-  scenarioId: number;
+  scenarioId: string; // Changed from number to string for UUID
   scenarioTitle: string;
-  topicId: number;
-  characterId: number;
+  topicId: string; // Changed from number to string for UUID
+  characterId: string; // Changed from number to string for UUID
   characterName: string;
   selectedLanguage: LanguageCode;
   onBackToCharacters: () => void;

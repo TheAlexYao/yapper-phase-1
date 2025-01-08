@@ -4,8 +4,8 @@ import { Script, ChatMessage } from '@/types/chat';
 import { LanguageCode } from '@/constants/languages';
 
 interface ChatSessionManagerProps {
-  scenarioId: number;
-  characterId: number;
+  scenarioId: string; // Changed from number to string for UUID
+  characterId: string; // Changed from number to string for UUID
   selectedLanguage: LanguageCode;
   script: Script | null;
   onSessionLoaded: (messages: ChatMessage[], currentLineIndex: number, sessionId: string) => void;
