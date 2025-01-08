@@ -3,9 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { Auth as SupabaseAuth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { supabase } from "@/integrations/supabase/client";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AuthError, AuthApiError, AuthChangeEvent } from "@supabase/supabase-js";
-import { Progress } from "@/components/ui/progress";
+import { AuthLoadingSpinner } from "@/components/auth/AuthLoadingSpinner";
+import { AuthProgress } from "@/components/auth/AuthProgress";
+import { AuthError as AuthErrorComponent } from "@/components/auth/AuthError";
+import { AuthContainer } from "@/components/auth/AuthContainer";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -52,7 +54,6 @@ const Auth = () => {
         if (event === "SIGNED_IN" && session) {
           startProgressBar();
           try {
-            // Create profile if it doesn't exist
             const { data: profile } = await supabase
               .from('profiles')
               .select()
@@ -123,75 +124,47 @@ const Auth = () => {
   };
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-[#38b6ff] to-[#7843e6]">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-white border-t-transparent" />
-      </div>
-    );
+    return <AuthLoadingSpinner />;
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-[#38b6ff] to-[#7843e6] p-4">
-      <div className="w-full max-w-md bg-white rounded-lg shadow-xl p-8">
-        <div className="flex flex-col items-center mb-6">
-          <div className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-[#38b6ff] to-[#7843e6] bg-clip-text text-transparent mb-4">
-            Yapper
-          </div>
-          <h1 className="text-2xl font-bold text-center text-gray-800">
-            Welcome Back
-          </h1>
-          <p className="text-gray-600 text-center mt-2">
-            Sign in to continue your language learning journey
-          </p>
-        </div>
-
-        {progress > 0 && (
-          <div className="mb-4">
-            <Progress value={progress} className="h-2" />
-          </div>
-        )}
-
-        {errorMessage && (
-          <Alert variant="destructive" className="mb-4">
-            <AlertDescription>{errorMessage}</AlertDescription>
-          </Alert>
-        )}
-
-        <SupabaseAuth
-          supabaseClient={supabase}
-          appearance={{
-            theme: ThemeSupa,
-            variables: {
-              default: {
-                colors: {
-                  brand: "#38b6ff",
-                  brandAccent: "#7843e6",
-                },
+    <AuthContainer>
+      <AuthProgress progress={progress} />
+      <AuthErrorComponent message={errorMessage} />
+      <SupabaseAuth
+        supabaseClient={supabase}
+        appearance={{
+          theme: ThemeSupa,
+          variables: {
+            default: {
+              colors: {
+                brand: "#38b6ff",
+                brandAccent: "#7843e6",
               },
             },
-            style: {
-              button: {
-                backgroundColor: 'white',
-                color: '#333',
-                border: '1px solid #ddd'
-              },
+          },
+          style: {
+            button: {
+              backgroundColor: 'white',
+              color: '#333',
+              border: '1px solid #ddd'
             },
-          }}
-          providers={["google"]}
-          redirectTo={`${window.location.origin}/topics`}
-          view="sign_in"
-          showLinks={false}
-          onlyThirdPartyProviders={true}
-          localization={{
-            variables: {
-              sign_in: {
-                social_provider_text: "Continue with {{provider}}"
-              }
+          },
+        }}
+        providers={["google"]}
+        redirectTo={`${window.location.origin}/topics`}
+        view="sign_in"
+        showLinks={false}
+        onlyThirdPartyProviders={true}
+        localization={{
+          variables: {
+            sign_in: {
+              social_provider_text: "Continue with {{provider}}"
             }
-          }}
-        />
-      </div>
-    </div>
+          }
+        }}
+      />
+    </AuthContainer>
   );
 };
 
