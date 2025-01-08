@@ -7,8 +7,11 @@ import { Progress } from "@/components/ui/progress";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, Play, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { useQueryClient } from '@tanstack/react-query';
+import { supabase } from "@/integrations/supabase/client";
 import ConversationReviewCard from '@/components/summary/ConversationReviewCard';
 import WordAnalysisCard from '@/components/summary/WordAnalysisCard';
+import { useToast } from "@/components/ui/use-toast";
 
 interface PostScenarioSummaryProps {
   scenarioTitle: string;
@@ -54,7 +57,54 @@ const PostScenarioSummary: React.FC<PostScenarioSummaryProps> = ({
   onNextScenario
 }) => {
   const [currentCard, setCurrentCard] = useState(0);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const selectedLanguage = queryClient.getQueryData(['selectedLanguage']);
+
+  const handleNextScenario = async () => {
+    try {
+      // Get current scenario ID from query client
+      const currentScenario = queryClient.getQueryData(['selectedScenario']);
+      
+      // Fetch next available scenario
+      const { data: scenarios, error } = await supabase
+        .from('default_scenarios')
+        .select('*')
+        .eq('topic', currentScenario?.topic)
+        .order('title', { ascending: true });
+
+      if (error) throw error;
+
+      // Find index of current scenario and get next one
+      const currentIndex = scenarios.findIndex(s => s.id === currentScenario?.id);
+      const nextScenario = scenarios[currentIndex + 1] || scenarios[0]; // Loop back to first if at end
+
+      if (nextScenario) {
+        // Update selected scenario in query client
+        queryClient.setQueryData(['selectedScenario'], {
+          id: nextScenario.id,
+          title: nextScenario.title,
+          topic: nextScenario.topic
+        });
+        
+        // Call the provided onNextScenario callback
+        onNextScenario();
+      } else {
+        toast({
+          title: "No more scenarios",
+          description: "You've completed all scenarios in this topic!",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching next scenario:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load next scenario. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
 
   const handleSwipe = (direction: number) => {
     setCurrentCard(prev => Math.max(0, Math.min(1, prev + direction)));
@@ -137,7 +187,7 @@ const PostScenarioSummary: React.FC<PostScenarioSummaryProps> = ({
           
           <div className="space-y-3">
             <Button 
-              onClick={onNextScenario} 
+              onClick={handleNextScenario}
               className="w-full bg-gradient-to-r from-[#38b6ff] to-[#7843e6] hover:opacity-90 text-white transition-all duration-300"
             >
               Continue to Next Scenario

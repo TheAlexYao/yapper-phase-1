@@ -1,5 +1,7 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SUPPORTED_LANGUAGES, LanguageCode } from "@/constants/languages";
+import { useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 
 interface LanguageSelectorProps {
   selectedLanguage: LanguageCode;
@@ -7,6 +9,16 @@ interface LanguageSelectorProps {
 }
 
 const LanguageSelector: React.FC<LanguageSelectorProps> = ({ selectedLanguage, onLanguageChange }) => {
+  const queryClient = useQueryClient();
+  
+  // Use persisted language if available
+  useEffect(() => {
+    const persistedLanguage = queryClient.getQueryData(['selectedLanguage']) as LanguageCode;
+    if (persistedLanguage && persistedLanguage !== selectedLanguage) {
+      onLanguageChange(persistedLanguage);
+    }
+  }, [queryClient, selectedLanguage, onLanguageChange]);
+
   return (
     <div className="flex flex-col items-center gap-2">
       <label htmlFor="language-select" className="text-sm text-gray-600">
