@@ -26,7 +26,6 @@ const ScenarioChat = () => {
   const selectedLanguage = (queryClient.getQueryData(['selectedLanguage']) as LanguageCode) || "en-US";
   const userGender = (queryClient.getQueryData(['userGender']) as UserGender) || "male";
 
-  // Query for the script
   const { data: script, isLoading: isLoadingScript } = useQuery({
     queryKey: ['script', selectedScenario?.id, selectedCharacter?.id, selectedLanguage, userGender],
     queryFn: async () => {
@@ -34,9 +33,9 @@ const ScenarioChat = () => {
 
       console.log('Fetching script with params:', {
         language_code: selectedLanguage,
-        scenario_id: parseInt(selectedScenario.id),
-        topic_id: parseInt(selectedScenario.topicId),
-        character_id: parseInt(selectedCharacter.id),
+        scenario_id: selectedScenario.id,
+        topic_id: selectedScenario.topicId,
+        character_id: selectedCharacter.id,
         user_gender: userGender
       });
 
@@ -44,9 +43,9 @@ const ScenarioChat = () => {
         .from('scripts')
         .select('*')
         .eq('language_code', selectedLanguage)
-        .eq('scenario_id', parseInt(selectedScenario.id))
-        .eq('topic_id', parseInt(selectedScenario.topicId))
-        .eq('character_id', parseInt(selectedCharacter.id))
+        .eq('scenario_id', selectedScenario.id)
+        .eq('topic_id', selectedScenario.topicId)
+        .eq('character_id', selectedCharacter.id)
         .eq('user_gender', userGender)
         .maybeSingle();
 
@@ -89,10 +88,10 @@ const ScenarioChat = () => {
 
   return (
     <ScenarioChatScreen
-      scenarioId={parseInt(selectedScenario.id)}
+      scenarioId={selectedScenario.id}
       scenarioTitle={selectedScenario.title}
-      topicId={parseInt(selectedScenario.topicId)}
-      characterId={parseInt(selectedCharacter.id)}
+      topicId={selectedScenario.topicId}
+      characterId={selectedCharacter.id}
       characterName={selectedCharacter.name}
       selectedLanguage={selectedLanguage}
       onBackToCharacters={handleBackToCharacters}

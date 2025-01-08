@@ -13,18 +13,6 @@ interface ScenarioSelectionScreenProps {
   onScenarioSelect: (scenarioTitle: string, scenarioId: string) => void;
 }
 
-// Define the type for the joined query result
-interface ScenarioWithMapping {
-  id: number;
-  title: string;
-  description: string | null;
-  topic: string;
-  image_url: string | null;
-  reference_mappings: {
-    uuid_id: string;
-  };
-}
-
 const ScenarioSelectionScreen: React.FC<ScenarioSelectionScreenProps> = ({
   topicTitle,
   selectedLanguage,
@@ -43,16 +31,8 @@ const ScenarioSelectionScreen: React.FC<ScenarioSelectionScreenProps> = ({
       
       const { data: scenariosData, error: fetchError } = await supabase
         .from('default_scenarios')
-        .select(`
-          id,
-          title,
-          description,
-          topic,
-          image_url,
-          reference_mappings!inner(uuid_id)
-        `)
-        .eq('topic', topicTitle)
-        .returns<ScenarioWithMapping[]>();
+        .select('*')
+        .eq('topic', topicTitle);
 
       if (fetchError) {
         console.error('Error fetching scenarios:', fetchError);
@@ -65,14 +45,8 @@ const ScenarioSelectionScreen: React.FC<ScenarioSelectionScreenProps> = ({
         return;
       }
 
-      // Transform the data to use UUIDs
-      const transformedScenarios: Scenario[] = scenariosData.map(scenario => ({
-        ...scenario,
-        id: scenario.reference_mappings.uuid_id
-      }));
-
-      console.log('Transformed scenarios:', transformedScenarios);
-      setScenarios(transformedScenarios);
+      console.log('Fetched scenarios:', scenariosData);
+      setScenarios(scenariosData);
       setError(null);
     } catch (err) {
       console.error('Error in fetchScenarios:', err);

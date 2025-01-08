@@ -84,7 +84,7 @@ export type Database = {
           current_line_index: number | null
           id: string
           messages: Json | null
-          scenario_id: number
+          scenario_id: string
           updated_at: string | null
           user_id: string | null
         }
@@ -94,7 +94,7 @@ export type Database = {
           current_line_index?: number | null
           id?: string
           messages?: Json | null
-          scenario_id: number
+          scenario_id: string
           updated_at?: string | null
           user_id?: string | null
         }
@@ -104,11 +104,19 @@ export type Database = {
           current_line_index?: number | null
           id?: string
           messages?: Json | null
-          scenario_id?: number
+          scenario_id?: string
           updated_at?: string | null
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "chat_sessions_scenario_id_fkey"
+            columns: ["scenario_id"]
+            isOneToOne: false
+            referencedRelation: "default_scenarios"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       cities: {
         Row: {
@@ -189,21 +197,21 @@ export type Database = {
       default_scenarios: {
         Row: {
           description: string | null
-          id: number
+          id: string
           image_url: string | null
           title: string
           topic: string
         }
         Insert: {
           description?: string | null
-          id: number
+          id?: string
           image_url?: string | null
           title: string
           topic: string
         }
         Update: {
           description?: string | null
-          id?: number
+          id?: string
           image_url?: string | null
           title?: string
           topic?: string
@@ -337,7 +345,7 @@ export type Database = {
           created_at: string | null
           id: string
           language_code: string
-          scenario_id: number
+          scenario_id: string
           script_data: Json
           topic_id: number
           updated_at: string | null
@@ -349,7 +357,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           language_code: string
-          scenario_id: number
+          scenario_id: string
           script_data: Json
           topic_id: number
           updated_at?: string | null
@@ -361,13 +369,21 @@ export type Database = {
           created_at?: string | null
           id?: string
           language_code?: string
-          scenario_id?: number
+          scenario_id?: string
           script_data?: Json
           topic_id?: number
           updated_at?: string | null
           user_gender?: Database["public"]["Enums"]["user_gender"]
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "scripts_scenario_id_fkey"
+            columns: ["scenario_id"]
+            isOneToOne: false
+            referencedRelation: "default_scenarios"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       topics: {
         Row: {
