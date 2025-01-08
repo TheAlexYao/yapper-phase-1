@@ -51,9 +51,19 @@ const Auth = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-[#38b6ff] to-[#7843e6] p-4">
       <div className="w-full max-w-md bg-white rounded-lg shadow-xl p-8">
-        <h1 className="text-2xl font-bold text-center mb-6 text-gray-800">
-          Welcome Back
-        </h1>
+        <div className="flex flex-col items-center mb-6">
+          <img 
+            src="/placeholder.svg" 
+            alt="Yapper Logo" 
+            className="h-16 w-auto mb-4"
+          />
+          <h1 className="text-2xl font-bold text-center text-gray-800">
+            Welcome to Yapper
+          </h1>
+          <p className="text-gray-600 text-center mt-2">
+            Sign in to start your language learning journey
+          </p>
+        </div>
         {errorMessage && (
           <Alert variant="destructive" className="mb-4">
             <AlertDescription>{errorMessage}</AlertDescription>
