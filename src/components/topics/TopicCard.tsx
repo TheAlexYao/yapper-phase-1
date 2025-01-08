@@ -9,10 +9,10 @@ interface TopicCardProps {
 }
 
 const TopicCard: React.FC<TopicCardProps> = ({ topic, onSelect }) => {
-  // Use a different image for dating topics
+  // Use a specific image for dating topics
   const imageUrl = topic.title === 'Dating' 
     ? 'https://images.unsplash.com/photo-1516685018646-549198525c1b'  // Two people on a date
-    : topic.image_url || '';
+    : topic.image_url;
 
   return (
     <Card 
