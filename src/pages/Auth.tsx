@@ -121,7 +121,6 @@ const Auth = () => {
             },
             style: {
               button: {
-                width: '100%',
                 backgroundColor: 'white',
                 color: '#333',
                 border: '1px solid #ddd'
@@ -129,9 +128,10 @@ const Auth = () => {
             },
           }}
           providers={["google"]}
-          redirectTo={window.location.origin}
-          onlyThirdPartyProviders={true}
+          redirectTo={`${window.location.origin}/topics`}
+          view="sign_in"
           showLinks={false}
+          onlyThirdPartyProviders={true}
           localization={{
             variables: {
               sign_in: {
