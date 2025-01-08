@@ -35,24 +35,44 @@ VALUES (
       {
         "lineNumber": 1,
         "speaker": "character",
-        "targetText": "...",
-        "transliteration": "...",
-        "translation": "..."
+        "targetText": "Welcome! Would you like some coffee?",
+        "transliteration": "Wel-kahm! Wud yuh laik sum kaw-fee?",
+        "translation": "¡Bienvenido! ¿Te gustaría un café?"
       },
       {
         "lineNumber": 2,
         "speaker": "user",
-        "targetText": "...",
-        "transliteration": "...",
-        "translation": "..."
+        "targetText": "Yes, please",
+        "transliteration": "Yes, pleez",
+        "translation": "Sí, por favor"
       },
-      ...
+      {
+        "lineNumber": 3,
+        "speaker": "character",
+        "targetText": "Hot or iced coffee?",
+        "transliteration": "Hot or iced kaw-fee?",
+        "translation": "¿Café caliente o helado?"
+      },
+      {
+        "lineNumber": 4,
+        "speaker": "user",
+        "targetText": "Hot, please",
+        "transliteration": "Hot, pleez",
+        "translation": "Caliente, por favor"
+      },
+      {
+        "lineNumber": 5,
+        "speaker": "character",
+        "targetText": "That's 40 baht",
+        "transliteration": "That's 40 baht",
+        "translation": "Eso es 40 baht"
+      },
       {
         "lineNumber": 6,
         "speaker": "user",
-        "targetText": "...",
-        "transliteration": "...",
-        "translation": "..."
+        "targetText": "Thank you",
+        "transliteration": "Thank yuh",
+        "translation": "Gracias"
       }
     ]
   }'

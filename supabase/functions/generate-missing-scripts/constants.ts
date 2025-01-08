@@ -1,6 +1,6 @@
-import { LANGUAGE_FORMATTING } from './prompts/languageFormatting';
-import { SCRIPT_STRUCTURE } from './prompts/scriptStructure';
-import { SQL_FORMAT } from './prompts/sqlFormat';
+import { LANGUAGE_FORMATTING } from './prompts/languageFormatting.ts';
+import { SCRIPT_STRUCTURE } from './prompts/scriptStructure.ts';
+import { SQL_FORMAT } from './prompts/sqlFormat.ts';
 
 export const SYSTEM_PROMPT = `You are an AI that generates dialogue scripts for a language-learning application. **Follow these instructions exactly** to produce **SQL INSERT** statements that meet the specified requirements.
 ---
