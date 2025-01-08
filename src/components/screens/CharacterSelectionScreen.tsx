@@ -38,7 +38,7 @@ const CharacterSelectionScreen: React.FC<CharacterSelectionScreenProps> = ({
       setLoading(true);
       // First, get the scenario ID based on the title
       const { data: scenarios, error: scenarioError } = await supabase
-        .from('scenarios')
+        .from('default_scenarios')
         .select('id')
         .ilike('title', `%${scenarioTitle}%`)
         .limit(1);
@@ -48,7 +48,7 @@ const CharacterSelectionScreen: React.FC<CharacterSelectionScreenProps> = ({
         throw new Error('Scenario not found');
       }
 
-      const scenarioId = scenarios[0].id;
+      const scenarioId = scenarios[0].id.toString();
 
       // Then, get the characters for this scenario
       const { data, error: fetchError } = await supabase
