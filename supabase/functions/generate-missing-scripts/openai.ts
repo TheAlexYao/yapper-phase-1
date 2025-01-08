@@ -20,15 +20,7 @@ export async function generateScript(userPrompt: string) {
         { role: 'system', content: SYSTEM_PROMPT },
         { 
           role: 'user', 
-          content: `${userPrompt}\n\nIMPORTANT: For each line, provide properties in this exact order:
-1. speaker
-2. targetText
-3. ttsText
-4. transliteration
-5. translation
-6. lineNumber
-
-Return ONLY the JSON object, no markdown formatting or code blocks.` 
+          content: `${userPrompt}\n\nIMPORTANT: Return ONLY the JSON object, no markdown formatting or code blocks.` 
         }
       ],
       temperature: 0.7,
