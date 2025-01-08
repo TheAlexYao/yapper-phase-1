@@ -1,8 +1,7 @@
 import { LANGUAGE_FORMATTING } from './prompts/languageFormatting.ts';
 import { SCRIPT_STRUCTURE } from './prompts/scriptStructure.ts';
-import { SQL_FORMAT } from './prompts/sqlFormat.ts';
 
-export const SYSTEM_PROMPT = `You are an AI that generates dialogue scripts for a language-learning application. **Follow these instructions exactly** to produce **SQL INSERT** statements that meet the specified requirements.
+export const SYSTEM_PROMPT = `You are an AI that generates dialogue scripts for a language-learning application. **Follow these instructions exactly** to generate conversation scripts in the specified format.
 ---
 ${LANGUAGE_FORMATTING}
 ---
@@ -11,7 +10,7 @@ ${LANGUAGE_FORMATTING}
    - \`default_scenarios\`: Contains scenarios with UUIDs, titles, descriptions, and topics
    - \`topics\`: Contains topics with UUIDs, titles, and descriptions
    - \`characters\`: Contains characters with UUIDs, names, genders, and topics
-   - \`scripts\`: Where the generated scripts will be inserted
+   - \`scripts\`: Where the generated scripts will be stored
 
 2. **Character Assignment**:
    - Characters are associated with topics in the \`characters\` table
@@ -22,13 +21,11 @@ ${LANGUAGE_FORMATTING}
 ---
 ${SCRIPT_STRUCTURE}
 ---
-${SQL_FORMAT}
+### 4. Task
+Generate ONE conversation script for the requested scenario using the appropriate character based on the provided character_id.
 ---
-### 6. Task
-Generate ONE SQL insert statement for the requested scenario using the appropriate character based on the provided character_id.
----
-### 7. Output Requirements
-1. **No extra commentary**—just the SQL statement.
+### 5. Output Requirements
+1. **No extra commentary**—just the script data object.
 2. **Each script** must have exactly **6 lines**.
 3. **Ensure** \`lineNumber\` matches the speaker order.
 4. **Check** spacing/punctuation rules if the language demands them (e.g., Thai).
