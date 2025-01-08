@@ -24,6 +24,7 @@ const ScenarioChat = () => {
 
   useEffect(() => {
     const fetchScript = async () => {
+      // First validate required parameters
       if (!scenarioId || !characterId || !selectedLanguage) {
         setError('Missing required scenario information');
         toast({
@@ -31,6 +32,7 @@ const ScenarioChat = () => {
           description: "Missing required scenario information. Please try again.",
           variant: "destructive"
         });
+        setIsLoading(false);
         return;
       }
 
@@ -41,7 +43,7 @@ const ScenarioChat = () => {
           .eq('scenario_id', scenarioId)
           .eq('character_id', characterId)
           .eq('language_code', selectedLanguage)
-          .single();
+          .maybeSingle();
 
         if (scriptError) throw scriptError;
 
@@ -51,44 +53,49 @@ const ScenarioChat = () => {
 
         // Validate script_data structure
         const rawScriptData = scriptData.script_data;
+        
+        // Type guard for ScriptLine
+        const isValidScriptLine = (line: any): line is ScriptLine => {
+          return (
+            typeof line === 'object' &&
+            line !== null &&
+            'speaker' in line &&
+            (line.speaker === 'character' || line.speaker === 'user') &&
+            'targetText' in line &&
+            typeof line.targetText === 'string' &&
+            'transliteration' in line &&
+            (line.transliteration === null || typeof line.transliteration === 'string') &&
+            'translation' in line &&
+            typeof line.translation === 'string'
+          );
+        };
+
+        // Validate the entire script structure
         if (
-          typeof rawScriptData === 'object' && 
+          typeof rawScriptData === 'object' &&
           rawScriptData !== null &&
           'lines' in rawScriptData &&
           Array.isArray(rawScriptData.lines) &&
           'languageCode' in rawScriptData &&
           typeof rawScriptData.languageCode === 'string'
         ) {
-          // Validate each line in the array matches ScriptLine structure
-          const isValidScriptLine = (line: any): line is ScriptLine => {
-            return (
-              typeof line === 'object' &&
-              line !== null &&
-              'speaker' in line &&
-              (line.speaker === 'character' || line.speaker === 'user') &&
-              'targetText' in line &&
-              typeof line.targetText === 'string' &&
-              'transliteration' in line &&
-              (line.transliteration === null || typeof line.transliteration === 'string') &&
-              'translation' in line &&
-              typeof line.translation === 'string'
-            );
-          };
-
-          // Check if all lines are valid
-          if (rawScriptData.lines.every(isValidScriptLine)) {
-            // Type assertion after validation
-            const validatedScript: Script = {
-              ...scriptData,
-              script_data: {
-                lines: rawScriptData.lines as ScriptLine[],
-                languageCode: rawScriptData.languageCode
-              }
-            };
-            setScript(validatedScript);
-          } else {
+          // Validate each line in the array
+          const validLines = rawScriptData.lines.every((line: unknown) => isValidScriptLine(line));
+          
+          if (!validLines) {
             throw new Error('Invalid script line structure');
           }
+
+          // After validation, we can safely cast the types
+          const validatedScript: Script = {
+            ...scriptData,
+            script_data: {
+              lines: rawScriptData.lines as ScriptLine[],
+              languageCode: rawScriptData.languageCode
+            }
+          };
+          
+          setScript(validatedScript);
         } else {
           throw new Error('Invalid script data structure');
         }
