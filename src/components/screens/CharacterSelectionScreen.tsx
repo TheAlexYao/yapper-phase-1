@@ -36,10 +36,10 @@ const CharacterSelectionScreen: React.FC<CharacterSelectionScreenProps> = ({
   const fetchCharacters = async () => {
     try {
       setLoading(true);
-      // First, get the scenario ID based on the title
+      // First, get the topic type from the scenario title
       const { data: scenarios, error: scenarioError } = await supabase
         .from('default_scenarios')
-        .select('id')
+        .select('topic')
         .ilike('title', `%${scenarioTitle}%`)
         .limit(1)
         .maybeSingle();
@@ -49,20 +49,19 @@ const CharacterSelectionScreen: React.FC<CharacterSelectionScreenProps> = ({
         throw new Error('Scenario not found');
       }
 
-      // Convert the numeric ID to a UUID format that matches our data
-      const scenarioUuid = crypto.randomUUID();
-      console.log('Fetching characters for scenario:', scenarioUuid);
+      console.log('Found topic:', scenarios.topic);
 
-      // Then, get the characters for this scenario
+      // Then, get the characters for this topic
       const { data, error: fetchError } = await supabase
         .from('characters')
         .select('*')
-        .eq('scenario_id', scenarioUuid)
+        .eq('topic', scenarios.topic)
         .order('gender', { ascending: false }); // This will put 'female' first since 'f' comes before 'm'
 
       if (fetchError) throw fetchError;
 
       if (data) {
+        console.log('Found characters:', data);
         setCharacters(data);
         setError(null);
       }
