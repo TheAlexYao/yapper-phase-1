@@ -8,6 +8,7 @@ import TopicSelection from "./pages/TopicSelection";
 import ScenarioSelection from "./pages/ScenarioSelection";
 import CharacterSelection from "./pages/CharacterSelection";
 import ScenarioChat from "./pages/ScenarioChat";
+import AdminDashboard from "./pages/AdminDashboard";
 
 const queryClient = new QueryClient();
 
@@ -22,6 +23,7 @@ const App = () => {
             <Route path="/scenarios" element={<ScenarioSelection />} />
             <Route path="/characters" element={<CharacterSelection />} />
             <Route path="/chat" element={<ScenarioChat />} />
+            <Route path="/admin" element={<AdminDashboard />} />
           </Routes>
           <Toaster />
           <Sonner />
