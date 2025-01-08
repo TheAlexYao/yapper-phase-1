@@ -1,27 +1,59 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Auth as SupabaseAuth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useState } from "react";
-import { AuthError, AuthApiError } from "@supabase/supabase-js";
+import { AuthError, AuthApiError, AuthChangeEvent } from "@supabase/supabase-js";
 
 const Auth = () => {
   const navigate = useNavigate();
   const [errorMessage, setErrorMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (session) navigate("/topics");
+      if (error) setErrorMessage(getErrorMessage(error));
+      setIsLoading(false);
+    };
+    checkSession();
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      async (event: AuthChangeEvent, session) => {
         if (event === "SIGNED_IN" && session) {
+          // Create profile if it doesn't exist
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select()
+            .eq('id', session.user.id)
+            .single();
+
+          if (!profile) {
+            const { error: profileError } = await supabase
+              .from('profiles')
+              .insert([
+                {
+                  id: session.user.id,
+                  full_name: session.user.user_metadata.full_name,
+                  avatar_url: session.user.user_metadata.avatar_url,
+                  onboarding_completed: false
+                }
+              ]);
+
+            if (profileError) {
+              console.error('Error creating profile:', profileError);
+              setErrorMessage('Failed to create user profile');
+              return;
+            }
+          }
+
           navigate("/topics");
         }
         if (event === "USER_UPDATED") {
           const { error } = await supabase.auth.getSession();
-          if (error) {
-            setErrorMessage(getErrorMessage(error));
-          }
+          if (error) setErrorMessage(getErrorMessage(error));
         }
         if (event === "SIGNED_OUT") {
           setErrorMessage("");
@@ -47,6 +79,14 @@ const Auth = () => {
     }
     return error.message;
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-[#38b6ff] to-[#7843e6]">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-white border-t-transparent" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-[#38b6ff] to-[#7843e6] p-4">
@@ -84,16 +124,13 @@ const Auth = () => {
                 width: '100%',
                 backgroundColor: 'white',
                 color: '#333',
-                border: '1px solid #ddd',
-                '&:hover': {
-                  backgroundColor: '#f9f9f9'
-                }
+                border: '1px solid #ddd'
               },
             },
           }}
           providers={["google"]}
           redirectTo={window.location.origin}
-          view="sign_in"
+          onlyThirdPartyProviders={true}
           showLinks={false}
           localization={{
             variables: {
