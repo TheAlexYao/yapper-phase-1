@@ -400,7 +400,21 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      scripts_with_details: {
+        Row: {
+          audio_generated: boolean | null
+          character_name: string | null
+          created_at: string | null
+          language_code: string | null
+          scenario_title: string | null
+          script_data: Json | null
+          script_id: string | null
+          topic_title: string | null
+          updated_at: string | null
+          user_gender: Database["public"]["Enums"]["user_gender"] | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       get_uuid_from_numeric_id: {
