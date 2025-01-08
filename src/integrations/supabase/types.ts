@@ -25,6 +25,7 @@ export type Database = {
           name: string
           name_translations: Json | null
           scenario_id: string | null
+          topic: string
           updated_at: string | null
           voice_id: string | null
         }
@@ -43,6 +44,7 @@ export type Database = {
           name: string
           name_translations?: Json | null
           scenario_id?: string | null
+          topic: string
           updated_at?: string | null
           voice_id?: string | null
         }
@@ -61,6 +63,7 @@ export type Database = {
           name?: string
           name_translations?: Json | null
           scenario_id?: string | null
+          topic?: string
           updated_at?: string | null
           voice_id?: string | null
         }
