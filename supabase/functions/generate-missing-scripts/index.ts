@@ -20,6 +20,7 @@ serve(async (req) => {
       .single();
 
     if (topicError || !topic) {
+      console.error('Error fetching topic:', topicError);
       throw new Error('Food topic not found');
     }
 
@@ -34,6 +35,7 @@ serve(async (req) => {
       .single();
 
     if (scenarioError || !scenario) {
+      console.error('Error fetching scenario:', scenarioError);
       throw new Error('Restaurant scenario not found');
     }
 
@@ -46,6 +48,7 @@ serve(async (req) => {
       .eq('topic', 'Food');
 
     if (charactersError || !characters || characters.length === 0) {
+      console.error('Error fetching characters:', charactersError);
       throw new Error('No food-related characters found');
     }
 
@@ -75,17 +78,30 @@ serve(async (req) => {
             Character: ${character.name} (${character.gender})
             Topic: ${topic.title}`;
 
-          const sqlStatement = await generateScript(prompt);
-          console.log('Generated SQL:', sqlStatement);
-
-          // Execute the SQL statement
-          const { error: sqlError } = await supabase.rpc('execute_sql', { sql: sqlStatement });
+          const scriptData = await generateScript(prompt);
           
-          if (sqlError) {
-            throw sqlError;
+          // Insert the script using Supabase client
+          const { error: insertError } = await supabase
+            .from('scripts')
+            .insert({
+              language_code: 'es-MX',
+              scenario_id: scenario.id,
+              topic_id: topic.id,
+              character_id: character.id,
+              user_gender: character.gender === 'male' ? 'male' : 'female',
+              script_data: {
+                lines: scriptData.lines,
+                languageCode: 'es-MX'
+              },
+              audio_generated: false
+            });
+
+          if (insertError) {
+            throw insertError;
           }
 
           generatedCount++;
+          console.log(`Successfully generated and inserted script for ${character.name}`);
           
           // Add a small delay to avoid rate limits
           await new Promise(resolve => setTimeout(resolve, 1000));
@@ -93,7 +109,7 @@ serve(async (req) => {
           console.log(`Script already exists for ${character.name}`);
         }
       } catch (error) {
-        console.error(`Error generating script:`, error);
+        console.error(`Error generating script for ${character.name}:`, error);
         errorCount++;
         errors.push(`es-MX-${scenario.id}-${character.id}: ${error.message}`);
       }
