@@ -20,7 +20,15 @@ export async function generateScript(userPrompt: string) {
         { role: 'system', content: SYSTEM_PROMPT },
         { 
           role: 'user', 
-          content: `${userPrompt}\n\nIMPORTANT: For each line, provide both a 'targetText' (with proper spacing for pronunciation assessment) and a 'ttsText' (without extra spaces for TTS generation). Return ONLY the JSON object, no markdown formatting or code blocks.` 
+          content: `${userPrompt}\n\nIMPORTANT: For each line, provide properties in this exact order:
+1. speaker
+2. targetText
+3. ttsText
+4. transliteration
+5. translation
+6. lineNumber
+
+Return ONLY the JSON object, no markdown formatting or code blocks.` 
         }
       ],
       temperature: 0.7,
@@ -51,15 +59,21 @@ export async function generateScript(userPrompt: string) {
       throw new Error('Invalid script data structure: missing required fields');
     }
 
-    // Add ttsText if not present (use targetText without extra spaces)
+    // Reorder properties to match type definition
     scriptData.lines = scriptData.lines.map(line => {
       if (!line.targetText) {
         console.error('Line missing targetText:', line);
         throw new Error('Invalid line data: missing targetText');
       }
+
+      // Create new object with properties in the correct order
       return {
-        ...line,
-        ttsText: line.ttsText || line.targetText.replace(/\s+/g, ' ').trim()
+        speaker: line.speaker,
+        targetText: line.targetText,
+        ttsText: line.ttsText || line.targetText.replace(/\s+/g, ' ').trim(),
+        transliteration: line.transliteration,
+        translation: line.translation,
+        lineNumber: line.lineNumber
       };
     });
     
