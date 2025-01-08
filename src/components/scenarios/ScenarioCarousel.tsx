@@ -8,7 +8,7 @@ interface ScenarioCarouselProps {
   scenarios: Scenario[];
   currentIndex: number;
   onNavigate: (direction: 'prev' | 'next') => void;
-  onSelect: (scenarioId: number) => void;
+  onSelect: (scenarioId: string) => void;
 }
 
 const ScenarioCarousel: React.FC<ScenarioCarouselProps> = ({

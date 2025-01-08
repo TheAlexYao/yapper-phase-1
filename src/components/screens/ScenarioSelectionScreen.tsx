@@ -5,7 +5,6 @@ import FloatingElements from '@/components/FloatingElements';
 import { supabase } from "@/integrations/supabase/client";
 import ScenarioCarousel from '@/components/scenarios/ScenarioCarousel';
 import { Scenario } from "@/types/scenario";
-import { Database } from "@/integrations/supabase/types";
 
 interface ScenarioSelectionScreenProps {
   topicTitle: string;
@@ -30,7 +29,8 @@ const ScenarioSelectionScreen: React.FC<ScenarioSelectionScreenProps> = ({
       setLoading(true);
       console.log('Fetching scenarios for topic:', topicTitle);
       
-      const { data, error: fetchError } = await supabase
+      // First, fetch scenarios with numeric IDs
+      const { data: scenariosData, error: fetchError } = await supabase
         .from('default_scenarios')
         .select('*')
         .eq('topic', topicTitle);
@@ -40,14 +40,39 @@ const ScenarioSelectionScreen: React.FC<ScenarioSelectionScreenProps> = ({
         throw fetchError;
       }
 
-      if (data) {
-        console.log('Fetched scenarios:', data);
-        setScenarios(data as Scenario[]);
-        setError(null);
-      } else {
+      if (!scenariosData) {
         console.log('No scenarios found for topic:', topicTitle);
         setScenarios([]);
+        return;
       }
+
+      console.log('Fetched scenarios:', scenariosData);
+
+      // Convert numeric IDs to UUIDs using the reference_mappings table
+      const scenariosWithUuids = await Promise.all(
+        scenariosData.map(async (scenario) => {
+          const { data: mappingData, error: mappingError } = await supabase
+            .rpc('get_uuid_from_numeric_id', {
+              ref_type: 'scenario',
+              num_id: scenario.id
+            });
+
+          if (mappingError) {
+            console.error('Error getting UUID for scenario:', mappingError);
+            return null;
+          }
+
+          return {
+            ...scenario,
+            id: mappingData || scenario.id.toString() // Fallback to string version of numeric ID
+          };
+        })
+      );
+
+      const validScenarios = scenariosWithUuids.filter((s): s is Scenario => s !== null);
+      console.log('Scenarios with UUIDs:', validScenarios);
+      setScenarios(validScenarios);
+      setError(null);
     } catch (err) {
       console.error('Error in fetchScenarios:', err);
       setError('Failed to load scenarios. Please try again.');
@@ -60,10 +85,10 @@ const ScenarioSelectionScreen: React.FC<ScenarioSelectionScreenProps> = ({
     fetchScenarios();
   }, [topicTitle]);
 
-  const handleScenarioSelect = useCallback((scenarioId: number) => {
+  const handleScenarioSelect = useCallback((scenarioId: string) => {
     const selectedScenario = scenarios.find(scenario => scenario.id === scenarioId);
     if (selectedScenario) {
-      onScenarioSelect(selectedScenario.title, scenarioId.toString());
+      onScenarioSelect(selectedScenario.title, scenarioId);
     }
   }, [scenarios, onScenarioSelect]);
 
