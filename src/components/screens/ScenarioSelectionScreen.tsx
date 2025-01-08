@@ -29,10 +29,16 @@ const ScenarioSelectionScreen: React.FC<ScenarioSelectionScreenProps> = ({
       setLoading(true);
       console.log('Fetching scenarios for topic:', topicTitle);
       
-      // First, fetch scenarios with numeric IDs
       const { data: scenariosData, error: fetchError } = await supabase
         .from('default_scenarios')
-        .select('*')
+        .select(`
+          id,
+          title,
+          description,
+          topic,
+          image_url,
+          reference_mappings!inner(uuid_id)
+        `)
         .eq('topic', topicTitle);
 
       if (fetchError) {
@@ -46,32 +52,14 @@ const ScenarioSelectionScreen: React.FC<ScenarioSelectionScreenProps> = ({
         return;
       }
 
-      console.log('Fetched scenarios:', scenariosData);
+      // Transform the data to use UUIDs
+      const transformedScenarios: Scenario[] = scenariosData.map(scenario => ({
+        ...scenario,
+        id: scenario.reference_mappings.uuid_id
+      }));
 
-      // Convert numeric IDs to UUIDs using the reference_mappings table
-      const scenariosWithUuids = await Promise.all(
-        scenariosData.map(async (scenario) => {
-          const { data: mappingData, error: mappingError } = await supabase
-            .rpc('get_uuid_from_numeric_id', {
-              ref_type: 'scenario',
-              num_id: scenario.id
-            });
-
-          if (mappingError) {
-            console.error('Error getting UUID for scenario:', mappingError);
-            return null;
-          }
-
-          return {
-            ...scenario,
-            id: mappingData || scenario.id.toString() // Fallback to string version of numeric ID
-          };
-        })
-      );
-
-      const validScenarios = scenariosWithUuids.filter((s): s is Scenario => s !== null);
-      console.log('Scenarios with UUIDs:', validScenarios);
-      setScenarios(validScenarios);
+      console.log('Transformed scenarios:', transformedScenarios);
+      setScenarios(transformedScenarios);
       setError(null);
     } catch (err) {
       console.error('Error in fetchScenarios:', err);
