@@ -1,3 +1,5 @@
+import { SYSTEM_PROMPT } from './constants.ts';
+
 export async function generateScript(userPrompt: string) {
   const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
   if (!OPENAI_API_KEY) {
