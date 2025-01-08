@@ -72,13 +72,6 @@ export type Database = {
             referencedRelation: "cities"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "characters_scenario_id_fkey"
-            columns: ["scenario_id"]
-            isOneToOne: false
-            referencedRelation: "scenarios"
-            referencedColumns: ["id"]
-          },
         ]
       }
       chat_sessions: {
@@ -333,13 +326,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "guided_conversations_scenario_id_fkey"
-            columns: ["scenario_id"]
-            isOneToOne: false
-            referencedRelation: "scenarios"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "guided_conversations_target_language_id_fkey"
             columns: ["target_language_id"]
             isOneToOne: false
@@ -449,215 +435,6 @@ export type Database = {
           voice_preference?: string | null
         }
         Relationships: []
-      }
-      scenario_images: {
-        Row: {
-          created_at: string | null
-          id: string
-          image_url: string
-          language_code: string | null
-          region: string | null
-          scenario_id: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          image_url: string
-          language_code?: string | null
-          region?: string | null
-          scenario_id?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          image_url?: string
-          language_code?: string | null
-          region?: string | null
-          scenario_id?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "scenario_images_language_code_fkey"
-            columns: ["language_code"]
-            isOneToOne: false
-            referencedRelation: "languages"
-            referencedColumns: ["code"]
-          },
-        ]
-      }
-      scenarios: {
-        Row: {
-          category: string
-          created_at: string | null
-          cultural_notes: string | null
-          cultural_notes_translations: Json | null
-          description: string | null
-          description_translations: Json | null
-          id: string
-          location_details: string | null
-          location_details_translations: Json | null
-          primary_goal: string | null
-          primary_goal_translations: Json | null
-          title: string
-          title_translations: Json | null
-          updated_at: string | null
-          useful_phrases: string[] | null
-          useful_phrases_translations: Json | null
-        }
-        Insert: {
-          category: string
-          created_at?: string | null
-          cultural_notes?: string | null
-          cultural_notes_translations?: Json | null
-          description?: string | null
-          description_translations?: Json | null
-          id?: string
-          location_details?: string | null
-          location_details_translations?: Json | null
-          primary_goal?: string | null
-          primary_goal_translations?: Json | null
-          title: string
-          title_translations?: Json | null
-          updated_at?: string | null
-          useful_phrases?: string[] | null
-          useful_phrases_translations?: Json | null
-        }
-        Update: {
-          category?: string
-          created_at?: string | null
-          cultural_notes?: string | null
-          cultural_notes_translations?: Json | null
-          description?: string | null
-          description_translations?: Json | null
-          id?: string
-          location_details?: string | null
-          location_details_translations?: Json | null
-          primary_goal?: string | null
-          primary_goal_translations?: Json | null
-          title?: string
-          title_translations?: Json | null
-          updated_at?: string | null
-          useful_phrases?: string[] | null
-          useful_phrases_translations?: Json | null
-        }
-        Relationships: []
-      }
-      script_messages: {
-        Row: {
-          audio_url: string | null
-          content: string
-          created_at: string | null
-          id: string
-          line_number: number
-          pronunciation_data: Json | null
-          pronunciation_score: number | null
-          reference_audio_url: string | null
-          script_template_id: string | null
-          sentence_count: number
-          speaker: string | null
-          translation: string | null
-          transliteration: string | null
-          updated_at: string | null
-          user_audio_url: string | null
-        }
-        Insert: {
-          audio_url?: string | null
-          content: string
-          created_at?: string | null
-          id?: string
-          line_number: number
-          pronunciation_data?: Json | null
-          pronunciation_score?: number | null
-          reference_audio_url?: string | null
-          script_template_id?: string | null
-          sentence_count?: number
-          speaker?: string | null
-          translation?: string | null
-          transliteration?: string | null
-          updated_at?: string | null
-          user_audio_url?: string | null
-        }
-        Update: {
-          audio_url?: string | null
-          content?: string
-          created_at?: string | null
-          id?: string
-          line_number?: number
-          pronunciation_data?: Json | null
-          pronunciation_score?: number | null
-          reference_audio_url?: string | null
-          script_template_id?: string | null
-          sentence_count?: number
-          speaker?: string | null
-          translation?: string | null
-          transliteration?: string | null
-          updated_at?: string | null
-          user_audio_url?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "script_messages_script_template_id_fkey"
-            columns: ["script_template_id"]
-            isOneToOne: false
-            referencedRelation: "script_templates"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      script_templates: {
-        Row: {
-          character_id: string | null
-          city_id: string | null
-          created_at: string | null
-          id: string
-          scenario_id: string | null
-          updated_at: string | null
-          user_gender: string | null
-        }
-        Insert: {
-          character_id?: string | null
-          city_id?: string | null
-          created_at?: string | null
-          id?: string
-          scenario_id?: string | null
-          updated_at?: string | null
-          user_gender?: string | null
-        }
-        Update: {
-          character_id?: string | null
-          city_id?: string | null
-          created_at?: string | null
-          id?: string
-          scenario_id?: string | null
-          updated_at?: string | null
-          user_gender?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "script_templates_character_id_fkey"
-            columns: ["character_id"]
-            isOneToOne: false
-            referencedRelation: "characters"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "script_templates_city_id_fkey"
-            columns: ["city_id"]
-            isOneToOne: false
-            referencedRelation: "cities"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "script_templates_scenario_id_fkey"
-            columns: ["scenario_id"]
-            isOneToOne: false
-            referencedRelation: "scenarios"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       scripts: {
         Row: {
@@ -810,15 +587,7 @@ export type Database = {
           updated_at?: string | null
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "user_scenarios_scenario_id_fkey"
-            columns: ["scenario_id"]
-            isOneToOne: false
-            referencedRelation: "scenarios"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
     }
     Views: {

@@ -3,22 +3,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import CharacterSelectionScreen from "@/components/screens/CharacterSelectionScreen";
 import { LanguageCode } from "@/constants/languages";
 
-// Character ID mapping based on the provided schema
-const CHARACTER_ID_MAP: { [key: string]: number } = {
-  "Rick": 1,
-  "Sabrina": 2,
-  "Alex": 3,
-  "Jaymie": 4,
-  "Andrew": 5,
-  "Lada": 6,
-  "Julian": 7,
-  "Angela": 8,
-  "Matt": 9,
-  "Erica": 10,
-  "Sam": 11,
-  "Kim": 12
-};
-
 const CharacterSelection = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -35,9 +19,8 @@ const CharacterSelection = () => {
   };
 
   const handleCharacterSelect = (characterId: string, characterName: string) => {
-    const numericCharacterId = CHARACTER_ID_MAP[characterName];
     queryClient.setQueryData(['selectedCharacter'], { 
-      id: numericCharacterId, 
+      id: characterId, 
       name: characterName 
     });
     navigate('/chat');
