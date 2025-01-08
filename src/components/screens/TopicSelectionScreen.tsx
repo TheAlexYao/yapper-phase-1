@@ -24,6 +24,7 @@ const TopicSelectionScreen: React.FC<TopicSelectionScreenProps> = ({ onTopicSele
   const { data: topics = [], isLoading, error } = useQuery({
     queryKey: ['topics'],
     queryFn: async () => {
+      console.log('Fetching topics...');
       const { data, error } = await supabase
         .from('topics')
         .select('*')
@@ -34,6 +35,7 @@ const TopicSelectionScreen: React.FC<TopicSelectionScreenProps> = ({ onTopicSele
         throw error;
       }
 
+      console.log('Fetched topics:', data);
       return data || [];
     },
   });

@@ -21,7 +21,6 @@ const TopicCarousel: React.FC<TopicCarouselProps> = ({
 }) => {
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
@@ -52,7 +51,6 @@ const TopicCarousel: React.FC<TopicCarouselProps> = ({
   return (
     <>
       <div 
-        ref={containerRef}
         className="w-full aspect-[3/4] overflow-hidden rounded-2xl shadow-xl mb-4"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}

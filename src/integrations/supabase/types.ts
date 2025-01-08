@@ -312,6 +312,24 @@ export type Database = {
         }
         Relationships: []
       }
+      reference_mappings: {
+        Row: {
+          numeric_id: number
+          ref_type: string
+          uuid_id: string | null
+        }
+        Insert: {
+          numeric_id: number
+          ref_type: string
+          uuid_id?: string | null
+        }
+        Update: {
+          numeric_id?: number
+          ref_type?: string
+          uuid_id?: string | null
+        }
+        Relationships: []
+      }
       scripts: {
         Row: {
           audio_generated: boolean | null
@@ -470,7 +488,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_uuid_from_numeric_id: {
+        Args: {
+          ref_type: string
+          num_id: number
+        }
+        Returns: string
+      }
     }
     Enums: {
       sender_type: "user" | "agent"
