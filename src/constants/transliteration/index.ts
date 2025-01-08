@@ -5,6 +5,7 @@ import { southeastAsianRules } from './southeastAsian';
 import { europeanRules } from './european';
 import { otherEuropeanRules } from './otherEuropean';
 import { scandinavianRules } from './scandinavian';
+import { LanguageCode } from '../languages';
 
 export const TRANSLITERATION_RULES: TransliterationRules = {
   'en-US': {
