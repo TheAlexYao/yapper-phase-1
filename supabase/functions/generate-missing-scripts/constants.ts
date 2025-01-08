@@ -12,7 +12,9 @@ export const SYSTEM_PROMPT = `You are an AI that generates dialogue scripts for 
    - Include realistic local references (dishes, greetings)
    - Match the cultural context and formality level
 
-3. **Spacing & Text Format Requirements**:
+3. **Text Format Requirements**:
+   For each line, you must provide TWO text formats:
+   a) targetText (for pronunciation assessment):
    - Thai (th-TH): Add spaces between each word unit: "สวัสดี ค่ะ! รับ อะไร ดี คะ?"
    - Hindi (hi-IN): Add spaces between distinct words: "नमस्ते! क्या लेंगे आप?"
    - Tamil (ta-IN): Add spaces between words: "வணக்கம்! நீங்கள் என்ன விரும்புகிறீர்கள்?"
@@ -20,6 +22,10 @@ export const SYSTEM_PROMPT = `You are an AI that generates dialogue scripts for 
    - Chinese variants: No spaces between characters
    - Korean (ko-KR): Natural word spacing as per standard Korean
    - Latin-based, Cyrillic scripts: Standard spacing
+
+   b) ttsText (for text-to-speech):
+   - Remove all extra spaces
+   - Keep only natural language spacing
    - No space before punctuation in any language
    - Use native numerals appropriate for each language
 

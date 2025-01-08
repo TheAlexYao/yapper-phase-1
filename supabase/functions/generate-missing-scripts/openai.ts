@@ -47,15 +47,21 @@ export async function generateScript(userPrompt: string) {
     
     // Validate the required structure
     if (!scriptData.languageCode || !Array.isArray(scriptData.lines)) {
+      console.error('Invalid script data structure:', scriptData);
       throw new Error('Invalid script data structure: missing required fields');
     }
 
     // Add ttsText if not present (use targetText without extra spaces)
-    scriptData.lines = scriptData.lines.map(line => ({
-      ...line,
-      targetText: line.targetText || line.text, // Backward compatibility
-      ttsText: line.ttsText || line.targetText.replace(/\s+/g, ' ').trim() // Generate ttsText from targetText if not provided
-    }));
+    scriptData.lines = scriptData.lines.map(line => {
+      if (!line.targetText) {
+        console.error('Line missing targetText:', line);
+        throw new Error('Invalid line data: missing targetText');
+      }
+      return {
+        ...line,
+        ttsText: line.ttsText || line.targetText.replace(/\s+/g, ' ').trim()
+      };
+    });
     
     return scriptData;
   } catch (error) {
