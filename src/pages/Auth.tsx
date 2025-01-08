@@ -81,8 +81,6 @@ const Auth = () => {
           redirectTo={window.location.origin}
           view="sign_in"
           showLinks={false}
-          magicLink={false}
-          emailAuth={false}
           localization={{
             variables: {
               sign_in: {
