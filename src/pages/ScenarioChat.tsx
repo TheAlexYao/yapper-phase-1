@@ -6,6 +6,7 @@ import { Database } from "@/integrations/supabase/types";
 import { LanguageCode } from "@/constants/languages";
 
 type ScriptRow = Database['public']['Tables']['scripts']['Row'];
+type UserGender = 'male' | 'female';
 
 const ScenarioChat = () => {
   const navigate = useNavigate();
@@ -23,7 +24,7 @@ const ScenarioChat = () => {
   } | undefined;
 
   const selectedLanguage = (queryClient.getQueryData(['selectedLanguage']) as LanguageCode) || "en-US";
-  const userGender = queryClient.getQueryData(['userGender']) as string || "male";
+  const userGender = (queryClient.getQueryData(['userGender']) as UserGender) || "male";
 
   // Query for the script
   const { data: script, isLoading: isLoadingScript } = useQuery({
