@@ -1,13 +1,22 @@
-export const SCRIPT_STRUCTURE = `
-### 3. Script Structure for Language Learning
+export const SCRIPT_STRUCTURE = `### 3. Script Structure
+1. **Format**:
+   \`\`\`json
+   {
+     "languageCode": "string",
+     "lines": [
+       {
+         "lineNumber": number,
+         "speaker": "character" | "user",
+         "targetText": "string",
+         "transliteration": "string",
+         "translation": "string"
+       }
+     ]
+   }
+   \`\`\`
 
-**Pattern** (6 lines):
-1. Character: Opening greeting/context
-2. User: Initial response
-3. Character: Key question
-4. User: Main response
-5. Character: Confirmation/next steps
-6. User: Closing/thanks
-
-Each line should be clear, focused, and appropriate for the scenario.
-Use local currency and pricing if relevant.`;
+2. **Requirements**:
+   - Exactly 6 lines per script
+   - Alternate between character and user
+   - Character always speaks first (odd-numbered lines)
+   - User responds (even-numbered lines)`;
