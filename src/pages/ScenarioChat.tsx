@@ -1,82 +1,114 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
-import ChatHeader from '@/components/chat/ChatHeader';
-import ChatMessages from '@/components/chat/ChatMessages';
-import { RecordingControls } from '@/components/chat/RecordingControls';
-import { ChatSessionManager } from '@/components/screens/chat/ChatSessionManager';
-import { ScriptManager } from '@/components/screens/chat/ScriptManager';
-import PronunciationFeedbackModal from '@/components/chat/PronunciationFeedbackModal';
+import { useEffect, useState } from 'react';
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import ScenarioChatScreen from '@/components/screens/ScenarioChatScreen';
 import { Script } from '@/types/chat';
 import { LanguageCode } from '@/constants/languages';
 
 const ScenarioChat = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [messages, setMessages] = useState([]);
-  const [currentPrompt, setCurrentPrompt] = useState(null);
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(true);
   const [script, setScript] = useState<Script | null>(null);
-  const [selectedLanguage, setSelectedLanguage] = useState<LanguageCode>('en-US');
+  const [error, setError] = useState<string | null>(null);
+
+  // Extract data from location state
+  const scenarioId = location.state?.scenarioId;
+  const characterId = location.state?.characterId;
+  const selectedLanguage = location.state?.selectedLanguage as LanguageCode;
+  const scenarioTitle = location.state?.scenarioTitle;
+  const characterName = location.state?.characterName;
+  const topicId = location.state?.topicId;
+
+  useEffect(() => {
+    const fetchScript = async () => {
+      if (!scenarioId || !characterId || !selectedLanguage) {
+        setError('Missing required scenario information');
+        toast({
+          title: "Error",
+          description: "Missing required scenario information. Please try again.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      try {
+        const { data: scriptData, error: scriptError } = await supabase
+          .from('scripts')
+          .select('*')
+          .eq('scenario_id', scenarioId)
+          .eq('character_id', characterId)
+          .eq('language_code', selectedLanguage)
+          .single();
+
+        if (scriptError) throw scriptError;
+
+        if (!scriptData) {
+          throw new Error('No script found for this scenario');
+        }
+
+        setScript(scriptData as Script);
+      } catch (err) {
+        console.error('Error fetching script:', err);
+        setError(err.message);
+        toast({
+          title: "Error",
+          description: "Failed to load the conversation script. Please try again.",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchScript();
+  }, [scenarioId, characterId, selectedLanguage, toast]);
 
   const handleBackToCharacters = () => {
-    navigate('/characters');
-  };
-
-  const handleScriptLoaded = (
-    scriptLines: any[],
-    initialMessages: any[],
-    initialLineIndex: number
-  ) => {
-    setScript({
-      script_data: {
-        lines: scriptLines,
-        languageCode: selectedLanguage
-      }
+    navigate('/characters', { 
+      state: { 
+        topicId,
+        selectedLanguage 
+      } 
     });
-    setMessages(initialMessages);
   };
 
-  const handleRecordingComplete = (audioUrl: string, audioBlob: Blob) => {
-    // Handle recording completion
-    console.log('Recording completed:', { audioUrl, audioBlob });
-  };
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen p-4">
+        <h1 className="text-2xl font-bold text-red-600 mb-4">Error</h1>
+        <p className="text-gray-600 mb-4">{error}</p>
+        <button
+          onClick={handleBackToCharacters}
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+        >
+          Back to Characters
+        </button>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+      </div>
+    );
+  }
 
   return (
-    <div>
-      <ChatHeader
-        characterName="Character Name" // Replace with actual character name from context/props
-        scenarioTitle="Scenario Title" // Replace with actual scenario title from context/props
-        onBackToCharacters={handleBackToCharacters}
-      />
-      <ChatMessages messages={messages} />
-      <RecordingControls
-        currentPrompt={currentPrompt}
-        onRecordingComplete={handleRecordingComplete}
-      />
-      <ChatSessionManager
-        scenarioId="scenario-id" // Replace with actual scenario ID from context/props
-        characterId="character-id" // Replace with actual character ID from context/props
-        selectedLanguage={selectedLanguage}
-        script={script}
-        onSessionLoaded={(sessionMessages, currentLineIndex, sessionId) => {
-          setMessages(sessionMessages);
-        }}
-      />
-      <ScriptManager
-        script={script}
-        selectedLanguage={selectedLanguage}
-        onScriptLoaded={handleScriptLoaded}
-      />
-      <PronunciationFeedbackModal
-        isOpen={false}
-        onClose={() => {}}
-        feedback={{
-          overall_score: 0,
-          phoneme_analysis: '',
-          word_scores: {},
-          suggestions: ''
-        }}
-      />
-    </div>
+    <ScenarioChatScreen
+      scenarioId={scenarioId}
+      scenarioTitle={scenarioTitle}
+      topicId={topicId}
+      characterId={characterId}
+      characterName={characterName}
+      selectedLanguage={selectedLanguage}
+      onBackToCharacters={handleBackToCharacters}
+      script={script}
+    />
   );
 };
 
