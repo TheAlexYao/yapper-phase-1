@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import ScenarioChatScreen from '@/components/screens/ScenarioChatScreen';
-import { Script, ScriptLine } from '@/types/chat';
+import { Script, ScriptData } from '@/types/chat';
 import { LanguageCode } from '@/constants/languages';
 
 const ScenarioChat = () => {
@@ -24,7 +24,6 @@ const ScenarioChat = () => {
 
   useEffect(() => {
     const fetchScript = async () => {
-      // First validate required parameters
       if (!scenarioId || !characterId || !selectedLanguage) {
         setError('Missing required scenario information');
         toast({
@@ -46,69 +45,24 @@ const ScenarioChat = () => {
           .maybeSingle();
 
         if (scriptError) throw scriptError;
-
         if (!scriptData) {
           throw new Error('No script found for this scenario');
         }
 
-        const rawScriptData = scriptData.script_data;
-
-        // Type guard for ScriptLine
-        const isValidScriptLine = (line: any): line is ScriptLine => {
-          return (
-            typeof line === 'object' &&
-            line !== null &&
-            'speaker' in line &&
-            (line.speaker === 'character' || line.speaker === 'user') &&
-            'audioUrl' in line &&
-            typeof line.audioUrl === 'string' &&
-            'lineNumber' in line &&
-            typeof line.lineNumber === 'number' &&
-            'targetText' in line &&
-            typeof line.targetText === 'string' &&
-            'translation' in line &&
-            typeof line.translation === 'string' &&
-            'transliteration' in line &&
-            typeof line.transliteration === 'string'
-          );
-        };
-
-        // Validate the entire script structure
-        if (
-          typeof rawScriptData === 'object' &&
-          rawScriptData !== null &&
-          'lines' in rawScriptData &&
-          Array.isArray(rawScriptData.lines) &&
-          'languageCode' in rawScriptData &&
-          typeof rawScriptData.languageCode === 'string'
-        ) {
-          // Validate each line in the array
-          const validLines = rawScriptData.lines.every((line: unknown) => isValidScriptLine(line));
-          
-          if (!validLines) {
-            throw new Error('Invalid script line structure');
-          }
-
-          // After validation, we can safely cast the types
-          const validatedScript: Script = {
-            ...scriptData,
-            script_data: {
-              lines: rawScriptData.lines.map((line: any): ScriptLine => ({
-                speaker: line.speaker,
-                audioUrl: line.audioUrl,
-                lineNumber: line.lineNumber,
-                targetText: line.targetText,
-                translation: line.translation,
-                transliteration: line.transliteration
-              })),
-              languageCode: rawScriptData.languageCode
-            }
-          };
-          
-          setScript(validatedScript);
-        } else {
+        // Validate script data structure
+        const rawScriptData = scriptData.script_data as ScriptData;
+        
+        if (!Array.isArray(rawScriptData.lines) || !rawScriptData.languageCode) {
           throw new Error('Invalid script data structure');
         }
+
+        // Create the validated script object
+        const validatedScript: Script = {
+          ...scriptData,
+          script_data: rawScriptData
+        };
+
+        setScript(validatedScript);
       } catch (err) {
         console.error('Error fetching script:', err);
         setError(err.message);

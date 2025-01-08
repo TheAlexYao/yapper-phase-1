@@ -60,9 +60,11 @@ export interface ScriptLine {
   transliteration: string;
 }
 
+export interface ScriptData {
+  lines: ScriptLine[];
+  languageCode: string;
+}
+
 export interface Script {
-  script_data: {
-    lines: ScriptLine[];
-    languageCode: string;
-  };
+  script_data: ScriptData;
 }
