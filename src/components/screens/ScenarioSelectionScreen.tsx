@@ -13,6 +13,18 @@ interface ScenarioSelectionScreenProps {
   onScenarioSelect: (scenarioTitle: string, scenarioId: string) => void;
 }
 
+// Define the type for the joined query result
+interface ScenarioWithMapping {
+  id: number;
+  title: string;
+  description: string | null;
+  topic: string;
+  image_url: string | null;
+  reference_mappings: {
+    uuid_id: string;
+  };
+}
+
 const ScenarioSelectionScreen: React.FC<ScenarioSelectionScreenProps> = ({
   topicTitle,
   selectedLanguage,
@@ -39,7 +51,8 @@ const ScenarioSelectionScreen: React.FC<ScenarioSelectionScreenProps> = ({
           image_url,
           reference_mappings!inner(uuid_id)
         `)
-        .eq('topic', topicTitle);
+        .eq('topic', topicTitle)
+        .returns<ScenarioWithMapping[]>();
 
       if (fetchError) {
         console.error('Error fetching scenarios:', fetchError);
