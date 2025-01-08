@@ -21,6 +21,7 @@ export const ScriptManager: React.FC<ScriptManagerProps> = ({
         id: `${index}`,
         role: line.speaker === 'character' ? 'bot' : 'user',
         text: line.targetText,
+        ttsText: line.ttsText,
         transliteration: line.transliteration,
         translation: line.translation,
         tts_audio_url: line.audioUrl || '',

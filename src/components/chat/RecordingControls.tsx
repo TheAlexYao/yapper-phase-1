@@ -13,6 +13,7 @@ interface RecordingControlsProps {
   onRecordingComplete: (audioUrl: string, audioBlob: Blob) => void;
   currentPrompt: {
     text: string;
+    ttsText: string;
     transliteration: string | null;
     translation: string;
     tts_audio_url: string;

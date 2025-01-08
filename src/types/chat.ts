@@ -5,6 +5,7 @@ export interface ChatMessage {
   id: string;
   role: 'bot' | 'user';
   text: string;
+  ttsText: string;
   transliteration: string | null;
   translation: string;
   tts_audio_url: string;
