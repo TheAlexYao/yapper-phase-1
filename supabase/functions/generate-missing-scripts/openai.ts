@@ -65,6 +65,7 @@ export async function generateScript(userPrompt: string) {
         ttsText: line.ttsText || line.targetText.replace(/\s+/g, ' ').trim(),
         transliteration: line.transliteration,
         translation: line.translation,
+        audioUrl: line.audioUrl,
         lineNumber: line.lineNumber
       };
     });
