@@ -1,65 +1,45 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
-import { ScriptLine, ScriptData } from './types.ts';
 import { SYSTEM_PROMPT } from './constants.ts';
 
-export async function generateScript(prompt: string): Promise<ScriptData> {
-  const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
-  if (!openaiApiKey) {
-    throw new Error('OpenAI API key not found');
+export async function generateScript(userPrompt: string) {
+  const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+  if (!OPENAI_API_KEY) {
+    throw new Error('Missing OpenAI API key');
   }
 
+  console.log('Generating script with prompt:', userPrompt);
+
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${OPENAI_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'gpt-4',
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: userPrompt }
+      ],
+      temperature: 0.7,
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    console.error('OpenAI API error:', error);
+    throw new Error(`OpenAI API error: ${error}`);
+  }
+
+  const data = await response.json();
+  console.log('OpenAI response:', data);
+
   try {
-    console.log('Generating script with system prompt and user prompt:', {
-      systemPrompt: SYSTEM_PROMPT,
-      userPrompt: prompt
-    });
-    
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openaiApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o',
-        messages: [
-          {
-            role: 'system',
-            content: SYSTEM_PROMPT
-          },
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
-        temperature: 0.7,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('OpenAI API error:', errorData);
-      throw new Error(`OpenAI API error: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    console.log('OpenAI response:', data);
-
-    // Parse the response and structure it as ScriptData
-    const content = data.choices[0].message.content;
-    try {
-      // Assuming the model returns JSON in our required format
-      const parsedContent = JSON.parse(content);
-      return {
-        lines: parsedContent.lines,
-        languageCode: parsedContent.languageCode
-      };
-    } catch (error) {
-      console.error('Error parsing OpenAI response:', error);
-      throw new Error('Invalid script format returned from OpenAI');
-    }
+    // Parse the response content as JSON
+    const scriptData = JSON.parse(data.choices[0].message.content);
+    console.log('Parsed script data:', scriptData);
+    return scriptData;
   } catch (error) {
-    console.error('Error generating script:', error);
-    throw error;
+    console.error('Error parsing OpenAI response:', error);
+    throw new Error('Failed to parse script data from OpenAI response');
   }
 }

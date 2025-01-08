@@ -1,10 +1,23 @@
-export const USER_PROMPT = `Generate an SQL INSERT statement for a conversation script with the following parameters:
+export const USER_PROMPT = `Generate a conversation script with the following parameters:
 Language: {languageCode}
 Scenario: {scenarioTitle}
 Character: {characterName} ({characterGender})
 Topic: {topicTitle}
 
-The script should follow the exact structure defined in the system prompt, with 6 lines of dialogue between the character ({characterName}) and the user.
+The script should follow this structure:
+{
+  "languageCode": "{languageCode}",
+  "lines": [
+    {
+      "lineNumber": 1,
+      "speaker": "character",
+      "targetText": "...",
+      "transliteration": "...",
+      "translation": "..."
+    },
+    // ... 6 lines total alternating between character and user
+  ]
+}
 
 Please ensure:
 1. Natural dialogue appropriate for the scenario
