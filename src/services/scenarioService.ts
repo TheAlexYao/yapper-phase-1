@@ -1,22 +1,18 @@
 import { supabase } from "@/integrations/supabase/client";
 
 export const handleRestartScenario = async (sessionId: string) => {
-  // Delete the current session
   const { error } = await supabase
     .from('chat_sessions')
-    .delete()
+    .update({
+      messages: [],
+      current_line_index: 0
+    })
     .eq('id', sessionId);
 
-  if (error) {
-    console.error('Error deleting session:', error);
-    throw error;
-  }
-
-  // Reload the page to start fresh
-  window.location.reload();
+  if (error) throw error;
 };
 
 export const handleNextScenario = () => {
-  // For now, just go back to scenario selection
-  window.history.back();
+  // Implementation for next scenario
+  console.log('Next scenario handler - to be implemented');
 };

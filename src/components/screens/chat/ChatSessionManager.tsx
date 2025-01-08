@@ -35,9 +35,8 @@ export const ChatSessionManager: React.FC<ChatSessionManagerProps> = ({
         if (error) throw error;
 
         if (session) {
-          const messages = session.messages as ChatMessage[];
           onSessionLoaded(
-            messages || [], 
+            session.messages as ChatMessage[], 
             session.current_line_index || 0,
             session.id
           );
