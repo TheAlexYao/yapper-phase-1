@@ -37,12 +37,12 @@ serve(async (req) => {
 
     console.log('Found topic:', topic);
 
-    // Get restaurant scenario
+    // Get restaurant scenario - Updated title to match the database
     const { data: scenario, error: scenarioError } = await supabase
       .from('default_scenarios')
       .select('*')
       .eq('topic', 'Food')
-      .eq('title', 'Ordering at a Restaurant')
+      .eq('title', 'Ordering from a Restaurant')
       .single();
 
     if (scenarioError || !scenario) {
