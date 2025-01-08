@@ -21,6 +21,16 @@ export const TRANSLITERATION_RULES: Record<LanguageCode, LanguageTransliteration
       { original: '二十', transliteration: 'ar-shur' }
     ]
   },
+  'zh-TW': {
+    description: 'Break words into syllables with hyphens, use English letter combinations that match the sound',
+    examples: [
+      { original: '你好', transliteration: 'nee-how' },
+      { original: '謝謝', transliteration: 'shyeh-shyeh' },
+      { original: '咖啡', transliteration: 'kah-fey' },
+      { original: '熱的', transliteration: 'reh duh' },
+      { original: '二十', transliteration: 'ar-shur' }
+    ]
+  },
   'zh-HK': {
     description: 'Break Cantonese words into syllables with hyphens',
     examples: [
