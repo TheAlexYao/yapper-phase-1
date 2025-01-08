@@ -1,5 +1,3 @@
-import { SYSTEM_PROMPT } from './prompts/systemPrompt.ts';
-
 export async function generateScript(userPrompt: string) {
   const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
   if (!OPENAI_API_KEY) {
@@ -20,7 +18,7 @@ export async function generateScript(userPrompt: string) {
         { role: 'system', content: SYSTEM_PROMPT },
         { 
           role: 'user', 
-          content: `${userPrompt}\n\nIMPORTANT: You MUST follow the language-specific spacing rules EXACTLY as defined in the formatting requirements. The text spacing must match the examples provided for each language type.` 
+          content: `${userPrompt}\n\nIMPORTANT: Return ONLY the JSON object, no markdown formatting or code blocks.` 
         }
       ],
       temperature: 0.7,
@@ -37,11 +35,23 @@ export async function generateScript(userPrompt: string) {
   console.log('OpenAI response:', data);
 
   try {
-    const scriptData = JSON.parse(data.choices[0].message.content);
+    const content = data.choices[0].message.content;
+    // Remove any markdown code block formatting if present
+    const cleanJson = content.replace(/```json\n|\n```/g, '');
+    console.log('Cleaned JSON string:', cleanJson);
+    
+    const scriptData = JSON.parse(cleanJson);
     console.log('Parsed script data:', scriptData);
+    
+    // Validate the required structure
+    if (!scriptData.languageCode || !Array.isArray(scriptData.lines)) {
+      throw new Error('Invalid script data structure: missing required fields');
+    }
+    
     return scriptData;
   } catch (error) {
     console.error('Error parsing OpenAI response:', error);
+    console.error('Raw content:', data.choices[0].message.content);
     throw new Error('Failed to parse script data from OpenAI response');
   }
 }
