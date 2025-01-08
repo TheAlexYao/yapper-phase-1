@@ -28,19 +28,28 @@ const ScenarioSelectionScreen: React.FC<ScenarioSelectionScreenProps> = ({
   const fetchScenarios = async () => {
     try {
       setLoading(true);
+      console.log('Fetching scenarios for topic:', topicTitle);
+      
       const { data, error: fetchError } = await supabase
         .from('default_scenarios')
         .select('*')
         .eq('topic', topicTitle);
 
-      if (fetchError) throw fetchError;
+      if (fetchError) {
+        console.error('Error fetching scenarios:', fetchError);
+        throw fetchError;
+      }
 
       if (data) {
+        console.log('Fetched scenarios:', data);
         setScenarios(data as unknown as Scenario[]);
         setError(null);
+      } else {
+        console.log('No scenarios found for topic:', topicTitle);
+        setScenarios([]);
       }
     } catch (err) {
-      console.error('Error fetching scenarios:', err);
+      console.error('Error in fetchScenarios:', err);
       setError('Failed to load scenarios. Please try again.');
     } finally {
       setLoading(false);
