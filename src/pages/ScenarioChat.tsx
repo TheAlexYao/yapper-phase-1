@@ -59,15 +59,36 @@ const ScenarioChat = () => {
           'languageCode' in rawScriptData &&
           typeof rawScriptData.languageCode === 'string'
         ) {
-          // Type assertion after validation
-          const validatedScript: Script = {
-            ...scriptData,
-            script_data: {
-              lines: rawScriptData.lines as ScriptLine[],
-              languageCode: rawScriptData.languageCode
-            }
+          // Validate each line in the array matches ScriptLine structure
+          const isValidScriptLine = (line: any): line is ScriptLine => {
+            return (
+              typeof line === 'object' &&
+              line !== null &&
+              'speaker' in line &&
+              (line.speaker === 'character' || line.speaker === 'user') &&
+              'targetText' in line &&
+              typeof line.targetText === 'string' &&
+              'transliteration' in line &&
+              (line.transliteration === null || typeof line.transliteration === 'string') &&
+              'translation' in line &&
+              typeof line.translation === 'string'
+            );
           };
-          setScript(validatedScript);
+
+          // Check if all lines are valid
+          if (rawScriptData.lines.every(isValidScriptLine)) {
+            // Type assertion after validation
+            const validatedScript: Script = {
+              ...scriptData,
+              script_data: {
+                lines: rawScriptData.lines as ScriptLine[],
+                languageCode: rawScriptData.languageCode
+              }
+            };
+            setScript(validatedScript);
+          } else {
+            throw new Error('Invalid script line structure');
+          }
         } else {
           throw new Error('Invalid script data structure');
         }
