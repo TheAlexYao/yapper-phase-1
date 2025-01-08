@@ -12,6 +12,8 @@ serve(async (req) => {
   }
 
   try {
+    console.log('Starting script generation process...');
+
     // Get food topic
     const { data: topic, error: topicError } = await supabase
       .from('topics')
@@ -72,11 +74,29 @@ serve(async (req) => {
         if (!existingScript) {
           console.log(`Generating script for es-MX, scenario ${scenario.title}, character ${character.name}`);
 
-          const prompt = `${SYSTEM_PROMPT}\n\nGenerate a script for:
-            Language: es-MX (Mexican Spanish)
-            Scenario: ${scenario.title}
-            Character: ${character.name} (${character.gender})
-            Topic: ${topic.title}`;
+          const prompt = `Generate a restaurant conversation script in Mexican Spanish (es-MX) between a ${character.gender} waiter/waitress named ${character.name} and a customer.
+            The conversation should follow this scenario: ${scenario.title}
+            
+            Please return the response in this exact JSON format:
+            {
+              "lines": [
+                {
+                  "speaker": "character",
+                  "targetText": "Spanish text",
+                  "transliteration": "Pronunciation guide",
+                  "translation": "English translation"
+                },
+                {
+                  "speaker": "user",
+                  "targetText": "Spanish text",
+                  "transliteration": "Pronunciation guide",
+                  "translation": "English translation"
+                }
+              ],
+              "languageCode": "es-MX"
+            }
+            
+            Make sure the conversation is natural, includes common restaurant phrases, and is appropriate for language learners.`;
 
           const scriptData = await generateScript(prompt);
           
@@ -89,10 +109,7 @@ serve(async (req) => {
               topic_id: topic.id,
               character_id: character.id,
               user_gender: character.gender === 'male' ? 'male' : 'female',
-              script_data: {
-                lines: scriptData.lines,
-                languageCode: 'es-MX'
-              },
+              script_data: scriptData,
               audio_generated: false
             });
 

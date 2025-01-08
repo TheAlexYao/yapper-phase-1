@@ -41,50 +41,19 @@ export async function generateScript(prompt: string): Promise<ScriptData> {
     const data = await response.json();
     console.log('OpenAI response:', data);
 
-    // For testing, we'll create a structured restaurant conversation
-    const scriptData: ScriptData = {
-      lines: [
-        {
-          speaker: 'character',
-          targetText: '¡Hola! Bienvenido a nuestro restaurante. ¿Qué le gustaría ordenar?',
-          transliteration: 'Ola! Bienvenido a nuestro restaurante. Ke le gustaría ordenar?',
-          translation: 'Hello! Welcome to our restaurant. What would you like to order?'
-        },
-        {
-          speaker: 'user',
-          targetText: 'Me gustaría ver el menú, por favor.',
-          transliteration: 'Me gustaría ver el menú, por favor.',
-          translation: 'I would like to see the menu, please.'
-        },
-        {
-          speaker: 'character',
-          targetText: 'Aquí tiene el menú. Nuestra especialidad es la paella.',
-          transliteration: 'Akí tiene el menú. Nuestra especialidad es la paeya.',
-          translation: 'Here is the menu. Our specialty is paella.'
-        },
-        {
-          speaker: 'user',
-          targetText: 'La paella suena bien. ¿Me la puede recomendar?',
-          transliteration: 'La paeya suena bien. Me la puede recomendar?',
-          translation: 'The paella sounds good. Can you recommend it?'
-        },
-        {
-          speaker: 'character',
-          targetText: 'Por supuesto, es un plato excelente. ¿Le gustaría ordenarla?',
-          transliteration: 'Por supuesto, es un plato excelente. Le gustaría ordenarla?',
-          translation: 'Of course, it\'s an excellent dish. Would you like to order it?'
-        },
-        {
-          speaker: 'user',
-          targetText: 'Sí, me gustaría ordenar la paella, gracias.',
-          transliteration: 'Sí, me gustaría ordenar la paeya, grasias.',
-          translation: 'Yes, I would like to order the paella, thank you.'
-        }
-      ],
-      languageCode: 'es-MX'
-    };
-
-    return scriptData;
+    // Parse the response and structure it as ScriptData
+    const content = data.choices[0].message.content;
+    try {
+      // Assuming the model returns JSON in our required format
+      const parsedContent = JSON.parse(content);
+      return {
+        lines: parsedContent.lines,
+        languageCode: parsedContent.languageCode
+      };
+    } catch (error) {
+      console.error('Error parsing OpenAI response:', error);
+      throw new Error('Invalid script format returned from OpenAI');
+    }
   } catch (error) {
     console.error('Error generating script:', error);
     throw error;
