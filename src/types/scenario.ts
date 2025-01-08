@@ -1,5 +1,5 @@
 export interface Scenario {
-  id: string; // Changed from number to UUID string
+  id: number; // Changed back to number to match database schema
   title: string;
   description: string | null;
   image_url: string | null;

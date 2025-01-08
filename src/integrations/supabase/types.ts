@@ -79,32 +79,32 @@ export type Database = {
       }
       chat_sessions: {
         Row: {
-          character_id: string // Changed from number
+          character_id: number
           created_at: string | null
           current_line_index: number | null
           id: string
           messages: Json | null
-          scenario_id: string // Changed from number
+          scenario_id: number
           updated_at: string | null
           user_id: string | null
         }
         Insert: {
-          character_id: string // Changed from number
+          character_id: number
           created_at?: string | null
           current_line_index?: number | null
           id?: string
           messages?: Json | null
-          scenario_id: string // Changed from number
+          scenario_id: number
           updated_at?: string | null
           user_id?: string | null
         }
         Update: {
-          character_id?: string // Changed from number
+          character_id?: number
           created_at?: string | null
           current_line_index?: number | null
           id?: string
           messages?: Json | null
-          scenario_id?: string // Changed from number
+          scenario_id?: number
           updated_at?: string | null
           user_id?: string | null
         }
@@ -125,7 +125,7 @@ export type Database = {
           country: string
           created_at?: string | null
           cultural_notes?: string | null
-          id: string
+          id?: string
           language_id?: string | null
           local_slang?: Json | null
           name: string
@@ -234,7 +234,7 @@ export type Database = {
           emoji?: string | null
           features?: string | null
           female_voice?: string | null
-          id: string
+          id?: string
           male_voice?: string | null
           name: string
           output_format?: string | null
@@ -300,7 +300,7 @@ export type Database = {
           created_at?: string
           custom_goals?: string[] | null
           full_name?: string | null
-          id: string
+          id?: string
           languages_learning?: string[] | null
           learning_goals?: string[] | null
           native_language?: string | null
@@ -315,37 +315,37 @@ export type Database = {
       scripts: {
         Row: {
           audio_generated: boolean | null
-          character_id: string // Changed from number
+          character_id: number
           created_at: string | null
           id: string
           language_code: string
-          scenario_id: string // Changed from number
+          scenario_id: number
           script_data: Json
-          topic_id: string // Changed from number
+          topic_id: number
           updated_at: string | null
           user_gender: Database["public"]["Enums"]["user_gender"]
         }
         Insert: {
           audio_generated?: boolean | null
-          character_id: string // Changed from number
+          character_id: number
           created_at?: string | null
           id?: string
           language_code: string
-          scenario_id: string // Changed from number
+          scenario_id: number
           script_data: Json
-          topic_id: string // Changed from number
+          topic_id: number
           updated_at?: string | null
           user_gender: Database["public"]["Enums"]["user_gender"]
         }
         Update: {
           audio_generated?: boolean | null
-          character_id?: string // Changed from number
+          character_id?: number
           created_at?: string | null
           id?: string
           language_code?: string
-          scenario_id: string // Changed from number
+          scenario_id?: number
           script_data?: Json
-          topic_id?: string // Changed from number
+          topic_id?: number
           updated_at?: string | null
           user_gender?: Database["public"]["Enums"]["user_gender"]
         }
@@ -369,7 +369,7 @@ export type Database = {
           description?: string | null
           description_translations?: Json | null
           display_order?: number | null
-          id: string
+          id?: string
           image_url?: string | null
           is_active?: boolean | null
           title: string
@@ -410,7 +410,7 @@ export type Database = {
           audio_url_slow?: string | null
           audio_url_very_slow?: string | null
           created_at?: string | null
-          id: string
+          id?: string
           language_code: string
           text_content: string
           text_hash: string
@@ -491,7 +491,7 @@ export type Tables<
   TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
     ? keyof (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
         Database[PublicTableNameOrOptions["schema"]]["Views"])
-    : never,
+    : never = never,
 > = PublicTableNameOrOptions extends { schema: keyof Database }
   ? (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
       Database[PublicTableNameOrOptions["schema"]]["Views"])[TableName] extends {
@@ -545,10 +545,10 @@ export type TablesUpdate<
     : never
   : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
     ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
-      Update: infer U
-    }
-    ? U
-    : never
+        Update: infer U
+      }
+      ? U
+      : never
     : never
 
 export type Enums<

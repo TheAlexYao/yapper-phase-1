@@ -42,7 +42,7 @@ const ScenarioSelectionScreen: React.FC<ScenarioSelectionScreenProps> = ({
 
       if (data) {
         console.log('Fetched scenarios:', data);
-        setScenarios(data as unknown as Scenario[]);
+        setScenarios(data as Scenario[]);
         setError(null);
       } else {
         console.log('No scenarios found for topic:', topicTitle);
