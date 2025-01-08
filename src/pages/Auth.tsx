@@ -52,16 +52,14 @@ const Auth = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-[#38b6ff] to-[#7843e6] p-4">
       <div className="w-full max-w-md bg-white rounded-lg shadow-xl p-8">
         <div className="flex flex-col items-center mb-6">
-          <img 
-            src="/placeholder.svg" 
-            alt="Yapper Logo" 
-            className="h-16 w-auto mb-4"
-          />
+          <div className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-[#38b6ff] to-[#7843e6] bg-clip-text text-transparent mb-4">
+            Yapper
+          </div>
           <h1 className="text-2xl font-bold text-center text-gray-800">
-            Welcome to Yapper
+            Welcome Back
           </h1>
           <p className="text-gray-600 text-center mt-2">
-            Sign in to start your language learning journey
+            Sign in to continue your language learning journey
           </p>
         </div>
         {errorMessage && (
@@ -84,18 +82,14 @@ const Auth = () => {
             style: {
               button: {
                 width: '100%',
+                backgroundColor: 'white',
+                color: '#333',
+                border: '1px solid #ddd',
+                '&:hover': {
+                  backgroundColor: '#f9f9f9'
+                }
               },
             },
-            extend: true,
-            className: {
-              container: 'hidden',
-              anchor: 'hidden',
-              divider: 'hidden',
-              label: 'hidden',
-              input: 'hidden',
-              message: 'hidden',
-              button: '!bg-white hover:!bg-gray-50',
-            }
           }}
           providers={["google"]}
           redirectTo={window.location.origin}
