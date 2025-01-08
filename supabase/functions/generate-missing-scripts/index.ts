@@ -21,111 +21,124 @@ serve(async (req) => {
   }
 
   try {
-    console.log('Starting script generation process for all languages...');
+    console.log('Starting script generation process for all topics and scenarios...');
 
-    // Get food topic
-    const { data: topic, error: topicError } = await supabase
+    // Get all active topics
+    const { data: topics, error: topicsError } = await supabase
       .from('topics')
       .select('*')
-      .eq('title', 'Food')
-      .single();
+      .eq('is_active', true);
 
-    if (topicError || !topic) {
-      console.error('Error fetching topic:', topicError);
-      throw new Error('Food topic not found');
+    if (topicsError || !topics) {
+      console.error('Error fetching topics:', topicsError);
+      throw new Error('No active topics found');
     }
 
-    console.log('Found topic:', topic);
-
-    // Get restaurant scenario - Updated title to match the database
-    const { data: scenario, error: scenarioError } = await supabase
-      .from('default_scenarios')
-      .select('*')
-      .eq('topic', 'Food')
-      .eq('title', 'Ordering from a Restaurant')
-      .single();
-
-    if (scenarioError || !scenario) {
-      console.error('Error fetching scenario:', scenarioError);
-      throw new Error('Restaurant scenario not found');
-    }
-
-    console.log('Found scenario:', scenario);
-
-    // Get food-related characters
-    const { data: characters, error: charactersError } = await supabase
-      .from('characters')
-      .select('*')
-      .eq('topic', 'Food');
-
-    if (charactersError || !characters || characters.length === 0) {
-      console.error('Error fetching characters:', charactersError);
-      throw new Error('No food-related characters found');
-    }
-
-    console.log('Found characters:', characters);
+    console.log(`Found ${topics.length} active topics`);
 
     let generatedCount = 0;
     let errorCount = 0;
     const errors: string[] = [];
 
-    // Process each language
-    for (const languageCode of SUPPORTED_LANGUAGES) {
-      console.log(`Processing language: ${languageCode}`);
-      
-      for (const character of characters) {
-        try {
-          // Check if script already exists
-          const { data: existingScript } = await supabase
-            .from('scripts')
-            .select('id')
-            .eq('language_code', languageCode)
-            .eq('scenario_id', scenario.id)
-            .eq('character_id', character.id)
-            .maybeSingle();
+    // Process each topic
+    for (const topic of topics) {
+      console.log(`Processing topic: ${topic.title}`);
 
-          if (!existingScript) {
-            console.log(`Generating script for ${languageCode}, scenario ${scenario.title}, character ${character.name}`);
+      // Get all scenarios for this topic
+      const { data: scenarios, error: scenariosError } = await supabase
+        .from('default_scenarios')
+        .select('*')
+        .eq('topic', topic.title);
 
-            const userPrompt = formatUserPrompt({
-              languageCode,
-              scenarioTitle: scenario.title,
-              characterName: character.name,
-              characterGender: character.gender || 'unknown',
-              topicTitle: topic.title
-            });
+      if (scenariosError) {
+        console.error(`Error fetching scenarios for topic ${topic.title}:`, scenariosError);
+        continue; // Skip to next topic if there's an error
+      }
 
-            const scriptData = await generateScript(userPrompt);
-            
-            // Insert the script using Supabase client
-            const { error: insertError } = await supabase
-              .from('scripts')
-              .insert({
-                language_code: languageCode,
-                scenario_id: scenario.id,
-                topic_id: topic.id,
-                character_id: character.id,
-                user_gender: character.gender === 'male' ? 'male' : 'female',
-                script_data: scriptData,
-                audio_generated: false
-              });
+      if (!scenarios || scenarios.length === 0) {
+        console.log(`No scenarios found for topic: ${topic.title}`);
+        continue;
+      }
 
-            if (insertError) {
-              throw insertError;
+      console.log(`Found ${scenarios.length} scenarios for topic: ${topic.title}`);
+
+      // Get characters for this topic
+      const { data: characters, error: charactersError } = await supabase
+        .from('characters')
+        .select('*')
+        .eq('topic', topic.title);
+
+      if (charactersError || !characters || characters.length === 0) {
+        console.error(`Error fetching characters for topic ${topic.title}:`, charactersError);
+        continue;
+      }
+
+      console.log(`Found ${characters.length} characters for topic: ${topic.title}`);
+
+      // Process each scenario
+      for (const scenario of scenarios) {
+        console.log(`Processing scenario: ${scenario.title}`);
+        
+        // Process each character
+        for (const character of characters) {
+          console.log(`Processing character: ${character.name}`);
+          
+          // Process each language
+          for (const languageCode of SUPPORTED_LANGUAGES) {
+            try {
+              // Check if script already exists
+              const { data: existingScript } = await supabase
+                .from('scripts')
+                .select('id')
+                .eq('language_code', languageCode)
+                .eq('scenario_id', scenario.id)
+                .eq('character_id', character.id)
+                .maybeSingle();
+
+              if (!existingScript) {
+                console.log(`Generating script for ${languageCode}, scenario ${scenario.title}, character ${character.name}`);
+
+                const userPrompt = formatUserPrompt({
+                  languageCode,
+                  scenarioTitle: scenario.title,
+                  characterName: character.name,
+                  characterGender: character.gender || 'unknown',
+                  topicTitle: topic.title
+                });
+
+                const scriptData = await generateScript(userPrompt);
+                
+                // Insert the script using Supabase client
+                const { error: insertError } = await supabase
+                  .from('scripts')
+                  .insert({
+                    language_code: languageCode,
+                    scenario_id: scenario.id,
+                    topic_id: topic.id,
+                    character_id: character.id,
+                    user_gender: character.gender === 'male' ? 'male' : 'female',
+                    script_data: scriptData,
+                    audio_generated: false
+                  });
+
+                if (insertError) {
+                  throw insertError;
+                }
+
+                generatedCount++;
+                console.log(`Successfully generated and inserted script for ${character.name} in ${languageCode}`);
+                
+                // Add a small delay to avoid rate limits
+                await new Promise(resolve => setTimeout(resolve, 1000));
+              } else {
+                console.log(`Script already exists for ${character.name} in ${languageCode}`);
+              }
+            } catch (error) {
+              console.error(`Error generating script for ${character.name} in ${languageCode}:`, error);
+              errorCount++;
+              errors.push(`${languageCode}-${scenario.id}-${character.id}: ${error.message}`);
             }
-
-            generatedCount++;
-            console.log(`Successfully generated and inserted script for ${character.name} in ${languageCode}`);
-            
-            // Add a small delay to avoid rate limits
-            await new Promise(resolve => setTimeout(resolve, 1000));
-          } else {
-            console.log(`Script already exists for ${character.name} in ${languageCode}`);
           }
-        } catch (error) {
-          console.error(`Error generating script for ${character.name} in ${languageCode}:`, error);
-          errorCount++;
-          errors.push(`${languageCode}-${scenario.id}-${character.id}: ${error.message}`);
         }
       }
     }
