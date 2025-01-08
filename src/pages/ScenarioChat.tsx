@@ -36,6 +36,12 @@ const ScenarioChat = () => {
       }
 
       try {
+        console.log('Fetching script with params:', {
+          scenarioId,
+          characterId,
+          selectedLanguage
+        });
+
         const { data: scriptData, error: scriptError } = await supabase
           .from('scripts')
           .select('*')
@@ -44,22 +50,39 @@ const ScenarioChat = () => {
           .eq('language_code', selectedLanguage)
           .maybeSingle();
 
+        console.log('Script query result:', { scriptData, scriptError });
+
         if (scriptError) throw scriptError;
         if (!scriptData) {
           throw new Error('No script found for this scenario');
         }
 
         // Validate script data structure
-        const rawScriptData = scriptData.script_data as ScriptData;
+        const rawScriptData = scriptData.script_data;
+        console.log('Raw script data:', rawScriptData);
         
-        if (!Array.isArray(rawScriptData.lines) || !rawScriptData.languageCode) {
-          throw new Error('Invalid script data structure');
+        if (!rawScriptData || typeof rawScriptData !== 'object') {
+          throw new Error('Invalid script data: not an object');
         }
+
+        const validatedScriptData: ScriptData = {
+          lines: Array.isArray(rawScriptData.lines) ? rawScriptData.lines.map(line => ({
+            speaker: line.speaker,
+            audioUrl: line.audioUrl,
+            lineNumber: line.lineNumber,
+            targetText: line.targetText,
+            translation: line.translation,
+            transliteration: line.transliteration
+          })) : [],
+          languageCode: rawScriptData.languageCode || selectedLanguage
+        };
+
+        console.log('Validated script data:', validatedScriptData);
 
         // Create the validated script object
         const validatedScript: Script = {
           ...scriptData,
-          script_data: rawScriptData
+          script_data: validatedScriptData
         };
 
         setScript(validatedScript);
