@@ -10,6 +10,7 @@ interface ScriptLine {
   lineNumber: number
   speaker: string
   targetText: string
+  ttsText: string // Added ttsText field
   transliteration: string | null
   translation: string
   audioUrl: string | null
@@ -54,7 +55,6 @@ serve(async (req) => {
 
     for (const script of scripts) {
       try {
-        // Fetch language voices with more specific query
         const { data: languageData, error: languageError } = await supabase
           .from('languages')
           .select('male_voice, female_voice')
@@ -63,7 +63,7 @@ serve(async (req) => {
 
         if (languageError) {
           console.error(`Error fetching language data for code ${script.language_code}:`, languageError)
-          continue // Skip this script and continue with others
+          continue
         }
 
         if (!languageData) {
@@ -87,11 +87,12 @@ serve(async (req) => {
                 ? (script.character_id % 2 === 0 ? languageData.female_voice : languageData.male_voice)
                 : (script.user_gender === 'female' ? languageData.female_voice : languageData.male_voice)
 
+              // Use ttsText instead of targetText for SSML
               const ssml = `
                 <speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${script.language_code}">
                   <voice name="${voiceName}">
                     <prosody rate="0.9">
-                      ${line.targetText}
+                      ${line.ttsText || line.targetText} 
                     </prosody>
                   </voice>
                 </speak>`
@@ -138,7 +139,7 @@ serve(async (req) => {
               console.log(`Generated TTS for line ${line.lineNumber} in script ${script.id}`)
             } catch (error) {
               console.error(`Error processing line ${line.lineNumber} in script ${script.id}:`, error)
-              continue // Skip this line and continue with others
+              continue
             }
           }
         }
@@ -161,7 +162,7 @@ serve(async (req) => {
         }
       } catch (error) {
         console.error(`Error processing script ${script.id}:`, error)
-        continue // Skip this script and continue with others
+        continue
       }
     }
 
