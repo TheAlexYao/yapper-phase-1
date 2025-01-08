@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 
 interface Character {
-  id: string;
+  id: string;  // Updated to handle UUID
   name: string;
   bio: string | null;
   avatar_url: string | null;

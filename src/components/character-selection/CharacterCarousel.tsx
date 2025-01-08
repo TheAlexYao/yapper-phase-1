@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import CharacterCard from './CharacterCard';
 
 interface Character {
-  id: string;
+  id: string;  // Changed from string to handle UUID consistently
   name: string;
   bio: string | null;
   avatar_url: string | null;

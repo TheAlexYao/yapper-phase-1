@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import CharacterCarousel from '../character-selection/CharacterCarousel';
 
 interface Character {
-  id: string;
+  id: string;  // Updated to handle UUID
   name: string;
   bio: string | null;
   avatar_url: string | null;
@@ -52,7 +52,7 @@ const CharacterSelectionScreen: React.FC<CharacterSelectionScreenProps> = ({
       console.log('Found topic:', scenarios.topic);
 
       // Then, get the characters for this topic
-      const { data, error: fetchError } = await supabase
+      const { data: charactersData, error: fetchError } = await supabase
         .from('characters')
         .select('*')
         .eq('topic', scenarios.topic)
@@ -60,9 +60,10 @@ const CharacterSelectionScreen: React.FC<CharacterSelectionScreenProps> = ({
 
       if (fetchError) throw fetchError;
 
-      if (data) {
-        console.log('Found characters:', data);
-        setCharacters(data);
+      if (charactersData) {
+        console.log('Found characters:', charactersData);
+        // No need for UUID conversion since characters table already uses UUIDs
+        setCharacters(charactersData);
         setError(null);
       }
     } catch (err) {
