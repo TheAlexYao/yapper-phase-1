@@ -1,0 +1,29 @@
+export const USER_PROMPT = `Generate an SQL INSERT statement for a conversation script with the following parameters:
+Language: {languageCode}
+Scenario: {scenarioTitle}
+Character: {characterName} ({characterGender})
+Topic: {topicTitle}
+
+The script should follow the exact structure defined in the system prompt, with 6 lines of dialogue between the character ({characterName}) and the user.
+
+Please ensure:
+1. Natural dialogue appropriate for the scenario
+2. Proper grammar and punctuation for {languageCode}
+3. Appropriate formality level for the culture
+4. Clear turn-taking between character and user
+5. Context-appropriate vocabulary`;
+
+export function formatUserPrompt(params: {
+  languageCode: string;
+  scenarioTitle: string;
+  characterName: string;
+  characterGender: string;
+  topicTitle: string;
+}): string {
+  return USER_PROMPT
+    .replace(/{languageCode}/g, params.languageCode)
+    .replace(/{scenarioTitle}/g, params.scenarioTitle)
+    .replace(/{characterName}/g, params.characterName)
+    .replace(/{characterGender}/g, params.characterGender)
+    .replace(/{topicTitle}/g, params.topicTitle);
+}

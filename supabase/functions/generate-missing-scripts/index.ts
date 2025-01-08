@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import 'https://deno.land/x/xhr@0.1.0/mod.ts';
 import { corsHeaders } from './constants.ts';
 import { SYSTEM_PROMPT } from './constants.ts';
+import { formatUserPrompt } from './prompts/userPrompt.ts';
 import { ScriptGenerationResult } from './types.ts';
 import { generateScript } from './openai.ts';
 import { supabase } from './database.ts';
@@ -74,21 +75,13 @@ serve(async (req) => {
         if (!existingScript) {
           console.log(`Generating script for es-MX, scenario ${scenario.title}, character ${character.name}`);
 
-          // Format the prompt according to our system prompt structure
-          const userPrompt = `Generate an SQL INSERT statement for a restaurant conversation script with the following parameters:
-            Language: Mexican Spanish (es-MX)
-            Scenario: ${scenario.title}
-            Character: ${character.name} (${character.gender})
-            Topic: ${topic.title}
-            
-            The script should follow the exact structure defined in the system prompt, with 6 lines of dialogue between the character (${character.name}) and the user.
-            
-            Please ensure:
-            1. Natural restaurant dialogue
-            2. Proper Spanish grammar and punctuation
-            3. Appropriate formality level
-            4. Clear turn-taking between character and user
-            5. Context-appropriate vocabulary`;
+          const userPrompt = formatUserPrompt({
+            languageCode: 'es-MX',
+            scenarioTitle: scenario.title,
+            characterName: character.name,
+            characterGender: character.gender || 'unknown',
+            topicTitle: topic.title
+          });
 
           const scriptData = await generateScript(userPrompt);
           
