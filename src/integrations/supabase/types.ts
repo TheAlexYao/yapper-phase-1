@@ -1,5 +1,8 @@
 import { Character } from '@/types/database/characters';
 import { ChatSession } from '@/types/database/chat';
+import { Json } from '@/types/json';
+
+export type { Json };
 
 export interface Database {
   public: {

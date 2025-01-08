@@ -1,5 +1,5 @@
 import { LanguageCode } from '@/constants/languages';
-import { Json } from '@/integrations/supabase/types';
+import { Json } from '@/types/json';
 
 export interface ChatMessage {
   id: string;
