@@ -20,7 +20,7 @@ export async function generateScript(userPrompt: string) {
         { role: 'system', content: SYSTEM_PROMPT },
         { 
           role: 'user', 
-          content: `${userPrompt}\n\nIMPORTANT: Return ONLY the JSON object, no markdown formatting or code blocks.` 
+          content: `${userPrompt}\n\nIMPORTANT: For each line, provide both a 'targetText' (with proper spacing for pronunciation assessment) and a 'ttsText' (without extra spaces for TTS generation). Return ONLY the JSON object, no markdown formatting or code blocks.` 
         }
       ],
       temperature: 0.7,
@@ -49,6 +49,13 @@ export async function generateScript(userPrompt: string) {
     if (!scriptData.languageCode || !Array.isArray(scriptData.lines)) {
       throw new Error('Invalid script data structure: missing required fields');
     }
+
+    // Ensure each line has both targetText and ttsText
+    scriptData.lines = scriptData.lines.map(line => ({
+      ...line,
+      targetText: line.targetText || line.text, // Backward compatibility
+      ttsText: line.ttsText || line.text.replace(/\s+/g, ' ').trim() // Backward compatibility
+    }));
     
     return scriptData;
   } catch (error) {

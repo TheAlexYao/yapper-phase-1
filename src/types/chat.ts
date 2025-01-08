@@ -56,6 +56,7 @@ export interface ScriptLine {
   audioUrl: string;
   lineNumber: number;
   targetText: string;
+  ttsText: string; // Added for TTS-specific formatting
   translation: string;
   transliteration: string;
 }
@@ -94,6 +95,7 @@ export function isValidScriptData(data: unknown): data is ScriptData {
     typeof line.audioUrl === 'string' &&
     typeof line.lineNumber === 'number' &&
     typeof line.targetText === 'string' &&
+    typeof line.ttsText === 'string' &&
     typeof line.translation === 'string' &&
     typeof line.transliteration === 'string'
   );
