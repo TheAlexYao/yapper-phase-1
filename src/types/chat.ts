@@ -60,11 +60,41 @@ export interface ScriptLine {
   transliteration: string;
 }
 
+// This interface matches our database JSONB structure
 export interface ScriptData {
   lines: ScriptLine[];
   languageCode: string;
 }
 
+// This type ensures the Script interface matches our database structure
 export interface Script {
+  id: string;
+  language_code: string;
+  scenario_id: string;
+  character_id: string;
+  user_gender: 'male' | 'female';
   script_data: ScriptData;
+  created_at?: string;
+  updated_at?: string;
+  audio_generated?: boolean;
+}
+
+// Type guard to validate ScriptData structure
+export function isValidScriptData(data: unknown): data is ScriptData {
+  if (!data || typeof data !== 'object') return false;
+  
+  const scriptData = data as Partial<ScriptData>;
+  
+  if (!Array.isArray(scriptData.lines)) return false;
+  if (typeof scriptData.languageCode !== 'string') return false;
+  
+  return scriptData.lines.every(line => 
+    typeof line === 'object' &&
+    (line.speaker === 'character' || line.speaker === 'user') &&
+    typeof line.audioUrl === 'string' &&
+    typeof line.lineNumber === 'number' &&
+    typeof line.targetText === 'string' &&
+    typeof line.translation === 'string' &&
+    typeof line.transliteration === 'string'
+  );
 }

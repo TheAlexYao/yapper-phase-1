@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import ScenarioChatScreen from '@/components/screens/ScenarioChatScreen';
-import { Script, ScriptData, ScriptLine } from '@/types/chat';
+import { Script, ScriptData, isValidScriptData } from '@/types/chat';
 import { LanguageCode } from '@/constants/languages';
 
 const ScenarioChat = () => {
@@ -57,48 +57,18 @@ const ScenarioChat = () => {
           throw new Error('No script found for this scenario');
         }
 
-        // Type assertion for the raw script data
-        const rawScriptData = scriptData.script_data as {
-          lines?: Array<{
-            speaker: 'character' | 'user';
-            audioUrl: string;
-            lineNumber: number;
-            targetText: string;
-            translation: string;
-            transliteration: string;
-          }>;
-          languageCode?: string;
-        };
-
-        console.log('Raw script data:', rawScriptData);
-        
-        if (!rawScriptData || typeof rawScriptData !== 'object') {
-          throw new Error('Invalid script data: not an object');
+        // Validate script_data structure using our type guard
+        if (!isValidScriptData(scriptData.script_data)) {
+          throw new Error('Invalid script data structure');
         }
 
-        // Validate and transform the script data
-        const validatedScriptData: ScriptData = {
-          lines: Array.isArray(rawScriptData.lines) 
-            ? rawScriptData.lines.map(line => ({
-                speaker: line.speaker,
-                audioUrl: line.audioUrl,
-                lineNumber: line.lineNumber,
-                targetText: line.targetText,
-                translation: line.translation,
-                transliteration: line.transliteration
-              }))
-            : [],
-          languageCode: rawScriptData.languageCode || selectedLanguage
-        };
-
-        console.log('Validated script data:', validatedScriptData);
-
-        // Create the validated script object
+        // Now TypeScript knows scriptData.script_data is valid ScriptData
         const validatedScript: Script = {
           ...scriptData,
-          script_data: validatedScriptData
+          script_data: scriptData.script_data as ScriptData
         };
 
+        console.log('Validated script:', validatedScript);
         setScript(validatedScript);
       } catch (err) {
         console.error('Error fetching script:', err);
