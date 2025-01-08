@@ -93,7 +93,14 @@ const ScenarioChat = () => {
           const validatedScript: Script = {
             ...scriptData,
             script_data: {
-              lines: rawScriptData.lines,
+              lines: rawScriptData.lines.map((line: any): ScriptLine => ({
+                speaker: line.speaker,
+                audioUrl: line.audioUrl,
+                lineNumber: line.lineNumber,
+                targetText: line.targetText,
+                translation: line.translation,
+                transliteration: line.transliteration
+              })),
               languageCode: rawScriptData.languageCode
             }
           };
