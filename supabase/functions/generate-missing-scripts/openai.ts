@@ -50,11 +50,11 @@ export async function generateScript(userPrompt: string) {
       throw new Error('Invalid script data structure: missing required fields');
     }
 
-    // Ensure each line has both targetText and ttsText
+    // Add ttsText if not present (use targetText without extra spaces)
     scriptData.lines = scriptData.lines.map(line => ({
       ...line,
       targetText: line.targetText || line.text, // Backward compatibility
-      ttsText: line.ttsText || line.text.replace(/\s+/g, ' ').trim() // Backward compatibility
+      ttsText: line.ttsText || line.targetText.replace(/\s+/g, ' ').trim() // Generate ttsText from targetText if not provided
     }));
     
     return scriptData;
