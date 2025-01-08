@@ -71,11 +71,23 @@ const Auth = () => {
                 },
               },
             },
+            style: {
+              button: {
+                width: '100%',
+              },
+            },
           }}
           providers={["google"]}
           redirectTo={window.location.origin}
           view="sign_in"
           showLinks={false}
+          localization={{
+            variables: {
+              sign_in: {
+                social_provider_text: "Continue with {{provider}}"
+              }
+            }
+          }}
         />
       </div>
     </div>
