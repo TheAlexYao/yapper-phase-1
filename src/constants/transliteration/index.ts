@@ -36,7 +36,7 @@ export const TRANSLITERATION_RULES: TransliterationRules = {
   'vi-VN': southeastAsianRules['vi-VN']!
 };
 
-export const getTransliterationRules = (languageCode: LanguageCode): LanguageTransliterationRules => {
+export const getTransliterationRules = (languageCode: LanguageCode) => {
   return TRANSLITERATION_RULES[languageCode] || {
     description: 'No specific transliteration rules available',
     examples: []
