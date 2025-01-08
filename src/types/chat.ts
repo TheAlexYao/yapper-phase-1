@@ -11,6 +11,7 @@ export interface ChatMessage {
   user_audio_url: string | null;
   score: number | null;
   language_code: LanguageCode;
+  ttsText?: string; // Added for TTS optimization
   feedback?: {
     overall_score: number;
     phoneme_analysis: string;
@@ -56,18 +57,16 @@ export interface ScriptLine {
   audioUrl: string;
   lineNumber: number;
   targetText: string;
-  ttsText: string; // Added for TTS-specific formatting
+  ttsText: string; // Added for TTS optimization
   translation: string;
   transliteration: string;
 }
 
-// This interface matches our database JSONB structure
 export interface ScriptData {
   lines: ScriptLine[];
   languageCode: string;
 }
 
-// This type ensures the Script interface matches our database structure
 export interface Script {
   id: string;
   language_code: string;
@@ -95,7 +94,7 @@ export function isValidScriptData(data: unknown): data is ScriptData {
     typeof line.audioUrl === 'string' &&
     typeof line.lineNumber === 'number' &&
     typeof line.targetText === 'string' &&
-    typeof line.ttsText === 'string' &&
+    typeof line.ttsText === 'string' && // Added validation for ttsText
     typeof line.translation === 'string' &&
     typeof line.transliteration === 'string'
   );
