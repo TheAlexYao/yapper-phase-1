@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import ScenarioChatScreen from '@/components/screens/ScenarioChatScreen';
-import { Script } from '@/types/chat';
+import { Script, ScriptLine } from '@/types/chat';
 import { LanguageCode } from '@/constants/languages';
 
 const ScenarioChat = () => {
@@ -49,7 +49,28 @@ const ScenarioChat = () => {
           throw new Error('No script found for this scenario');
         }
 
-        setScript(scriptData as Script);
+        // Validate script_data structure
+        const rawScriptData = scriptData.script_data;
+        if (
+          typeof rawScriptData === 'object' && 
+          rawScriptData !== null &&
+          'lines' in rawScriptData &&
+          Array.isArray(rawScriptData.lines) &&
+          'languageCode' in rawScriptData &&
+          typeof rawScriptData.languageCode === 'string'
+        ) {
+          // Type assertion after validation
+          const validatedScript: Script = {
+            ...scriptData,
+            script_data: {
+              lines: rawScriptData.lines as ScriptLine[],
+              languageCode: rawScriptData.languageCode
+            }
+          };
+          setScript(validatedScript);
+        } else {
+          throw new Error('Invalid script data structure');
+        }
       } catch (err) {
         console.error('Error fetching script:', err);
         setError(err.message);
