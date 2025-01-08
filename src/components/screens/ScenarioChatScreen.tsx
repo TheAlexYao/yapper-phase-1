@@ -12,6 +12,7 @@ import ChatMessages from '@/components/chat/ChatMessages';
 import { LanguageCode } from '@/constants/languages';
 import { ChatSessionManager } from './chat/ChatSessionManager';
 import { ScriptManager } from './chat/ScriptManager';
+import { createBotMessage, createUserMessage } from '@/utils/messageUtils';
 
 interface ScenarioChatScreenProps {
   scenarioId: string;
@@ -38,7 +39,7 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
   const [scriptLines, setScriptLines] = useState<ChatMessage[]>([]);
   const [currentLineIndex, setCurrentLineIndex] = useState(0);
   const [isConversationComplete, setIsConversationComplete] = useState(false);
-  const [sessionId, setSessionId] = useState<string | null>(null); // Add sessionId state
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -74,22 +75,20 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
   const handleSessionLoaded = (sessionMessages: ChatMessage[], sessionLineIndex: number, newSessionId: string) => {
     setMessages(sessionMessages);
     setCurrentLineIndex(sessionLineIndex);
-    setSessionId(newSessionId); // Store the sessionId
+    setSessionId(newSessionId);
     
     if (scriptLines.length > sessionLineIndex) {
       const nextUserPrompt = scriptLines.slice(sessionLineIndex).find(line => line.role === 'user');
       if (nextUserPrompt) {
-        setCurrentPrompt({
+        setCurrentPrompt(createBotMessage({
           id: Date.now().toString(),
-          role: 'bot',
           text: nextUserPrompt.text,
+          ttsText: nextUserPrompt.ttsText,
           transliteration: nextUserPrompt.transliteration,
           translation: nextUserPrompt.translation,
           tts_audio_url: nextUserPrompt.tts_audio_url,
-          user_audio_url: null,
-          score: null,
           language_code: selectedLanguage
-        });
+        }));
       }
     }
   };
@@ -105,17 +104,15 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
 
     const firstUserPrompt = newScriptLines.find(line => line.role === 'user');
     if (firstUserPrompt) {
-      setCurrentPrompt({
+      setCurrentPrompt(createBotMessage({
         id: 'initial-prompt',
-        role: 'bot',
         text: firstUserPrompt.text,
+        ttsText: firstUserPrompt.ttsText,
         transliteration: firstUserPrompt.transliteration,
         translation: firstUserPrompt.translation,
         tts_audio_url: firstUserPrompt.tts_audio_url,
-        user_audio_url: null,
-        score: null,
         language_code: selectedLanguage
-      });
+      }));
     }
   };
 
@@ -127,15 +124,15 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
         const { score, feedback } = await assessPronunciation(
           audioBlob, 
           currentPrompt.text,
-          selectedLanguage // Pass the selected language code
+          selectedLanguage
         );
         
         console.log('Assessment completed:', { score, feedback });
 
-        const newMessage: UserMessage = {
+        const newMessage = createUserMessage({
           id: Date.now().toString(),
-          role: 'user',
           text: currentPrompt.text,
+          ttsText: currentPrompt.ttsText,
           transliteration: currentPrompt.transliteration,
           translation: currentPrompt.translation,
           tts_audio_url: currentPrompt.tts_audio_url,
@@ -158,7 +155,7 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
               Words: feedback.words
             }]
           }
-        };
+        });
 
         setMessages(prevMessages => [...prevMessages, newMessage]);
         setCurrentPrompt(null);
@@ -173,31 +170,27 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
             
             const nextUserIndex = nextIndex + 1;
             if (nextUserIndex < scriptLines.length && scriptLines[nextUserIndex].role === 'user') {
-              setCurrentPrompt({
+              setCurrentPrompt(createBotMessage({
                 id: Date.now().toString(),
-                role: 'bot',
                 text: scriptLines[nextUserIndex].text,
+                ttsText: scriptLines[nextUserIndex].ttsText,
                 transliteration: scriptLines[nextUserIndex].transliteration,
                 translation: scriptLines[nextUserIndex].translation,
                 tts_audio_url: scriptLines[nextUserIndex].tts_audio_url,
-                user_audio_url: null,
-                score: null,
                 language_code: selectedLanguage,
-              });
+              }));
               setCurrentLineIndex(nextUserIndex);
             }
           } else if (nextLine.role === 'user') {
-            setCurrentPrompt({
+            setCurrentPrompt(createBotMessage({
               id: Date.now().toString(),
-              role: 'bot',
               text: nextLine.text,
+              ttsText: nextLine.ttsText,
               transliteration: nextLine.transliteration,
               translation: nextLine.translation,
               tts_audio_url: nextLine.tts_audio_url,
-              user_audio_url: null,
-              score: null,
               language_code: selectedLanguage,
-            });
+            }));
           }
         } else {
           setIsConversationComplete(true);
