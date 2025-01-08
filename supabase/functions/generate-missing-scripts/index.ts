@@ -108,7 +108,7 @@ serve(async (req) => {
 
                 const scriptData = await generateScript(userPrompt);
                 
-                // Insert the script using Supabase client
+                // Always set user_gender to 'male' as this is the default for our application
                 const { error: insertError } = await supabase
                   .from('scripts')
                   .insert({
@@ -116,7 +116,7 @@ serve(async (req) => {
                     scenario_id: scenario.id,
                     topic_id: topic.id,
                     character_id: character.id,
-                    user_gender: character.gender === 'male' ? 'male' : 'female',
+                    user_gender: 'male', // Fixed value instead of using character gender
                     script_data: scriptData,
                     audio_generated: false
                   });
