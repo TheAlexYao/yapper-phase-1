@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ChatMessage, Script } from '@/types/chat';
 import { LanguageCode } from '@/constants/languages';
-import { ChatSessionProvider } from './chat/ChatSessionProvider';
 import { ChatContent } from './chat/ChatContent';
 
 interface ScenarioChatScreenProps {
@@ -41,28 +40,27 @@ const ScenarioChatScreen = ({
           user_audio_url: null,
           score: null,
           language_code: selectedLanguage,
+          scenario_id: scenarioId
         };
       });
 
       setScriptLines(lines);
     }
-  }, [script, selectedLanguage]);
+  }, [script, selectedLanguage, scenarioId]);
 
   if (!script || scriptLines.length === 0) {
     return <div>Loading...</div>;
   }
 
   return (
-    <ChatSessionProvider scenarioId={scenarioId} characterId={characterId}>
-      <ChatContent
-        scenarioTitle={scenarioTitle}
-        characterName={characterName}
-        selectedLanguage={selectedLanguage}
-        onBackToCharacters={onBackToCharacters}
-        script={script}
-        scriptLines={scriptLines}
-      />
-    </ChatSessionProvider>
+    <ChatContent
+      scenarioTitle={scenarioTitle}
+      characterName={characterName}
+      selectedLanguage={selectedLanguage}
+      onBackToCharacters={onBackToCharacters}
+      script={script}
+      scriptLines={scriptLines}
+    />
   );
 };
 

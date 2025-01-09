@@ -8,7 +8,7 @@ import ChatHeader from '@/components/chat/ChatHeader';
 import ChatMessages from '@/components/chat/ChatMessages';
 import { LanguageCode } from '@/constants/languages';
 import { createBotMessage, createUserMessage } from '@/utils/messageUtils';
-import { useChatSession } from './ChatSessionProvider';
+import { supabase } from "@/integrations/supabase/client";
 
 interface ChatContentProps {
   scenarioTitle: string;
@@ -26,10 +26,34 @@ export const ChatContent = ({
   onBackToCharacters,
   scriptLines,
 }: ChatContentProps) => {
-  const { messages, currentLineIndex, updateSession } = useChatSession();
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [currentLineIndex, setCurrentLineIndex] = useState(0);
   const [currentPrompt, setCurrentPrompt] = useState<BotMessage | null>(null);
   const [isConversationComplete, setIsConversationComplete] = useState(false);
   const { toast } = useToast();
+
+  // Initialize conversation if no messages
+  useState(() => {
+    if (messages.length === 0 && scriptLines.length > 0) {
+      const firstLine = scriptLines[0];
+      if (firstLine.role === 'bot') {
+        setMessages([firstLine]);
+        setCurrentLineIndex(1);
+        
+        if (scriptLines[1]?.role === 'user') {
+          setCurrentPrompt(createBotMessage({
+            id: Date.now().toString(),
+            text: scriptLines[1].text,
+            ttsText: scriptLines[1].ttsText,
+            transliteration: scriptLines[1].transliteration,
+            translation: scriptLines[1].translation,
+            tts_audio_url: scriptLines[1].tts_audio_url,
+            language_code: selectedLanguage,
+          }));
+        }
+      }
+    }
+  }, []);
 
   const handleRecordingComplete = async (audioUrl: string, audioBlob: Blob) => {
     if (!currentPrompt) return;
@@ -89,7 +113,7 @@ export const ChatContent = ({
               tts_audio_url: scriptLines[nextUserIndex].tts_audio_url,
               language_code: selectedLanguage,
             }));
-            await updateSession(newMessages, nextUserIndex);
+            setCurrentLineIndex(nextUserIndex);
           }
         } else if (nextLine.role === 'user') {
           setCurrentPrompt(createBotMessage({
@@ -101,11 +125,33 @@ export const ChatContent = ({
             tts_audio_url: nextLine.tts_audio_url,
             language_code: selectedLanguage,
           }));
-          await updateSession(newMessages, nextIndex);
+          setCurrentLineIndex(nextIndex);
         }
+        
+        setMessages(newMessages);
       } else {
         setIsConversationComplete(true);
-        await updateSession(newMessages, nextIndex);
+        setMessages(newMessages);
+        
+        // Save progress to user_scenarios
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          const averageScore = newMessages
+            .filter(m => m.role === 'user' && m.score !== null)
+            .reduce((acc, m) => acc + (m.score || 0), 0) / newMessages.filter(m => m.role === 'user').length;
+
+          await supabase
+            .from('user_scenarios')
+            .upsert({
+              user_id: session.user.id,
+              scenario_id: scriptLines[0].scenario_id,
+              status: 'completed',
+              completed_at: new Date().toISOString(),
+              pronunciation_score: averageScore,
+              attempts_count: 1
+            })
+            .select();
+        }
       }
     } catch (error) {
       console.error('Error processing recording:', error);

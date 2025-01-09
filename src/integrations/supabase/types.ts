@@ -63,54 +63,6 @@ export type Database = {
         }
         Relationships: []
       }
-      chat_sessions: {
-        Row: {
-          character_id: string
-          created_at: string | null
-          current_line_index: number | null
-          id: string
-          messages: Json | null
-          scenario_id: string
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          character_id: string
-          created_at?: string | null
-          current_line_index?: number | null
-          id?: string
-          messages?: Json | null
-          scenario_id: string
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          character_id?: string
-          created_at?: string | null
-          current_line_index?: number | null
-          id?: string
-          messages?: Json | null
-          scenario_id?: string
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "chat_sessions_character_id_fkey"
-            columns: ["character_id"]
-            isOneToOne: false
-            referencedRelation: "characters"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "chat_sessions_scenario_id_fkey"
-            columns: ["scenario_id"]
-            isOneToOne: false
-            referencedRelation: "default_scenarios"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       default_scenarios: {
         Row: {
           description: string | null
