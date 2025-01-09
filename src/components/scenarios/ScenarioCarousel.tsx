@@ -61,11 +61,8 @@ const ScenarioCarousel: React.FC<ScenarioCarouselProps> = ({
           {scenarios.map((scenario) => (
             <div key={scenario.id} className="w-full h-full flex-shrink-0">
               <ScenarioCard
-                id={scenario.id}
-                title={scenario.title}
-                description={scenario.description}
-                imageUrl={scenario.image_url}
-                onClick={() => onSelect(scenario.id)}
+                scenario={scenario}
+                onSelect={() => onSelect(scenario.id)}
               />
             </div>
           ))}

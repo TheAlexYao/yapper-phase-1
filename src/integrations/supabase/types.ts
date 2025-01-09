@@ -135,48 +135,6 @@ export type Database = {
         }
         Relationships: []
       }
-      feedback: {
-        Row: {
-          category: Database["public"]["Enums"]["feedback_category"]
-          created_at: string | null
-          description: string
-          id: string
-          resolution_notes: string | null
-          resolved_at: string | null
-          screenshot_url: string | null
-          status: string | null
-          subject: string
-          updated_at: string | null
-          user_id: string | null
-        }
-        Insert: {
-          category: Database["public"]["Enums"]["feedback_category"]
-          created_at?: string | null
-          description: string
-          id?: string
-          resolution_notes?: string | null
-          resolved_at?: string | null
-          screenshot_url?: string | null
-          status?: string | null
-          subject: string
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          category?: Database["public"]["Enums"]["feedback_category"]
-          created_at?: string | null
-          description?: string
-          id?: string
-          resolution_notes?: string | null
-          resolved_at?: string | null
-          screenshot_url?: string | null
-          status?: string | null
-          subject?: string
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
       languages: {
         Row: {
           code: string
@@ -409,55 +367,34 @@ export type Database = {
       }
       user_scenarios: {
         Row: {
-          attempts_count: number | null
           completed_at: string | null
-          completion_time: unknown | null
           created_at: string | null
-          fluency_score: number | null
-          grammar_score: number | null
           id: string
-          last_attempt_at: string | null
-          pronunciation_score: number | null
           scenario_id: string
           started_at: string | null
           status: string
           updated_at: string | null
           user_id: string
-          vocabulary_score: number | null
         }
         Insert: {
-          attempts_count?: number | null
           completed_at?: string | null
-          completion_time?: unknown | null
           created_at?: string | null
-          fluency_score?: number | null
-          grammar_score?: number | null
           id?: string
-          last_attempt_at?: string | null
-          pronunciation_score?: number | null
           scenario_id: string
           started_at?: string | null
           status?: string
           updated_at?: string | null
           user_id: string
-          vocabulary_score?: number | null
         }
         Update: {
-          attempts_count?: number | null
           completed_at?: string | null
-          completion_time?: unknown | null
           created_at?: string | null
-          fluency_score?: number | null
-          grammar_score?: number | null
           id?: string
-          last_attempt_at?: string | null
-          pronunciation_score?: number | null
           scenario_id?: string
           started_at?: string | null
           status?: string
           updated_at?: string | null
           user_id?: string
-          vocabulary_score?: number | null
         }
         Relationships: []
       }
@@ -489,12 +426,6 @@ export type Database = {
       }
     }
     Enums: {
-      feedback_category:
-        | "bug_report"
-        | "feature_request"
-        | "content_issue"
-        | "pronunciation_feedback"
-        | "other"
       sender_type: "user" | "agent"
       user_gender: "male" | "female"
     }
