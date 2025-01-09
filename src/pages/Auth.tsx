@@ -13,14 +13,12 @@ const Auth = () => {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    // Check for error in URL parameters
     const params = new URLSearchParams(window.location.search);
     const errorDesc = params.get('error_description');
     if (errorDesc) {
       setError(errorDesc);
     }
 
-    // Check if user is already authenticated
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
@@ -49,21 +47,10 @@ const Auth = () => {
       ) : (
         <SupabaseAuth
           supabaseClient={supabase}
-          appearance={{ 
-            theme: ThemeSupa,
-            variables: {
-              default: {
-                colors: {
-                  brand: '#7843e6',
-                  brandAccent: '#38b6ff',
-                }
-              }
-            }
-          }}
+          appearance={{ theme: ThemeSupa }}
           providers={["google"]}
           redirectTo={`${window.location.origin}/auth/callback`}
-          view="sign_in"
-          showLinks={false}
+          onlyThirdPartyProviders={true}
         />
       )}
     </AuthContainer>
