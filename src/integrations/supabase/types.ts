@@ -135,6 +135,48 @@ export type Database = {
         }
         Relationships: []
       }
+      feedback: {
+        Row: {
+          category: Database["public"]["Enums"]["feedback_category"]
+          created_at: string | null
+          description: string
+          id: string
+          resolution_notes: string | null
+          resolved_at: string | null
+          screenshot_url: string | null
+          status: string | null
+          subject: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          category: Database["public"]["Enums"]["feedback_category"]
+          created_at?: string | null
+          description: string
+          id?: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          screenshot_url?: string | null
+          status?: string | null
+          subject: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["feedback_category"]
+          created_at?: string | null
+          description?: string
+          id?: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          screenshot_url?: string | null
+          status?: string | null
+          subject?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       languages: {
         Row: {
           code: string
@@ -426,6 +468,12 @@ export type Database = {
       }
     }
     Enums: {
+      feedback_category:
+        | "bug_report"
+        | "feature_request"
+        | "content_issue"
+        | "pronunciation_feedback"
+        | "other"
       sender_type: "user" | "agent"
       user_gender: "male" | "female"
     }
