@@ -409,34 +409,55 @@ export type Database = {
       }
       user_scenarios: {
         Row: {
+          attempts_count: number | null
           completed_at: string | null
+          completion_time: unknown | null
           created_at: string | null
+          fluency_score: number | null
+          grammar_score: number | null
           id: string
+          last_attempt_at: string | null
+          pronunciation_score: number | null
           scenario_id: string
           started_at: string | null
           status: string
           updated_at: string | null
           user_id: string
+          vocabulary_score: number | null
         }
         Insert: {
+          attempts_count?: number | null
           completed_at?: string | null
+          completion_time?: unknown | null
           created_at?: string | null
+          fluency_score?: number | null
+          grammar_score?: number | null
           id?: string
+          last_attempt_at?: string | null
+          pronunciation_score?: number | null
           scenario_id: string
           started_at?: string | null
           status?: string
           updated_at?: string | null
           user_id: string
+          vocabulary_score?: number | null
         }
         Update: {
+          attempts_count?: number | null
           completed_at?: string | null
+          completion_time?: unknown | null
           created_at?: string | null
+          fluency_score?: number | null
+          grammar_score?: number | null
           id?: string
+          last_attempt_at?: string | null
+          pronunciation_score?: number | null
           scenario_id?: string
           started_at?: string | null
           status?: string
           updated_at?: string | null
           user_id?: string
+          vocabulary_score?: number | null
         }
         Relationships: []
       }
