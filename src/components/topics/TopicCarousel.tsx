@@ -51,7 +51,7 @@ const TopicCarousel: React.FC<TopicCarouselProps> = ({
   return (
     <>
       <div 
-        className="w-full aspect-[3/4] overflow-hidden rounded-2xl shadow-xl mb-4"
+        className="w-full max-w-2xl mx-auto aspect-[4/3] md:aspect-[16/9] overflow-hidden rounded-2xl shadow-xl mb-4"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
@@ -71,7 +71,7 @@ const TopicCarousel: React.FC<TopicCarouselProps> = ({
         </div>
       </div>
 
-      <div className="flex justify-center gap-4 w-full">
+      <div className="flex justify-center gap-4 w-full max-w-2xl mx-auto">
         <Button
           variant="outline"
           size="icon"
