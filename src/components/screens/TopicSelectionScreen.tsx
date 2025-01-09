@@ -21,6 +21,35 @@ const TopicSelectionScreen: React.FC<TopicSelectionScreenProps> = ({ onTopicSele
   const [currentIndex, setCurrentIndex] = useState(0);
   const { toast } = useToast();
 
+  // Fetch user's preferred language
+  const { data: userProfile } = useQuery({
+    queryKey: ['userProfile'],
+    queryFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return null;
+
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('target_language')
+        .eq('id', session.user.id)
+        .single();
+
+      if (error) {
+        console.error('Error fetching user profile:', error);
+        throw error;
+      }
+
+      return profile;
+    },
+  });
+
+  // Update selected language when profile is loaded
+  useEffect(() => {
+    if (userProfile?.target_language) {
+      setSelectedLanguage(userProfile.target_language as LanguageCode);
+    }
+  }, [userProfile]);
+
   const { data: topics = [], isLoading, error } = useQuery({
     queryKey: ['topics'],
     queryFn: async () => {
@@ -40,15 +69,32 @@ const TopicSelectionScreen: React.FC<TopicSelectionScreenProps> = ({ onTopicSele
     },
   });
 
-  const handleLanguageChange = (language: LanguageCode) => {
+  const handleLanguageChange = async (language: LanguageCode) => {
     setSelectedLanguage(language);
     setCurrentIndex(0);
+
+    // Update user's preferred language in the database
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ target_language: language })
+        .eq('id', session.user.id);
+
+      if (error) {
+        console.error('Error updating language preference:', error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to save language preference",
+        });
+      }
+    }
   };
 
   const handleTopicSelect = useCallback((topicId: string) => {
     const selectedTopic = topics.find(topic => topic.id === topicId);
     if (selectedTopic) {
-      // Pass both the topic title and selected language to the next screen
       onTopicSelect(`${selectedTopic.title}?lang=${selectedLanguage}`);
     }
   }, [topics, onTopicSelect, selectedLanguage]);
