@@ -5,29 +5,25 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { AuthContainer } from "@/components/auth/AuthContainer";
 import { InitialLanguageSelect } from "@/components/auth/InitialLanguageSelect";
+import { AuthError } from "@/components/auth/AuthError";
 
 const Auth = () => {
   const navigate = useNavigate();
   const [showLanguageSelect, setShowLanguageSelect] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    // Handle hash fragment from OAuth callback
-    const handleHashCallback = async () => {
-      const hashParams = new URLSearchParams(window.location.hash.substring(1));
-      const accessToken = hashParams.get("access_token");
-      
-      if (accessToken) {
-        // Set the session using the access token
-        const { data, error } = await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: hashParams.get("refresh_token") || "",
-        });
-
-        if (data.session) {
+    const handleAuthCallback = async () => {
+      try {
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) throw sessionError;
+        
+        if (session) {
           const { data: profile } = await supabase
             .from('profiles')
             .select('target_language')
-            .eq('id', data.session.user.id)
+            .eq('id', session.user.id)
             .single();
 
           if (profile?.target_language) {
@@ -36,42 +32,11 @@ const Auth = () => {
             setShowLanguageSelect(true);
           }
         }
+      } catch (error) {
+        console.error('Auth error:', error);
+        setError(error.message);
       }
     };
-
-    // Check for existing session
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('target_language')
-          .eq('id', session.user.id)
-          .single();
-
-        if (profile?.target_language) {
-          navigate("/topics");
-        } else {
-          setShowLanguageSelect(true);
-        }
-      }
-    };
-
-    // First check if we're on the callback path
-    if (window.location.pathname.includes('/callback')) {
-      // We're on the callback path, handle hash if present or check session
-      if (window.location.hash) {
-        handleHashCallback();
-      } else {
-        // If we're on callback but no hash, check session
-        // This handles the case where the hash was stripped
-        checkSession();
-      }
-    } else {
-      // Regular auth page, just check session
-      checkSession();
-    }
 
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -90,11 +55,17 @@ const Auth = () => {
       }
     });
 
+    // If we're on the callback page, handle the auth callback
+    if (window.location.pathname.includes('/callback')) {
+      handleAuthCallback();
+    }
+
     return () => subscription.unsubscribe();
   }, [navigate]);
 
   return (
     <AuthContainer>
+      <AuthError message={error} />
       {showLanguageSelect ? (
         <InitialLanguageSelect />
       ) : (
