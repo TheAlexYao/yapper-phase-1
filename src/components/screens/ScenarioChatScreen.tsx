@@ -3,16 +3,16 @@ import { AnimatePresence } from 'framer-motion';
 import PostScenarioSummary from './PostScenarioSummary';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { RecordingControls } from "@/components/chat/RecordingControls";
 import { ChatMessage, BotMessage, UserMessage, Script } from '@/types/chat';
 import { assessPronunciation } from '@/services/pronunciationService';
 import { handleRestartScenario, handleNextScenario } from '@/services/scenarioService';
-import ChatHeader from '@/components/chat/ChatHeader';
-import ChatMessages from '@/components/chat/ChatMessages';
 import { LanguageCode } from '@/constants/languages';
 import { ChatSessionManager } from './chat/ChatSessionManager';
 import { ScriptManager } from './chat/ScriptManager';
 import { createBotMessage, createUserMessage } from '@/utils/messageUtils';
+import { SessionProvider } from '@/components/chat/SessionProvider';
+import ScenarioContent from '@/components/chat/ScenarioContent';
+import { useQuery } from '@tanstack/react-query';
 
 interface ScenarioChatScreenProps {
   scenarioId: string;
@@ -35,87 +35,36 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
   selectedLanguage,
   topicId
 }) => {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [currentPrompt, setCurrentPrompt] = useState<BotMessage | null>(null);
   const [scriptLines, setScriptLines] = useState<ChatMessage[]>([]);
   const [currentLineIndex, setCurrentLineIndex] = useState(0);
   const [isConversationComplete, setIsConversationComplete] = useState(false);
-  const [sessionId, setSessionId] = useState<string | null>(null);
   const { toast } = useToast();
 
-  useEffect(() => {
-    const updateSession = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+  const { data: session } = useQuery({
+    queryKey: ['chatSession', scenarioId, characterId],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
 
-        const { error } = await supabase
-          .from('chat_sessions')
-          .update({
-            messages: messages,
-            current_line_index: currentLineIndex,
-            updated_at: new Date().toISOString()
-          })
-          .eq('scenario_id', scenarioId)
-          .eq('user_id', user.id);
+      const { data: sessions, error } = await supabase
+        .from('chat_sessions')
+        .select('*')
+        .eq('scenario_id', scenarioId)
+        .eq('character_id', characterId)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
 
-        if (error) throw error;
-      } catch (error) {
-        console.error('Error updating session:', error);
-        toast({
-          title: "Error",
-          description: "Failed to save chat progress",
-          variant: "destructive"
-        });
+      if (error && error.code !== 'PGRST116') {
+        throw error;
       }
-    };
 
-    updateSession();
-  }, [messages, currentLineIndex, scenarioId, toast]);
-
-  const handleSessionLoaded = (sessionMessages: ChatMessage[], sessionLineIndex: number, newSessionId: string) => {
-    setMessages(sessionMessages);
-    setCurrentLineIndex(sessionLineIndex);
-    setSessionId(newSessionId);
-    
-    if (scriptLines.length > sessionLineIndex) {
-      const nextUserPrompt = scriptLines.slice(sessionLineIndex).find(line => line.role === 'user');
-      if (nextUserPrompt) {
-        setCurrentPrompt(createBotMessage({
-          id: Date.now().toString(),
-          text: nextUserPrompt.text,
-          ttsText: nextUserPrompt.ttsText,
-          transliteration: nextUserPrompt.transliteration,
-          translation: nextUserPrompt.translation,
-          tts_audio_url: nextUserPrompt.tts_audio_url,
-          language_code: selectedLanguage
-        }));
-      }
-    }
-  };
-
-  const handleScriptLoaded = (
-    newScriptLines: ChatMessage[],
-    initialMessages: ChatMessage[],
-    initialLineIndex: number
-  ) => {
-    setScriptLines(newScriptLines);
-    setMessages(initialMessages);
-    setCurrentLineIndex(initialLineIndex);
-
-    const firstUserPrompt = newScriptLines.find(line => line.role === 'user');
-    if (firstUserPrompt) {
-      setCurrentPrompt(createBotMessage({
-        id: 'initial-prompt',
-        text: firstUserPrompt.text,
-        ttsText: firstUserPrompt.ttsText,
-        transliteration: firstUserPrompt.transliteration,
-        translation: firstUserPrompt.translation,
-        tts_audio_url: firstUserPrompt.tts_audio_url,
-        language_code: selectedLanguage
-      }));
-    }
-  };
+      return sessions;
+    },
+    staleTime: Infinity,
+  });
 
   const handleRecordingComplete = async (audioUrl: string, audioBlob: Blob) => {
     if (currentPrompt) {
@@ -251,25 +200,10 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
   };
 
   if (isConversationComplete) {
-    const mockProgressData = [
-      { date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], score: 75 },
-      { date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], score: 80 },
-      { date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], score: 85 },
-      { date: new Date().toISOString().split('T')[0], score: calculateAverageScore() }
-    ];
-
-    const detailedScores = calculateDetailedScores();
-    const overallScore = Math.round(
-      (detailedScores.accuracyScore + 
-       detailedScores.fluencyScore + 
-       detailedScores.completenessScore + 
-       detailedScores.pronScore) / 4
-    );
-
     return (
       <PostScenarioSummary
         scenarioTitle={scenarioTitle}
-        overallScore={overallScore}
+        overallScore={calculateAverageScore()}
         transcript={messages.map(msg => ({
           role: msg.role,
           text: msg.text,
@@ -282,11 +216,9 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
           translation: msg.translation,
           feedback: msg.role === 'user' ? msg.feedback : undefined
         }))}
-        detailedScores={detailedScores}
+        detailedScores={calculateDetailedScores()}
         wordLevelFeedback={messages
-          .filter((msg): msg is UserMessage => 
-            msg.role === 'user'
-          )
+          .filter((msg): msg is UserMessage => msg.role === 'user')
           .flatMap(msg => 
             msg.feedback?.NBest?.[0]?.Words?.map(word => ({
               word: word.Word,
@@ -294,14 +226,18 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
               errorType: word.PronunciationAssessment?.ErrorType || 'none'
             })) || []
           )}
-        progressData={mockProgressData}
-        onRestart={() => sessionId && handleRestartScenario(sessionId)}
+        progressData={[
+          { date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], score: 75 },
+          { date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], score: 80 },
+          { date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], score: 85 },
+          { date: new Date().toISOString().split('T')[0], score: calculateAverageScore() }
+        ]}
+        onRestart={() => session?.id && handleRestartScenario(session.id)}
         onExit={onBackToCharacters}
         onNextScenario={async () => {
           const nextScenario = await handleNextScenario(scenarioId, topicId);
           if (nextScenario) {
-            // Navigate to the next scenario
-            onBackToCharacters(); // This will take us back to character selection with the new scenario
+            onBackToCharacters();
           } else {
             toast({
               title: "No more scenarios",
@@ -318,40 +254,29 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
   }
 
   return (
-    <div className="h-screen w-screen overflow-hidden relative flex flex-col">
-      <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#38b6ff]/10 via-transparent to-[#7843e6]/10 animate-gradient-shift"></div>
-      </div>
+    <SessionProvider>
+      <ChatSessionManager
+        scenarioId={scenarioId}
+        characterId={characterId}
+        selectedLanguage={selectedLanguage}
+        script={script}
+        onSessionLoaded={handleSessionLoaded}
+      />
 
-      <div className="relative z-20 flex flex-col h-full">
-        <ChatSessionManager
-          scenarioId={scenarioId}
-          characterId={characterId}
-          selectedLanguage={selectedLanguage}
-          script={script}
-          onSessionLoaded={handleSessionLoaded}
-        />
+      <ScriptManager
+        script={script}
+        selectedLanguage={selectedLanguage}
+        onScriptLoaded={handleScriptLoaded}
+      />
 
-        <ScriptManager
-          script={script}
-          selectedLanguage={selectedLanguage}
-          onScriptLoaded={handleScriptLoaded}
-        />
-
-        <ChatHeader
-          characterName={characterName}
-          scenarioTitle={scenarioTitle}
-          onBackToCharacters={onBackToCharacters}
-        />
-
-        <ChatMessages messages={messages} />
-
-        <RecordingControls
-          currentPrompt={currentPrompt}
-          onRecordingComplete={handleRecordingComplete}
-        />
-      </div>
-    </div>
+      <ScenarioContent
+        characterName={characterName}
+        scenarioTitle={scenarioTitle}
+        onBackToCharacters={onBackToCharacters}
+        currentPrompt={currentPrompt}
+        onRecordingComplete={handleRecordingComplete}
+      />
+    </SessionProvider>
   );
 };
 
