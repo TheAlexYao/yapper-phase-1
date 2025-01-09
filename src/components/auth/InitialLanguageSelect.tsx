@@ -41,6 +41,10 @@ export const InitialLanguageSelect = () => {
     }
   };
 
+  const handleLanguageChange = (value: string) => {
+    setSelectedLanguage(value as LanguageCode);
+  };
+
   return (
     <div className="space-y-6">
       <div className="text-center space-y-2">
@@ -48,7 +52,7 @@ export const InitialLanguageSelect = () => {
         <p className="text-gray-600">Select the language you want to learn</p>
       </div>
 
-      <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
+      <Select value={selectedLanguage} onValueChange={handleLanguageChange}>
         <SelectTrigger className="w-full">
           <SelectValue placeholder="Select language" />
         </SelectTrigger>
