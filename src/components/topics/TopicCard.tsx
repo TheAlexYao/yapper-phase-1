@@ -1,46 +1,112 @@
+import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
-import { Database } from '@/integrations/supabase/types';
-import { useEffect } from "react";
-
-type Topic = Database['public']['Tables']['topics']['Row'];
+import { motion } from 'framer-motion';
+import TopicProgressIndicator from './TopicProgressIndicator';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface TopicCardProps {
-  topic: Topic;
-  onSelect: () => void;
+  id: string;
+  title: string;
+  description?: string;
+  imageUrl?: string;
+  onClick: () => void;
+  isSelected?: boolean;
 }
 
-const TopicCard: React.FC<TopicCardProps> = ({ topic, onSelect }) => {
-  useEffect(() => {
-    if (!topic.image_url) {
-      console.warn(`No image URL for topic: ${topic.title}`);
-    } else {
-      console.log(`Loading image for topic: ${topic.title}, URL: ${topic.image_url}`);
-    }
-  }, [topic]);
+const TopicCard: React.FC<TopicCardProps> = ({
+  id,
+  title,
+  description,
+  imageUrl,
+  onClick,
+  isSelected
+}) => {
+  // Fetch user's progress for this topic
+  const { data: progress } = useQuery({
+    queryKey: ['topicProgress', id],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
 
-  const handleImageError = () => {
-    console.error(`Failed to load image for topic: ${topic.title}, URL: ${topic.image_url}`);
-  };
+      // Get all scenarios for this topic
+      const { data: scenarios } = await supabase
+        .from('default_scenarios')
+        .select('id')
+        .eq('topic', title);
+
+      if (!scenarios?.length) return null;
+
+      // Get user's progress for all scenarios in this topic
+      const { data: userScenarios } = await supabase
+        .from('user_scenarios')
+        .select('*')
+        .eq('user_id', user.id)
+        .in('scenario_id', scenarios.map(s => s.id));
+
+      if (!userScenarios) return null;
+
+      // Calculate completion percentage
+      const completionPercentage = Math.round(
+        (userScenarios.filter(s => s.status === 'completed').length / scenarios.length) * 100
+      );
+
+      // Calculate mastery level (0-5 stars) based on average scores
+      const averageScores = userScenarios.reduce((acc, scenario) => {
+        return acc + (
+          scenario.pronunciation_score +
+          scenario.grammar_score +
+          scenario.fluency_score +
+          scenario.vocabulary_score
+        ) / 4;
+      }, 0) / (userScenarios.length || 1);
+
+      const masteryLevel = Math.min(Math.floor(averageScores / 20), 5);
+
+      return {
+        completionPercentage,
+        masteryLevel
+      };
+    }
+  });
 
   return (
-    <Card 
-      className="w-full h-full overflow-hidden cursor-pointer transform transition-all duration-300 hover:scale-[1.02] hover:shadow-lg rounded-2xl"
-      onClick={onSelect}
+    <motion.div
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      className={`cursor-pointer ${isSelected ? 'ring-2 ring-blue-500' : ''}`}
+      onClick={onClick}
     >
-      <CardContent className="p-0 h-full relative">
-        <img
-          src={topic.image_url || '/placeholder.svg'}
-          alt={topic.title}
-          className="w-full h-full object-cover"
-          loading="lazy"
-          onError={handleImageError}
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent flex flex-col justify-end p-6">
-          <h3 className="text-2xl md:text-3xl font-bold text-white mb-2">{topic.title}</h3>
-          <p className="text-sm md:text-base text-white/90">{topic.description}</p>
-        </div>
-      </CardContent>
-    </Card>
+      <Card className="overflow-hidden">
+        <CardContent className="p-0">
+          <div className="relative">
+            {imageUrl && (
+              <img
+                src={imageUrl}
+                alt={title}
+                className="w-full h-48 object-cover"
+              />
+            )}
+          </div>
+          
+          <div className="p-4 space-y-4">
+            <div>
+              <h3 className="font-semibold text-lg">{title}</h3>
+              {description && (
+                <p className="text-sm text-gray-500 mt-1">{description}</p>
+              )}
+            </div>
+
+            {progress && (
+              <TopicProgressIndicator
+                completionPercentage={progress.completionPercentage}
+                masteryLevel={progress.masteryLevel}
+              />
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 };
 

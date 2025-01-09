@@ -43,11 +43,11 @@
 ### Visual Progress Indicators 📈 (IN PROGRESS)
 - [ ] Scenario Cards
   - [x] Completion status badge
-  - [ ] Progress bar
-  - [ ] Best score display
+  - [x] Progress bar
+  - [x] Best score display
 - [ ] Topic Progress
-  - [ ] Completion percentage
-  - [ ] Topic mastery level
+  - [x] Completion percentage
+  - [x] Topic mastery level
   - [ ] Unlocked achievements
 - [ ] Profile Dashboard
   - [ ] Overall statistics
