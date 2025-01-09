@@ -155,7 +155,7 @@ const Auth = () => {
             },
           }}
           providers={["google"]}
-          redirectTo="https://jgxvzzyfjpntsbhxfcjv.supabase.co/auth/v1/callback"
+          redirectTo={`${window.location.origin}/auth/callback`}
           view="sign_in"
           showLinks={false}
           onlyThirdPartyProviders={true}
