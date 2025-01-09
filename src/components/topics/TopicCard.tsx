@@ -4,27 +4,22 @@ import { motion } from 'framer-motion';
 import TopicProgressIndicator from './TopicProgressIndicator';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { Database } from '@/integrations/supabase/types';
+
+type Topic = Database['public']['Tables']['topics']['Row'];
 
 interface TopicCardProps {
-  id: string;
-  title: string;
-  description?: string;
-  imageUrl?: string;
-  onClick: () => void;
-  isSelected?: boolean;
+  topic: Topic;
+  onSelect: () => void;
 }
 
 const TopicCard: React.FC<TopicCardProps> = ({
-  id,
-  title,
-  description,
-  imageUrl,
-  onClick,
-  isSelected
+  topic,
+  onSelect
 }) => {
   // Fetch user's progress for this topic
   const { data: progress } = useQuery({
-    queryKey: ['topicProgress', id],
+    queryKey: ['topicProgress', topic.id],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
@@ -33,7 +28,7 @@ const TopicCard: React.FC<TopicCardProps> = ({
       const { data: scenarios } = await supabase
         .from('default_scenarios')
         .select('id')
-        .eq('topic', title);
+        .eq('topic', topic.title);
 
       if (!scenarios?.length) return null;
 
@@ -74,16 +69,16 @@ const TopicCard: React.FC<TopicCardProps> = ({
     <motion.div
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
-      className={`cursor-pointer ${isSelected ? 'ring-2 ring-blue-500' : ''}`}
-      onClick={onClick}
+      className="cursor-pointer"
+      onClick={onSelect}
     >
       <Card className="overflow-hidden">
         <CardContent className="p-0">
           <div className="relative">
-            {imageUrl && (
+            {topic.image_url && (
               <img
-                src={imageUrl}
-                alt={title}
+                src={topic.image_url}
+                alt={topic.title}
                 className="w-full h-48 object-cover"
               />
             )}
@@ -91,9 +86,9 @@ const TopicCard: React.FC<TopicCardProps> = ({
           
           <div className="p-4 space-y-4">
             <div>
-              <h3 className="font-semibold text-lg">{title}</h3>
-              {description && (
-                <p className="text-sm text-gray-500 mt-1">{description}</p>
+              <h3 className="font-semibold text-lg">{topic.title}</h3>
+              {topic.description && (
+                <p className="text-sm text-gray-500 mt-1">{topic.description}</p>
               )}
             </div>
 
