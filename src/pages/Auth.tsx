@@ -56,7 +56,7 @@ const Auth = () => {
             .from('profiles')
             .select('target_language')
             .eq('id', session.user.id)
-            .single();
+            .maybeSingle();
 
           if (profileError) throw profileError;
 
@@ -103,7 +103,7 @@ const Auth = () => {
               .from('profiles')
               .select('target_language')
               .eq('id', session.user.id)
-              .single();
+              .maybeSingle();
 
             if (profileError) throw profileError;
 
