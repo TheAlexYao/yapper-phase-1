@@ -4,7 +4,6 @@ import { ChatMessage, Script } from '@/types/chat';
 import { LanguageCode } from '@/constants/languages';
 import { ChatSessionProvider } from './chat/ChatSessionProvider';
 import { ChatContent } from './chat/ChatContent';
-import { createBotMessage } from '@/utils/messageUtils';
 
 interface ScenarioChatScreenProps {
   scenarioId: string;
@@ -32,7 +31,7 @@ const ScenarioChatScreen = ({
     if (script) {
       const lines = script.script_data.lines.map((line, index) => ({
         id: index.toString(),
-        role: line.speaker === 'character' ? 'bot' : 'user',
+        role: line.speaker === 'character' ? 'bot' : 'user' as const,
         text: line.targetText,
         ttsText: line.ttsText,
         transliteration: line.transliteration,
