@@ -58,10 +58,18 @@ const Auth = () => {
       }
     };
 
-    // Handle both hash callback and regular session check based on the current path
-    if (window.location.pathname.includes('/callback') && window.location.hash) {
-      handleHashCallback();
+    // First check if we're on the callback path
+    if (window.location.pathname.includes('/callback')) {
+      // We're on the callback path, handle hash if present or check session
+      if (window.location.hash) {
+        handleHashCallback();
+      } else {
+        // If we're on callback but no hash, check session
+        // This handles the case where the hash was stripped
+        checkSession();
+      }
     } else {
+      // Regular auth page, just check session
       checkSession();
     }
 
