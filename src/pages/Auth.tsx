@@ -11,6 +11,30 @@ const Auth = () => {
   const [showLanguageSelect, setShowLanguageSelect] = useState(false);
 
   useEffect(() => {
+    // Handle hash fragment from OAuth callback
+    const handleHashCallback = async () => {
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const accessToken = hashParams.get("access_token");
+      
+      if (accessToken) {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (session) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('target_language')
+            .eq('id', session.user.id)
+            .single();
+
+          if (profile?.target_language) {
+            navigate("/topics");
+          } else {
+            setShowLanguageSelect(true);
+          }
+        }
+      }
+    };
+
+    // Check for existing session
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       
@@ -29,8 +53,14 @@ const Auth = () => {
       }
     };
 
-    checkSession();
+    // Handle both hash callback and regular session check
+    if (window.location.hash.includes('access_token')) {
+      handleHashCallback();
+    } else {
+      checkSession();
+    }
 
+    // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session) {
         const { data: profile } = await supabase
