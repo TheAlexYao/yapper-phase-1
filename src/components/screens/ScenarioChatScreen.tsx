@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import PostScenarioSummary from './PostScenarioSummary';
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { RecordingControls } from "@/components/chat/RecordingControls";
 import { ChatMessage, BotMessage, UserMessage, Script } from '@/types/chat';
 import { assessPronunciation } from '@/services/pronunciationService';
@@ -10,7 +9,6 @@ import { handleRestartScenario, handleNextScenario } from '@/services/scenarioSe
 import ChatHeader from '@/components/chat/ChatHeader';
 import ChatMessages from '@/components/chat/ChatMessages';
 import { LanguageCode } from '@/constants/languages';
-import { ChatSessionManager } from './chat/ChatSessionManager';
 import { ScriptManager } from './chat/ScriptManager';
 import { createBotMessage, createUserMessage } from '@/utils/messageUtils';
 
@@ -39,59 +37,7 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
   const [scriptLines, setScriptLines] = useState<ChatMessage[]>([]);
   const [currentLineIndex, setCurrentLineIndex] = useState(0);
   const [isConversationComplete, setIsConversationComplete] = useState(false);
-  const [sessionId, setSessionId] = useState<string | null>(null);
   const { toast } = useToast();
-
-  useEffect(() => {
-    const updateSession = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-
-        const { error } = await supabase
-          .from('chat_sessions')
-          .update({
-            messages: messages,
-            current_line_index: currentLineIndex,
-            updated_at: new Date().toISOString()
-          })
-          .eq('scenario_id', scenarioId)
-          .eq('user_id', user.id);
-
-        if (error) throw error;
-      } catch (error) {
-        console.error('Error updating session:', error);
-        toast({
-          title: "Error",
-          description: "Failed to save chat progress",
-          variant: "destructive"
-        });
-      }
-    };
-
-    updateSession();
-  }, [messages, currentLineIndex, scenarioId, toast]);
-
-  const handleSessionLoaded = (sessionMessages: ChatMessage[], sessionLineIndex: number, newSessionId: string) => {
-    setMessages(sessionMessages);
-    setCurrentLineIndex(sessionLineIndex);
-    setSessionId(newSessionId);
-    
-    if (scriptLines.length > sessionLineIndex) {
-      const nextUserPrompt = scriptLines.slice(sessionLineIndex).find(line => line.role === 'user');
-      if (nextUserPrompt) {
-        setCurrentPrompt(createBotMessage({
-          id: Date.now().toString(),
-          text: nextUserPrompt.text,
-          ttsText: nextUserPrompt.ttsText,
-          transliteration: nextUserPrompt.transliteration,
-          translation: nextUserPrompt.translation,
-          tts_audio_url: nextUserPrompt.tts_audio_url,
-          language_code: selectedLanguage
-        }));
-      }
-    }
-  };
 
   const handleScriptLoaded = (
     newScriptLines: ChatMessage[],
@@ -265,9 +211,6 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
        detailedScores.pronScore) / 4
     );
 
-    console.log('Detailed scores:', detailedScores);
-    console.log('Messages being passed:', messages);
-
     return (
       <PostScenarioSummary
         scenarioTitle={scenarioTitle}
@@ -297,7 +240,7 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
             })) || []
           )}
         progressData={mockProgressData}
-        onRestart={() => sessionId && handleRestartScenario(sessionId)}
+        onRestart={() => handleRestartScenario()}
         onExit={onBackToCharacters}
         onNextScenario={handleNextScenario}
       />
@@ -311,14 +254,6 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
       </div>
 
       <div className="relative z-20 flex flex-col h-full">
-        <ChatSessionManager
-          scenarioId={scenarioId}
-          characterId={characterId}
-          selectedLanguage={selectedLanguage}
-          script={script}
-          onSessionLoaded={handleSessionLoaded}
-        />
-
         <ScriptManager
           script={script}
           selectedLanguage={selectedLanguage}
