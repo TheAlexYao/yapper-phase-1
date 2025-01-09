@@ -299,7 +299,20 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
         progressData={mockProgressData}
         onRestart={() => sessionId && handleRestartScenario(sessionId)}
         onExit={onBackToCharacters}
-        onNextScenario={handleNextScenario}
+        onNextScenario={async () => {
+          const nextScenario = await handleNextScenario(scenarioId, topicId);
+          if (nextScenario) {
+            // Navigate to the next scenario
+            // Implement your navigation logic here
+          } else {
+            toast({
+              title: "No more scenarios",
+              description: "You've completed all scenarios in this topic!",
+              variant: "default"
+            });
+            onBackToCharacters();
+          }
+        }}
       />
     );
   }
