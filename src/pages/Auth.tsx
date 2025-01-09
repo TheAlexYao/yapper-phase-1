@@ -86,7 +86,7 @@ const Auth = () => {
     });
 
     // If we're on the callback page or have a hash, handle the auth callback
-    if (window.location.pathname.includes('/callback') || window.location.hash) {
+    if (window.location.pathname.includes('/auth/callback') || window.location.hash) {
       handleAuthCallback();
     }
 
