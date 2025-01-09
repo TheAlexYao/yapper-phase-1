@@ -3,17 +3,19 @@ import { useNavigate } from "react-router-dom";
 import { Auth as SupabaseAuth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { supabase } from "@/integrations/supabase/client";
-import { AuthError, AuthApiError, AuthChangeEvent } from "@supabase/supabase-js";
+import { AuthError, AuthApiError } from "@supabase/supabase-js";
 import { AuthLoadingSpinner } from "@/components/auth/AuthLoadingSpinner";
 import { AuthProgress } from "@/components/auth/AuthProgress";
 import { AuthError as AuthErrorComponent } from "@/components/auth/AuthError";
 import { AuthContainer } from "@/components/auth/AuthContainer";
+import { InitialLanguageSelect } from "@/components/auth/InitialLanguageSelect";
 
 const Auth = () => {
   const navigate = useNavigate();
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [progress, setProgress] = useState(0);
+  const [showLanguageSelect, setShowLanguageSelect] = useState(false);
 
   useEffect(() => {
     let progressInterval: NodeJS.Timeout;
@@ -22,7 +24,17 @@ const Auth = () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
         if (session) {
-          navigate("/topics");
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('target_language')
+            .eq('id', session.user.id)
+            .single();
+
+          if (profile?.target_language) {
+            navigate("/topics");
+          } else {
+            setShowLanguageSelect(true);
+          }
         }
         if (error) {
           setErrorMessage(getErrorMessage(error));
@@ -50,37 +62,23 @@ const Auth = () => {
     checkSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event: AuthChangeEvent, session) => {
+      async (event, session) => {
         if (event === "SIGNED_IN" && session) {
           startProgressBar();
           try {
             const { data: profile } = await supabase
               .from('profiles')
-              .select()
+              .select('target_language')
               .eq('id', session.user.id)
               .single();
 
-            if (!profile) {
-              const { error: profileError } = await supabase
-                .from('profiles')
-                .insert([
-                  {
-                    id: session.user.id,
-                    full_name: session.user.user_metadata.full_name,
-                    avatar_url: session.user.user_metadata.avatar_url,
-                    onboarding_completed: false
-                  }
-                ]);
-
-              if (profileError) {
-                console.error('Error creating profile:', profileError);
-                setErrorMessage('Failed to create user profile');
-                return;
-              }
+            if (profile?.target_language) {
+              setProgress(100);
+              setTimeout(() => navigate("/topics"), 500);
+            } else {
+              setProgress(100);
+              setShowLanguageSelect(true);
             }
-
-            setProgress(100);
-            setTimeout(() => navigate("/topics"), 500);
           } catch (error) {
             setErrorMessage('An unexpected error occurred during sign in');
             setProgress(0);
@@ -93,6 +91,7 @@ const Auth = () => {
         if (event === "SIGNED_OUT") {
           setErrorMessage("");
           setProgress(0);
+          setShowLanguageSelect(false);
         }
       }
     );
@@ -131,39 +130,44 @@ const Auth = () => {
     <AuthContainer>
       <AuthProgress progress={progress} />
       <AuthErrorComponent message={errorMessage} />
-      <SupabaseAuth
-        supabaseClient={supabase}
-        appearance={{
-          theme: ThemeSupa,
-          variables: {
-            default: {
-              colors: {
-                brand: "#38b6ff",
-                brandAccent: "#7843e6",
+      
+      {showLanguageSelect ? (
+        <InitialLanguageSelect />
+      ) : (
+        <SupabaseAuth
+          supabaseClient={supabase}
+          appearance={{
+            theme: ThemeSupa,
+            variables: {
+              default: {
+                colors: {
+                  brand: "#38b6ff",
+                  brandAccent: "#7843e6",
+                },
               },
             },
-          },
-          style: {
-            button: {
-              backgroundColor: 'white',
-              color: '#333',
-              border: '1px solid #ddd'
+            style: {
+              button: {
+                backgroundColor: 'white',
+                color: '#333',
+                border: '1px solid #ddd'
+              },
             },
-          },
-        }}
-        providers={["google"]}
-        redirectTo={`${window.location.origin}/topics`}
-        view="sign_in"
-        showLinks={false}
-        onlyThirdPartyProviders={true}
-        localization={{
-          variables: {
-            sign_in: {
-              social_provider_text: "Continue with {{provider}}"
+          }}
+          providers={["google"]}
+          redirectTo={`${window.location.origin}/topics`}
+          view="sign_in"
+          showLinks={false}
+          onlyThirdPartyProviders={true}
+          localization={{
+            variables: {
+              sign_in: {
+                social_provider_text: "Continue with {{provider}}"
+              }
             }
-          }
-        }}
-      />
+          }}
+        />
+      )}
     </AuthContainer>
   );
 };
