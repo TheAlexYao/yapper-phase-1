@@ -10,7 +10,7 @@ interface ScriptLine {
   lineNumber: number
   speaker: string
   targetText: string
-  ttsText: string
+  ttsText: string // Added ttsText field
   transliteration: string | null
   translation: string
   audioUrl: string | null
@@ -87,27 +87,15 @@ serve(async (req) => {
                 ? (script.character_id % 2 === 0 ? languageData.female_voice : languageData.male_voice)
                 : (script.user_gender === 'female' ? languageData.female_voice : languageData.male_voice)
 
-              console.log(`Generating TTS for line ${line.lineNumber} with voice ${voiceName}`)
-
-              // Sanitize the text to prevent SSML injection
-              const sanitizedText = (line.ttsText || line.targetText)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&apos;')
-
               // Use ttsText instead of targetText for SSML
               const ssml = `
                 <speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${script.language_code}">
                   <voice name="${voiceName}">
-                    <prosody rate="0.9" pitch="0">
-                      ${sanitizedText}
+                    <prosody rate="0.9">
+                      ${line.ttsText || line.targetText} 
                     </prosody>
                   </voice>
-                </speak>`.trim()
-
-              console.log('SSML:', ssml)
+                </speak>`
 
               const response = await fetch(
                 `https://${Deno.env.get('AZURE_SPEECH_REGION')}.tts.speech.microsoft.com/cognitiveservices/v1`,
@@ -117,15 +105,13 @@ serve(async (req) => {
                     'Ocp-Apim-Subscription-Key': Deno.env.get('AZURE_SPEECH_KEY') ?? '',
                     'Content-Type': 'application/ssml+xml',
                     'X-Microsoft-OutputFormat': 'audio-16khz-128kbitrate-mono-mp3',
-                    'User-Agent': 'LanguageLearningApp'
                   },
                   body: ssml,
                 }
               )
 
               if (!response.ok) {
-                const errorText = await response.text()
-                throw new Error(`Azure TTS API error: ${response.statusText}. Details: ${errorText}`)
+                throw new Error(`Azure TTS API error: ${response.statusText}`)
               }
 
               const audioBuffer = await response.arrayBuffer()

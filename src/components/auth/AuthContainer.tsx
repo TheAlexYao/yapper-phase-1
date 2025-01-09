@@ -12,6 +12,9 @@ export const AuthContainer = ({ children }: AuthContainerProps) => {
           <div className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-[#38b6ff] to-[#7843e6] bg-clip-text text-transparent mb-4">
             Yapper
           </div>
+          <h1 className="text-2xl font-bold text-center text-gray-800">
+            Welcome Back
+          </h1>
           <p className="text-gray-600 text-center mt-2">
             Sign in to continue your language learning journey
           </p>

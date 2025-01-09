@@ -12,8 +12,6 @@ import ScenarioSelection from "./pages/ScenarioSelection";
 import CharacterSelection from "./pages/CharacterSelection";
 import ScenarioChat from "./pages/ScenarioChat";
 import AdminDashboard from "./pages/AdminDashboard";
-import AuthCallback from "./pages/AuthCallback";
-import { AuthHeader } from "./components/auth/AuthHeader";
 
 const queryClient = new QueryClient();
 
@@ -39,12 +37,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <div>Loading...</div>;
   }
 
-  return isAuthenticated ? (
-    <>
-      <AuthHeader />
-      {children}
-    </>
-  ) : <Navigate to="/auth" />;
+  return isAuthenticated ? <>{children}</> : <Navigate to="/auth" />;
 };
 
 const App = () => {
@@ -55,7 +48,6 @@ const App = () => {
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
-            <Route path="/auth/callback" element={<AuthCallback />} />
             <Route
               path="/topics"
               element={
