@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import PostScenarioSummary from './PostScenarioSummary';
 import { ChatMessage, Script } from '@/types/chat';
 import { LanguageCode } from '@/constants/languages';
 import { ChatSessionProvider } from './chat/ChatSessionProvider';
@@ -29,9 +28,9 @@ const ScenarioChatScreen = ({
 
   useEffect(() => {
     if (script) {
-      const lines = script.script_data.lines.map((line, index) => ({
+      const lines: ChatMessage[] = script.script_data.lines.map((line, index) => ({
         id: index.toString(),
-        role: line.speaker === 'character' ? 'bot' : 'user' as const,
+        role: (line.speaker === 'character' ? 'bot' : 'user') as const,
         text: line.targetText,
         ttsText: line.ttsText,
         transliteration: line.transliteration,
