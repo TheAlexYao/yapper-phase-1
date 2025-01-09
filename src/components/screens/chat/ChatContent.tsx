@@ -53,7 +53,7 @@ export const ChatContent = ({
         }
       }
     }
-  }, []);
+  });
 
   const handleRecordingComplete = async (audioUrl: string, audioBlob: Blob) => {
     if (!currentPrompt) return;
