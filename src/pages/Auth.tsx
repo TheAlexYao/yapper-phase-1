@@ -22,44 +22,30 @@ const Auth = () => {
 
         // If we have tokens in the URL, set the session
         if (accessToken && refreshToken) {
-          const { data: { session }, error: sessionError } = await supabase.auth.setSession({
+          const { error: sessionError } = await supabase.auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken,
           });
 
           if (sessionError) throw sessionError;
+        }
 
-          if (session) {
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('target_language')
-              .eq('id', session.user.id)
-              .single();
+        // Always check for existing session after setting or if no tokens in URL
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) throw sessionError;
+        
+        if (session) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('target_language')
+            .eq('id', session.user.id)
+            .single();
 
-            if (profile?.target_language) {
-              navigate("/topics");
-            } else {
-              setShowLanguageSelect(true);
-            }
-          }
-        } else {
-          // If no tokens in URL, check for existing session
-          const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-          
-          if (sessionError) throw sessionError;
-          
-          if (session) {
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('target_language')
-              .eq('id', session.user.id)
-              .single();
-
-            if (profile?.target_language) {
-              navigate("/topics");
-            } else {
-              setShowLanguageSelect(true);
-            }
+          if (profile?.target_language) {
+            navigate("/topics");
+          } else {
+            setShowLanguageSelect(true);
           }
         }
       } catch (error) {
