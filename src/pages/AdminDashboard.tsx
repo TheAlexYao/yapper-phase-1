@@ -3,20 +3,24 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SUPPORTED_LANGUAGES, LanguageCode } from "@/constants/languages";
 
 const AdminDashboard = () => {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedLanguage, setSelectedLanguage] = useState<LanguageCode | null>(null);
 
-  const generateAllScripts = async () => {
+  const generateScripts = async (languageCode?: LanguageCode) => {
     setIsGenerating(true);
     setError(null);
     
     try {
       const { data, error: functionError } = await supabase.functions.invoke('generate-missing-scripts', {
         body: {
-          generateAll: true
+          generateAll: !languageCode,
+          languageCode: languageCode
         }
       });
 
@@ -30,7 +34,7 @@ const AdminDashboard = () => {
 
       toast({
         title: "Script Generation Started",
-        description: `Successfully started generating ${data.generated} scripts. Check the Supabase logs for progress updates.`,
+        description: `Successfully started generating ${data.generated} scripts${languageCode ? ` for ${SUPPORTED_LANGUAGES[languageCode].name}` : ''}. Check the Supabase logs for progress updates.`,
       });
 
       console.log('Generation response:', data);
@@ -67,12 +71,41 @@ const AdminDashboard = () => {
             )}
 
             <div className="bg-muted p-4 rounded-md">
+              <h3 className="text-lg font-medium mb-2">Generate Scripts for Specific Language</h3>
+              <div className="space-y-4">
+                <Select
+                  value={selectedLanguage || undefined}
+                  onValueChange={(value: LanguageCode) => setSelectedLanguage(value)}
+                >
+                  <SelectTrigger className="w-full sm:w-[300px]">
+                    <SelectValue placeholder="Select a language" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(SUPPORTED_LANGUAGES).map(([code, lang]) => (
+                      <SelectItem key={code} value={code}>
+                        {lang.flag} {lang.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                
+                <Button 
+                  onClick={() => selectedLanguage && generateScripts(selectedLanguage)} 
+                  disabled={isGenerating || !selectedLanguage}
+                  className="w-full sm:w-auto"
+                >
+                  {isGenerating ? "Generating Scripts..." : `Generate ${selectedLanguage ? SUPPORTED_LANGUAGES[selectedLanguage].name : ''} Scripts`}
+                </Button>
+              </div>
+            </div>
+
+            <div className="bg-muted p-4 rounded-md mt-4">
               <h3 className="text-lg font-medium mb-2">Generate All Scripts</h3>
               <p className="text-muted-foreground mb-4">
                 Generate conversation scripts for all 24 supported languages.
               </p>
               <Button 
-                onClick={generateAllScripts} 
+                onClick={() => generateScripts()} 
                 disabled={isGenerating}
                 className="w-full sm:w-auto"
               >
