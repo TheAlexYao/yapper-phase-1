@@ -58,8 +58,8 @@ const Auth = () => {
       }
     };
 
-    // Handle both hash callback and regular session check
-    if (window.location.hash.includes('access_token')) {
+    // Handle both hash callback and regular session check based on the current path
+    if (window.location.pathname.includes('/callback') && window.location.hash) {
       handleHashCallback();
     } else {
       checkSession();
