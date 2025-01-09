@@ -3,88 +3,53 @@ import { useNavigate } from "react-router-dom";
 import { Auth as SupabaseAuth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { supabase } from "@/integrations/supabase/client";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AuthError, AuthApiError, AuthChangeEvent } from "@supabase/supabase-js";
-import { AuthLoadingSpinner } from "@/components/auth/AuthLoadingSpinner";
-import { AuthProgress } from "@/components/auth/AuthProgress";
-import { AuthError as AuthErrorComponent } from "@/components/auth/AuthError";
-import { AuthContainer } from "@/components/auth/AuthContainer";
 
 const Auth = () => {
   const navigate = useNavigate();
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
-    let progressInterval: NodeJS.Timeout;
-
     const checkSession = async () => {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        if (session) {
-          navigate("/topics");
-        }
-        if (error) {
-          setErrorMessage(getErrorMessage(error));
-        }
-      } catch (error) {
-        setErrorMessage("Failed to check authentication status");
-      } finally {
-        setIsLoading(false);
-      }
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (session) navigate("/topics");
+      if (error) setErrorMessage(getErrorMessage(error));
+      setIsLoading(false);
     };
-
-    const startProgressBar = () => {
-      setProgress(0);
-      progressInterval = setInterval(() => {
-        setProgress((prev) => {
-          if (prev >= 90) {
-            clearInterval(progressInterval);
-            return 90;
-          }
-          return prev + 10;
-        });
-      }, 200);
-    };
-
     checkSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event: AuthChangeEvent, session) => {
         if (event === "SIGNED_IN" && session) {
-          startProgressBar();
-          try {
-            const { data: profile } = await supabase
+          // Create profile if it doesn't exist
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select()
+            .eq('id', session.user.id)
+            .single();
+
+          if (!profile) {
+            const { error: profileError } = await supabase
               .from('profiles')
-              .select()
-              .eq('id', session.user.id)
-              .single();
+              .insert([
+                {
+                  id: session.user.id,
+                  full_name: session.user.user_metadata.full_name,
+                  avatar_url: session.user.user_metadata.avatar_url,
+                  onboarding_completed: false
+                }
+              ]);
 
-            if (!profile) {
-              const { error: profileError } = await supabase
-                .from('profiles')
-                .insert([
-                  {
-                    id: session.user.id,
-                    full_name: session.user.user_metadata.full_name,
-                    avatar_url: session.user.user_metadata.avatar_url,
-                    onboarding_completed: false
-                  }
-                ]);
-
-              if (profileError) {
-                console.error('Error creating profile:', profileError);
-                setErrorMessage('Failed to create user profile');
-                return;
-              }
+            if (profileError) {
+              console.error('Error creating profile:', profileError);
+              setErrorMessage('Failed to create user profile');
+              return;
             }
-
-            setProgress(100);
-            setTimeout(() => navigate("/topics"), 500);
-          } catch (error) {
-            setErrorMessage('An unexpected error occurred during sign in');
-            setProgress(0);
           }
+
+          navigate("/topics");
         }
         if (event === "USER_UPDATED") {
           const { error } = await supabase.auth.getSession();
@@ -92,15 +57,11 @@ const Auth = () => {
         }
         if (event === "SIGNED_OUT") {
           setErrorMessage("");
-          setProgress(0);
         }
       }
     );
 
-    return () => {
-      subscription.unsubscribe();
-      if (progressInterval) clearInterval(progressInterval);
-    };
+    return () => subscription.unsubscribe();
   }, [navigate]);
 
   const getErrorMessage = (error: AuthError) => {
@@ -112,10 +73,6 @@ const Auth = () => {
           return "No user found with these credentials.";
         case "invalid_grant":
           return "Invalid login credentials.";
-        case "email_not_confirmed":
-          return "Please verify your email address before signing in.";
-        case "network_error":
-          return "Network error. Please check your internet connection.";
         default:
           return error.message;
       }
@@ -124,47 +81,67 @@ const Auth = () => {
   };
 
   if (isLoading) {
-    return <AuthLoadingSpinner />;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-[#38b6ff] to-[#7843e6]">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-white border-t-transparent" />
+      </div>
+    );
   }
 
   return (
-    <AuthContainer>
-      <AuthProgress progress={progress} />
-      <AuthErrorComponent message={errorMessage} />
-      <SupabaseAuth
-        supabaseClient={supabase}
-        appearance={{
-          theme: ThemeSupa,
-          variables: {
-            default: {
-              colors: {
-                brand: "#38b6ff",
-                brandAccent: "#7843e6",
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-[#38b6ff] to-[#7843e6] p-4">
+      <div className="w-full max-w-md bg-white rounded-lg shadow-xl p-8">
+        <div className="flex flex-col items-center mb-6">
+          <div className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-[#38b6ff] to-[#7843e6] bg-clip-text text-transparent mb-4">
+            Yapper
+          </div>
+          <h1 className="text-2xl font-bold text-center text-gray-800">
+            Welcome Back
+          </h1>
+          <p className="text-gray-600 text-center mt-2">
+            Sign in to continue your language learning journey
+          </p>
+        </div>
+        {errorMessage && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertDescription>{errorMessage}</AlertDescription>
+          </Alert>
+        )}
+        <SupabaseAuth
+          supabaseClient={supabase}
+          appearance={{
+            theme: ThemeSupa,
+            variables: {
+              default: {
+                colors: {
+                  brand: "#38b6ff",
+                  brandAccent: "#7843e6",
+                },
               },
             },
-          },
-          style: {
-            button: {
-              backgroundColor: 'white',
-              color: '#333',
-              border: '1px solid #ddd'
+            style: {
+              button: {
+                backgroundColor: 'white',
+                color: '#333',
+                border: '1px solid #ddd'
+              },
             },
-          },
-        }}
-        providers={["google"]}
-        redirectTo={`${window.location.origin}/topics`}
-        view="sign_in"
-        showLinks={false}
-        onlyThirdPartyProviders={true}
-        localization={{
-          variables: {
-            sign_in: {
-              social_provider_text: "Continue with {{provider}}"
+          }}
+          providers={["google"]}
+          redirectTo={`${window.location.origin}/topics`}
+          view="sign_in"
+          showLinks={false}
+          onlyThirdPartyProviders={true}
+          localization={{
+            variables: {
+              sign_in: {
+                social_provider_text: "Continue with {{provider}}"
+              }
             }
-          }
-        }}
-      />
-    </AuthContainer>
+          }}
+        />
+      </div>
+    </div>
   );
 };
 

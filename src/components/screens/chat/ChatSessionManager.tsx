@@ -24,55 +24,50 @@ export const ChatSessionManager: React.FC<ChatSessionManagerProps> = ({
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        console.log('Checking for existing chat session...');
-        
-        // First, check if a session exists
-        const { data: existingSessions, error: queryError } = await supabase
+        // Use maybeSingle() instead of single() to handle multiple results
+        const { data: session, error } = await supabase
           .from('chat_sessions')
           .select('*')
           .eq('scenario_id', scenarioId)
           .eq('character_id', characterId)
-          .eq('user_id', user.id);
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })  // Get the most recent session
+          .limit(1)
+          .maybeSingle();
 
-        if (queryError) throw queryError;
+        if (error) throw error;
 
-        // If we found existing sessions, use the most recent one
-        if (existingSessions && existingSessions.length > 0) {
-          console.log(`Found ${existingSessions.length} existing sessions, using most recent`);
-          const mostRecentSession = existingSessions.sort((a, b) => 
-            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-          )[0];
-          
+        if (session) {
+          console.log('Loaded existing chat session:', session);
           onSessionLoaded(
-            mostRecentSession.messages as ChatMessage[], 
-            mostRecentSession.current_line_index || 0,
-            mostRecentSession.id
+            session.messages as ChatMessage[], 
+            session.current_line_index || 0,
+            session.id
           );
-          return;
-        }
+        } else {
+          console.log('Creating new chat session');
+          // Create new session
+          const { data: newSession, error: insertError } = await supabase
+            .from('chat_sessions')
+            .insert({
+              scenario_id: scenarioId,
+              character_id: characterId,
+              user_id: user.id,
+              messages: [],
+              current_line_index: 0
+            })
+            .select()
+            .single();
 
-        // If no session exists, create a new one
-        console.log('No existing session found, creating new one');
-        const { data: newSession, error: insertError } = await supabase
-          .from('chat_sessions')
-          .insert({
-            scenario_id: scenarioId,
-            character_id: characterId,
-            user_id: user.id,
-            messages: [],
-            current_line_index: 0
-          })
-          .select()
-          .single();
+          if (insertError) throw insertError;
 
-        if (insertError) throw insertError;
-
-        if (newSession) {
-          console.log('Created new chat session:', newSession);
-          onSessionLoaded([], 0, newSession.id);
+          if (newSession) {
+            console.log('Created new chat session:', newSession);
+            onSessionLoaded([], 0, newSession.id);
+          }
         }
       } catch (error) {
-        console.error('Error managing chat session:', error);
+        console.error('Error loading chat session:', error);
       }
     };
 
