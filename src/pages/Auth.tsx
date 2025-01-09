@@ -15,21 +15,51 @@ const Auth = () => {
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        
-        if (sessionError) throw sessionError;
-        
-        if (session) {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('target_language')
-            .eq('id', session.user.id)
-            .single();
+        // Get hash parameters from URL
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const accessToken = hashParams.get("access_token");
+        const refreshToken = hashParams.get("refresh_token");
 
-          if (profile?.target_language) {
-            navigate("/topics");
-          } else {
-            setShowLanguageSelect(true);
+        // If we have tokens in the URL, set the session
+        if (accessToken && refreshToken) {
+          const { data: { session }, error: sessionError } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+
+          if (sessionError) throw sessionError;
+
+          if (session) {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('target_language')
+              .eq('id', session.user.id)
+              .single();
+
+            if (profile?.target_language) {
+              navigate("/topics");
+            } else {
+              setShowLanguageSelect(true);
+            }
+          }
+        } else {
+          // If no tokens in URL, check for existing session
+          const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+          
+          if (sessionError) throw sessionError;
+          
+          if (session) {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('target_language')
+              .eq('id', session.user.id)
+              .single();
+
+            if (profile?.target_language) {
+              navigate("/topics");
+            } else {
+              setShowLanguageSelect(true);
+            }
           }
         }
       } catch (error) {
@@ -55,8 +85,8 @@ const Auth = () => {
       }
     });
 
-    // If we're on the callback page, handle the auth callback
-    if (window.location.pathname.includes('/callback')) {
+    // If we're on the callback page or have a hash, handle the auth callback
+    if (window.location.pathname.includes('/callback') || window.location.hash) {
       handleAuthCallback();
     }
 
