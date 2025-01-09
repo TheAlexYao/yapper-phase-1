@@ -17,12 +17,17 @@ const Auth = () => {
       const accessToken = hashParams.get("access_token");
       
       if (accessToken) {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        if (session) {
+        // Set the session using the access token
+        const { data, error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: hashParams.get("refresh_token") || "",
+        });
+
+        if (data.session) {
           const { data: profile } = await supabase
             .from('profiles')
             .select('target_language')
-            .eq('id', session.user.id)
+            .eq('id', data.session.user.id)
             .single();
 
           if (profile?.target_language) {
