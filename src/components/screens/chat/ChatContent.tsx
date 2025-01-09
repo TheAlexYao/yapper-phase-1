@@ -143,8 +143,8 @@ export const ChatContent = ({
           await supabase
             .from('user_scenarios')
             .upsert({
-              scenario_id: scriptLines[0].scenario_id,
               user_id: session.user.id,
+              scenario_id: scriptLines[0].scenario_id,
               status: 'completed',
               completed_at: new Date().toISOString(),
               pronunciation_score: averageScore,
