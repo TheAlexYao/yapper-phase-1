@@ -17,30 +17,60 @@ const Auth = () => {
   const [progress, setProgress] = useState(0);
   const [showLanguageSelect, setShowLanguageSelect] = useState(false);
 
+  // Handle hash fragment and initial session check
+  useEffect(() => {
+    const handleHashFragment = async () => {
+      try {
+        // If we have a hash in the URL, we're coming back from OAuth
+        if (window.location.hash) {
+          console.log("Detected hash fragment, processing OAuth callback...");
+          const { data, error } = await supabase.auth.getSession();
+          if (error) throw error;
+          if (data?.session) {
+            // Clean up the URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+          }
+        }
+      } catch (error) {
+        console.error("Error processing hash fragment:", error);
+        setErrorMessage(getErrorMessage(error as AuthError));
+      }
+    };
+
+    handleHashFragment();
+  }, []);
+
   useEffect(() => {
     let progressInterval: NodeJS.Timeout;
 
     const checkSession = async () => {
       try {
+        console.log("Checking session...");
         const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) throw error;
+
         if (session) {
-          const { data: profile } = await supabase
+          console.log("Session found, checking profile...");
+          const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('target_language')
             .eq('id', session.user.id)
             .single();
 
+          if (profileError) throw profileError;
+
           if (profile?.target_language) {
+            console.log("Language preference found, redirecting to topics...");
             navigate("/topics");
           } else {
+            console.log("No language preference, showing language select...");
             setShowLanguageSelect(true);
           }
         }
-        if (error) {
-          setErrorMessage(getErrorMessage(error));
-        }
       } catch (error) {
-        setErrorMessage("Failed to check authentication status");
+        console.error("Error in checkSession:", error);
+        setErrorMessage(getErrorMessage(error as AuthError));
       } finally {
         setIsLoading(false);
       }
@@ -63,23 +93,31 @@ const Auth = () => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log("Auth state changed:", event);
+        
         if (event === "SIGNED_IN" && session) {
+          console.log("User signed in, starting progress...");
           startProgressBar();
           try {
-            const { data: profile } = await supabase
+            const { data: profile, error: profileError } = await supabase
               .from('profiles')
               .select('target_language')
               .eq('id', session.user.id)
               .single();
 
+            if (profileError) throw profileError;
+
             if (profile?.target_language) {
+              console.log("Language preference exists, completing progress...");
               setProgress(100);
               setTimeout(() => navigate("/topics"), 500);
             } else {
+              console.log("No language preference, showing selector...");
               setProgress(100);
               setShowLanguageSelect(true);
             }
           } catch (error) {
+            console.error("Error checking profile:", error);
             setErrorMessage('An unexpected error occurred during sign in');
             setProgress(0);
           }
@@ -89,6 +127,7 @@ const Auth = () => {
           if (error) setErrorMessage(getErrorMessage(error));
         }
         if (event === "SIGNED_OUT") {
+          console.log("User signed out, resetting state...");
           setErrorMessage("");
           setProgress(0);
           setShowLanguageSelect(false);
