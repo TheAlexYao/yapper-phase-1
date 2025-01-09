@@ -12,6 +12,9 @@ import { supabase } from "@/integrations/supabase/client";
 import ConversationReviewCard from '@/components/summary/ConversationReviewCard';
 import WordAnalysisCard from '@/components/summary/WordAnalysisCard';
 import { useToast } from "@/components/ui/use-toast";
+import { Tables } from '@/integrations/supabase/types';
+
+type Scenario = Tables<'default_scenarios'>;
 
 interface PostScenarioSummaryProps {
   scenarioTitle: string;
@@ -63,14 +66,18 @@ const PostScenarioSummary: React.FC<PostScenarioSummaryProps> = ({
 
   const handleNextScenario = async () => {
     try {
-      // Get current scenario ID from query client
-      const currentScenario = queryClient.getQueryData(['selectedScenario']);
+      // Get current scenario ID from query client with proper typing
+      const currentScenario = queryClient.getQueryData(['selectedScenario']) as Scenario | undefined;
       
+      if (!currentScenario?.topic) {
+        throw new Error('No current scenario found');
+      }
+
       // Fetch next available scenario
       const { data: scenarios, error } = await supabase
         .from('default_scenarios')
         .select('*')
-        .eq('topic', currentScenario?.topic)
+        .eq('topic', currentScenario.topic)
         .order('title', { ascending: true });
 
       if (error) throw error;
