@@ -8,83 +8,65 @@ const AuthCallback = () => {
   useEffect(() => {
     const handleCallback = async () => {
       try {
+        // Get hash parameters
         const hash = window.location.hash;
-        console.log("Hash present:", !!hash);
-
         if (!hash) {
-          console.log("No hash found in URL");
-          navigate("/auth");
+          console.error("No hash found in URL");
+          navigate("/auth?error_description=Authentication failed");
           return;
         }
 
+        // Parse hash parameters
         const hashParams = new URLSearchParams(hash.substring(1));
         const accessToken = hashParams.get("access_token");
         const refreshToken = hashParams.get("refresh_token");
         const error = hashParams.get("error");
         const errorDescription = hashParams.get("error_description");
 
-        console.log("Tokens present:", {
-          hasAccessToken: !!accessToken,
-          hasRefreshToken: !!refreshToken,
-        });
-
         if (error) {
-          console.error("Error in callback:", errorDescription || error);
-          navigate("/auth", { state: { error: errorDescription || error } });
+          console.error("Auth error:", errorDescription || error);
+          navigate(`/auth?error_description=${encodeURIComponent(errorDescription || error)}`);
           return;
         }
 
-        if (accessToken && refreshToken) {
-          console.log("Setting session...");
-          const { data: sessionData, error: sessionError } =
-            await supabase.auth.setSession({
-              access_token: accessToken,
-              refresh_token: refreshToken,
-            });
+        if (!accessToken || !refreshToken) {
+          console.error("Missing tokens");
+          navigate("/auth?error_description=Authentication failed");
+          return;
+        }
 
-          if (sessionError) {
-            console.error("Session error:", sessionError);
-            throw sessionError;
-          }
+        // Set the session
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
 
-          console.log("Session set successfully:", !!sessionData);
+        if (sessionError) {
+          console.error("Session error:", sessionError);
+          navigate(`/auth?error_description=${encodeURIComponent(sessionError.message)}`);
+          return;
+        }
 
-          const {
-            data: { session },
-          } = await supabase.auth.getSession();
-          console.log("Got session:", !!session);
+        // Check if user has selected a language
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("target_language")
+            .eq("id", session.user.id)
+            .single();
 
-          if (session) {
-            const { data: profile, error: profileError } = await supabase
-              .from("profiles")
-              .select("target_language")
-              .eq("id", session.user.id)
-              .single();
-
-            if (profileError) {
-              console.error("Profile error:", profileError);
-            }
-
-            console.log("Profile data:", profile);
-
-            if (profile?.target_language) {
-              console.log("Navigating to topics");
-              navigate("/topics");
-            } else {
-              console.log("Navigating to language select");
-              navigate("/auth", { state: { showLanguageSelect: true } });
-            }
+          if (profile?.target_language) {
+            navigate("/topics");
           } else {
-            console.log("No session found after setting");
-            navigate("/auth");
+            navigate("/auth", { state: { showLanguageSelect: true } });
           }
         } else {
-          console.error("Access token or refresh token missing");
-          navigate("/auth");
+          navigate("/auth?error_description=Session not found");
         }
       } catch (error) {
-        console.error("Auth callback error:", error);
-        navigate("/auth", { state: { error: error.message } });
+        console.error("Callback error:", error);
+        navigate(`/auth?error_description=${encodeURIComponent(error.message)}`);
       }
     };
 
@@ -94,4 +76,4 @@ const AuthCallback = () => {
   return <div>Processing authentication...</div>;
 };
 
-export default AuthCallback; 
+export default AuthCallback;

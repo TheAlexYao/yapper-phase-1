@@ -13,12 +13,33 @@ const Auth = () => {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    // Check for error in URL parameters
     const params = new URLSearchParams(window.location.search);
     const errorDesc = params.get('error_description');
     if (errorDesc) {
       setError(errorDesc);
     }
-  }, []);
+
+    // Check if user is already authenticated
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("target_language")
+          .eq("id", session.user.id)
+          .single();
+
+        if (profile?.target_language) {
+          navigate("/topics");
+        } else {
+          setShowLanguageSelect(true);
+        }
+      }
+    };
+
+    checkSession();
+  }, [navigate]);
 
   return (
     <AuthContainer>
