@@ -1,20 +1,13 @@
 'use client'
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Play, ChevronLeft, ChevronRight, X } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { useQueryClient } from '@tanstack/react-query';
-import { supabase } from "@/integrations/supabase/client";
-import ConversationReviewCard from '@/components/summary/ConversationReviewCard';
-import WordAnalysisCard from '@/components/summary/WordAnalysisCard';
+import { ArrowLeft } from 'lucide-react';
 import { useToast } from "@/components/ui/use-toast";
-import { Tables } from '@/integrations/supabase/types';
-
-type Scenario = Tables<'default_scenarios'>;
+import ConversationReviewCard from '@/components/summary/ConversationReviewCard';
+import { handleNextScenario } from '@/services/scenarioService';
 
 interface PostScenarioSummaryProps {
   scenarioTitle: string;
@@ -48,41 +41,30 @@ interface PostScenarioSummaryProps {
   onRestart: () => void;
   onExit: () => void;
   onNextScenario: () => void;
-  currentScenarioId: string;  // Add this prop
-  topicId: string;           // Add this prop
+  currentScenarioId: string;
+  topicId: string;
 }
 
 const PostScenarioSummary: React.FC<PostScenarioSummaryProps> = ({
   scenarioTitle,
   overallScore,
   transcript,
-  detailedScores,
-  wordLevelFeedback,
-  progressData,
   onRestart,
   onExit,
   onNextScenario,
-  currentScenarioId,  // Add this prop
-  topicId,           // Add this prop
+  currentScenarioId,
+  topicId,
 }) => {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const selectedLanguage = queryClient.getQueryData(['selectedLanguage']);
   const [isNavigating, setIsNavigating] = useState(false);
 
-  const handleNextScenario = async () => {
+  const handleContinueToNext = async () => {
     try {
       setIsNavigating(true);
       const nextScenario = await handleNextScenario(currentScenarioId, topicId);
       
       if (nextScenario) {
-        navigate('/characters', {
-          state: {
-            scenarioId: nextScenario.id,
-            scenarioTitle: nextScenario.title,
-            topicId
-          }
-        });
+        onNextScenario();
       } else {
         toast({
           title: "No more scenarios",
@@ -164,7 +146,7 @@ const PostScenarioSummary: React.FC<PostScenarioSummaryProps> = ({
         <div className="container mx-auto px-4 py-3">
           <div className="flex justify-center items-center gap-8">
             <Button 
-              onClick={handleNextScenario}
+              onClick={handleContinueToNext}
               disabled={isNavigating}
               className="w-full bg-gradient-to-r from-[#38b6ff] to-[#7843e6] hover:opacity-90 text-white transition-all duration-300"
             >

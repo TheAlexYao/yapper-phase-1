@@ -32,7 +32,8 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
   onBackToCharacters,
   script,
   characterId,
-  selectedLanguage
+  selectedLanguage,
+  topicId
 }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [currentPrompt, setCurrentPrompt] = useState<BotMessage | null>(null);
@@ -265,9 +266,6 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
        detailedScores.pronScore) / 4
     );
 
-    console.log('Detailed scores:', detailedScores);
-    console.log('Messages being passed:', messages);
-
     return (
       <PostScenarioSummary
         scenarioTitle={scenarioTitle}
@@ -303,7 +301,7 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
           const nextScenario = await handleNextScenario(scenarioId, topicId);
           if (nextScenario) {
             // Navigate to the next scenario
-            // Implement your navigation logic here
+            onBackToCharacters(); // This will take us back to character selection with the new scenario
           } else {
             toast({
               title: "No more scenarios",
@@ -313,6 +311,8 @@ const ScenarioChatScreen: React.FC<ScenarioChatScreenProps> = ({
             onBackToCharacters();
           }
         }}
+        currentScenarioId={scenarioId}
+        topicId={topicId}
       />
     );
   }
