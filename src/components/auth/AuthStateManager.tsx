@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface AuthStateManagerProps {
   setErrorMessage: (message: string) => void;
-  setProgress: (progress: number) => void;
+  setProgress: (progress: number | ((prev: number) => number)) => void;
   setShowLanguageSelect: (show: boolean) => void;
   getErrorMessage: (error: AuthError) => string;
 }
@@ -24,7 +24,7 @@ export const AuthStateManager = ({
     const startProgressBar = () => {
       setProgress(0);
       progressInterval = setInterval(() => {
-        setProgress((prev) => {
+        setProgress((prev: number) => {
           if (prev >= 90) {
             clearInterval(progressInterval);
             return 90;
