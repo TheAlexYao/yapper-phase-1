@@ -36,24 +36,27 @@ export const ChatSessionProvider = ({ scenarioId, characterId, children }: ChatS
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
+        // First try to find an existing session
         const { data: existingSessions, error: queryError } = await supabase
           .from('chat_sessions')
           .select('*')
           .eq('scenario_id', scenarioId)
           .eq('character_id', characterId)
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
 
-        if (queryError && queryError.code !== 'PGRST116') {
+        if (queryError) {
           console.error('Error fetching session:', queryError);
           return;
         }
 
         if (existingSessions) {
+          console.log('Found existing session:', existingSessions);
           setSessionId(existingSessions.id);
           setMessages(existingSessions.messages as ChatMessage[]);
           setCurrentLineIndex(existingSessions.current_line_index);
         } else {
+          // Create a new session if none exists
           const { data: newSession, error: insertError } = await supabase
             .from('chat_sessions')
             .insert({
@@ -72,6 +75,7 @@ export const ChatSessionProvider = ({ scenarioId, characterId, children }: ChatS
           }
 
           if (newSession) {
+            console.log('Created new session:', newSession);
             setSessionId(newSession.id);
           }
         }
