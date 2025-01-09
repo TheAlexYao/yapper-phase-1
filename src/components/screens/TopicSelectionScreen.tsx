@@ -5,10 +5,28 @@ import { useQuery } from "@tanstack/react-query";
 import TopicCarousel from "@/components/topics/TopicCarousel";
 import LanguageSelector from "@/components/topics/LanguageSelector";
 import type { LanguageCode } from "@/constants/languages";
+import type { Database } from "@/integrations/supabase/types";
+
+type Topic = Database['public']['Tables']['topics']['Row'];
 
 const TopicSelectionScreen = () => {
   const navigate = useNavigate();
   const [selectedLanguage, setSelectedLanguage] = useState<LanguageCode>("en-US");
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  // Fetch topics
+  const { data: topics = [] } = useQuery<Topic[]>({
+    queryKey: ["topics"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("topics")
+        .select("*")
+        .order('display_order', { ascending: true });
+      
+      if (error) throw error;
+      return data;
+    }
+  });
 
   // Fetch user's profile to get their target language
   const { data: profile } = useQuery({
@@ -34,8 +52,23 @@ const TopicSelectionScreen = () => {
     }
   }, [profile]);
 
-  const handleTopicSelect = (topicTitle: string) => {
-    navigate(`/scenarios?topic=${topicTitle}&lang=${selectedLanguage}`);
+  const handleTopicSelect = (topicId: string) => {
+    const selectedTopic = topics.find(topic => topic.id === topicId);
+    if (selectedTopic) {
+      navigate(`/scenarios?topic=${selectedTopic.title}&lang=${selectedLanguage}`);
+    }
+  };
+
+  const handleNavigate = (direction: 'prev' | 'next') => {
+    if (direction === 'prev') {
+      setCurrentIndex(current => 
+        current > 0 ? current - 1 : topics.length - 1
+      );
+    } else {
+      setCurrentIndex(current => 
+        current < topics.length - 1 ? current + 1 : 0
+      );
+    }
   };
 
   return (
@@ -47,7 +80,12 @@ const TopicSelectionScreen = () => {
           onLanguageChange={setSelectedLanguage}
         />
       </div>
-      <TopicCarousel onTopicSelect={handleTopicSelect} />
+      <TopicCarousel
+        topics={topics}
+        currentIndex={currentIndex}
+        onNavigate={handleNavigate}
+        onTopicSelect={handleTopicSelect}
+      />
     </div>
   );
 };
