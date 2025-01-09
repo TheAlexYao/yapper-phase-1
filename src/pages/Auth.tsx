@@ -15,12 +15,18 @@ const Auth = () => {
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
-        // Get hash parameters from URL
-        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        // Store hash immediately to prevent loss during re-renders
+        const hash = window.location.hash;
+        
+        // If we're on the callback page but don't have a hash, return early
+        if (window.location.pathname.includes('/auth/callback') && !hash) {
+          return;
+        }
+
+        const hashParams = new URLSearchParams(hash.substring(1));
         const accessToken = hashParams.get("access_token");
         const refreshToken = hashParams.get("refresh_token");
 
-        // If we have tokens in the URL, set the session
         if (accessToken && refreshToken) {
           const { error: sessionError } = await supabase.auth.setSession({
             access_token: accessToken,
@@ -28,24 +34,24 @@ const Auth = () => {
           });
 
           if (sessionError) throw sessionError;
-        }
+          
+          // Clear the hash after setting session
+          window.history.replaceState(null, '', '/auth/callback');
+          
+          // Immediately check session and redirect
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('target_language')
+              .eq('id', session.user.id)
+              .single();
 
-        // Always check for existing session after setting or if no tokens in URL
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        
-        if (sessionError) throw sessionError;
-        
-        if (session) {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('target_language')
-            .eq('id', session.user.id)
-            .single();
-
-          if (profile?.target_language) {
-            navigate("/topics");
-          } else {
-            setShowLanguageSelect(true);
+            if (profile?.target_language) {
+              navigate("/topics");
+            } else {
+              setShowLanguageSelect(true);
+            }
           }
         }
       } catch (error) {
@@ -54,30 +60,10 @@ const Auth = () => {
       }
     };
 
-    // Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('target_language')
-          .eq('id', session.user.id)
-          .single();
+    handleAuthCallback();
 
-        if (profile?.target_language) {
-          navigate("/topics");
-        } else {
-          setShowLanguageSelect(true);
-        }
-      }
-    });
-
-    // If we're on the callback page or have a hash, handle the auth callback
-    if (window.location.pathname.includes('/auth/callback') || window.location.hash) {
-      handleAuthCallback();
-    }
-
-    return () => subscription.unsubscribe();
-  }, [navigate]);
+    return () => {}; // Clean up not needed for this case
+  }, []); // Run only once on mount
 
   return (
     <AuthContainer>
