@@ -48,27 +48,13 @@ const TopicCarousel: React.FC<TopicCarouselProps> = ({
     touchEndX.current = null;
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'ArrowLeft') {
-      e.preventDefault();
-      onNavigate('prev');
-    } else if (e.key === 'ArrowRight') {
-      e.preventDefault();
-      onNavigate('next');
-    }
-  };
-
   return (
     <>
       <div 
-        className="w-full max-w-2xl mx-auto aspect-[4/3] md:aspect-[16/9] overflow-hidden rounded-2xl shadow-xl mb-4"
+        className="w-full aspect-[3/4] overflow-hidden rounded-2xl shadow-xl mb-4"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        onKeyDown={handleKeyDown}
-        tabIndex={0}
-        role="region"
-        aria-label="Topic carousel"
       >
         <div 
           className="flex h-full transition-transform duration-300 ease-out"
@@ -85,13 +71,12 @@ const TopicCarousel: React.FC<TopicCarouselProps> = ({
         </div>
       </div>
 
-      <div className="flex justify-center gap-4 w-full max-w-2xl mx-auto">
+      <div className="flex justify-center gap-4 w-full">
         <Button
           variant="outline"
           size="icon"
           className="bg-gradient-to-r from-[#38b6ff] to-[#7843e6] text-white rounded-full p-2 border-none"
           onClick={() => onNavigate('prev')}
-          aria-label="Previous topic"
         >
           <ChevronLeft className="h-6 w-6" />
         </Button>
@@ -101,7 +86,6 @@ const TopicCarousel: React.FC<TopicCarouselProps> = ({
           size="icon"
           className="bg-gradient-to-r from-[#38b6ff] to-[#7843e6] text-white rounded-full p-2 border-none"
           onClick={() => onNavigate('next')}
-          aria-label="Next topic"
         >
           <ChevronRight className="h-6 w-6" />
         </Button>
