@@ -9,33 +9,62 @@ const AuthCallback = () => {
     const handleCallback = async () => {
       try {
         const hash = window.location.hash;
-        if (!hash) return;
+        console.log("Hash present:", !!hash);
+        
+        if (!hash) {
+          console.log("No hash found in URL");
+          return;
+        }
 
         const hashParams = new URLSearchParams(hash.substring(1));
         const accessToken = hashParams.get("access_token");
         const refreshToken = hashParams.get("refresh_token");
+        
+        console.log("Tokens present:", {
+          hasAccessToken: !!accessToken,
+          hasRefreshToken: !!refreshToken
+        });
 
         if (accessToken && refreshToken) {
-          const { error: sessionError } = await supabase.auth.setSession({
+          console.log("Setting session...");
+          const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken,
           });
 
-          if (sessionError) throw sessionError;
+          if (sessionError) {
+            console.error("Session error:", sessionError);
+            throw sessionError;
+          }
+
+          console.log("Session set successfully:", !!sessionData);
 
           const { data: { session } } = await supabase.auth.getSession();
+          console.log("Got session:", !!session);
+          
           if (session) {
-            const { data: profile } = await supabase
+            const { data: profile, error: profileError } = await supabase
               .from('profiles')
               .select('target_language')
               .eq('id', session.user.id)
               .single();
 
+            if (profileError) {
+              console.error("Profile error:", profileError);
+            }
+
+            console.log("Profile data:", profile);
+
             if (profile?.target_language) {
+              console.log("Navigating to topics");
               navigate("/topics");
             } else {
+              console.log("Navigating to language select");
               navigate("/auth", { state: { showLanguageSelect: true } });
             }
+          } else {
+            console.log("No session found after setting");
+            navigate("/auth");
           }
         }
       } catch (error) {
@@ -47,7 +76,7 @@ const AuthCallback = () => {
     handleCallback();
   }, [navigate]);
 
-  return null;
+  return <div>Processing authentication...</div>;
 };
 
 export default AuthCallback; 
