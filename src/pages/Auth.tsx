@@ -49,9 +49,21 @@ const Auth = () => {
       ) : (
         <SupabaseAuth
           supabaseClient={supabase}
-          appearance={{ theme: ThemeSupa }}
+          appearance={{ 
+            theme: ThemeSupa,
+            variables: {
+              default: {
+                colors: {
+                  brand: '#7843e6',
+                  brandAccent: '#38b6ff',
+                }
+              }
+            }
+          }}
           providers={["google"]}
           redirectTo={`${window.location.origin}/auth/callback`}
+          view="sign_in"
+          showLinks={false}
         />
       )}
     </AuthContainer>
