@@ -28,18 +28,21 @@ const ScenarioChatScreen = ({
 
   useEffect(() => {
     if (script) {
-      const lines: ChatMessage[] = script.script_data.lines.map((line, index) => ({
-        id: index.toString(),
-        role: (line.speaker === 'character' ? 'bot' : 'user') as const,
-        text: line.targetText,
-        ttsText: line.ttsText,
-        transliteration: line.transliteration,
-        translation: line.translation,
-        tts_audio_url: line.audioUrl || '',
-        user_audio_url: null,
-        score: null,
-        language_code: selectedLanguage,
-      }));
+      const lines: ChatMessage[] = script.script_data.lines.map((line, index) => {
+        const role: 'bot' | 'user' = line.speaker === 'character' ? 'bot' : 'user';
+        return {
+          id: index.toString(),
+          role,
+          text: line.targetText,
+          ttsText: line.ttsText,
+          transliteration: line.transliteration,
+          translation: line.translation,
+          tts_audio_url: line.audioUrl || '',
+          user_audio_url: null,
+          score: null,
+          language_code: selectedLanguage,
+        };
+      });
 
       setScriptLines(lines);
     }
