@@ -1,69 +1,103 @@
-# Welcome to your Lovable project
+# Yapper - Language Learning Application
 
-## Project info
+## Project Overview
 
-**URL**: https://lovable.dev/projects/422593ea-64c1-49cf-b1e1-9ce0d8792f86
+Yapper is an innovative language learning application that focuses on building conversation confidence through guided practice scenarios. The application helps users overcome the fear of speaking in another language by providing structured, real-world conversation practice.
 
-## How can I edit this code?
+## Key Features
 
-There are several ways of editing your application.
+- **Guided Conversation Scenarios**: Practice real-life situations like ordering coffee, meeting new friends, or traveling.
+- **Multiple Language Support**: Learn various languages with native speaker audio and pronunciation feedback.
+- **Progress Tracking**: Monitor your improvement across different conversation scenarios.
+- **Personalized Learning**: Choose topics that match your interests and learning goals.
+- **Instant Feedback**: Get real-time pronunciation and fluency feedback.
 
-**Use Lovable**
+## Technical Stack
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/422593ea-64c1-49cf-b1e1-9ce0d8792f86) and start prompting.
+This project is built with modern web technologies:
 
-Changes made via Lovable will be committed automatically to this repo.
+- **Frontend Framework**: React with TypeScript
+- **Build Tool**: Vite
+- **UI Components**: shadcn/ui
+- **Styling**: Tailwind CSS
+- **Backend**: Supabase
+  - Authentication
+  - PostgreSQL Database
+  - Storage
+  - Edge Functions
+- **State Management**: React Query
+- **Routing**: React Router
+- **Voice Generation**: Azure Speech Services
+- **AI Integration**: OpenAI for conversation generation
 
-**Use your preferred IDE**
+## Project Structure
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- `/src/components/` - Reusable UI components
+  - `/auth/` - Authentication related components
+  - `/scenarios/` - Conversation scenario components
+  - `/sections/` - Landing page sections
+  - `/ui/` - Base UI components (shadcn)
+- `/src/pages/` - Main application pages
+- `/src/hooks/` - Custom React hooks
+- `/src/types/` - TypeScript type definitions
+- `/src/utils/` - Utility functions
+- `/supabase/` - Supabase configuration and functions
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## Getting Started
 
-Follow these steps:
-
+1. **Clone the Repository**
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+git clone <repository-url>
+cd yapper
+```
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+2. **Install Dependencies**
+```sh
+npm install
+```
 
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+3. **Start Development Server**
+```sh
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## Environment Setup
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+The following environment variables are required:
 
-**Use GitHub Codespaces**
+- `SUPABASE_URL`: Your Supabase project URL
+- `SUPABASE_ANON_KEY`: Supabase anonymous key
+- `AZURE_SPEECH_KEY`: Azure Speech Services API key
+- `AZURE_SPEECH_REGION`: Azure Speech Services region
+- `OPENAI_API_KEY`: OpenAI API key for conversation generation
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Deployment
 
-## What technologies are used for this project?
+The application can be deployed through:
 
-This project is built with .
+1. **Lovable Platform**
+   - Visit [Lovable](https://lovable.dev/projects/422593ea-64c1-49cf-b1e1-9ce0d8792f86)
+   - Click on Share -> Publish
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+2. **Custom Domain**
+   - For custom domain deployment, we recommend using Netlify
+   - Follow our [Custom Domain Guide](https://docs.lovable.dev/tips-tricks/custom-domain/)
 
-## How can I deploy this project?
+## Contributing
 
-Simply open [Lovable](https://lovable.dev/projects/422593ea-64c1-49cf-b1e1-9ce0d8792f86) and click on Share -> Publish.
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
 
-## I want to use a custom domain - is that possible?
+## License
 
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+This project is private and confidential. All rights reserved.
+
+## Support
+
+For support and questions:
+- Visit our [Documentation](https://docs.lovable.dev/)
+- Join our [Discord Community](https://discord.gg/lovable)
+- Contact support at support@lovable.dev
